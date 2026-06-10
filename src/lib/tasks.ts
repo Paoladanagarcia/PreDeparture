@@ -159,7 +159,8 @@ export const TASKS: Task[] = [
   {
     id: "insurance",
     title: "Buy health insurance",
-    description: "US healthcare is expensive. Check if SHIP (Berkeley) is required or if you can waive.",
+    description:
+      "US healthcare is expensive. Check if SHIP (Berkeley) is required or if you can waive.",
     category: "insurance",
     phase: "before",
     recommendedDaysBefore: 30,
@@ -276,7 +277,8 @@ export const TASKS: Task[] = [
   {
     id: "arrival-reqs",
     title: "Check university arrival requirements",
-    description: "Mandatory check-in with Berkeley International Office, immunizations, orientation.",
+    description:
+      "Mandatory check-in with Berkeley International Office, immunizations, orientation.",
     category: "university",
     phase: "after",
     recommendedDaysBefore: -7,
@@ -284,7 +286,10 @@ export const TASKS: Task[] = [
     priority: "high",
     effort: "1-2 hours",
     source: "Berkeley International Office",
-    link: { label: "Berkeley International Office", url: "https://internationaloffice.berkeley.edu/" },
+    link: {
+      label: "Berkeley International Office",
+      url: "https://internationaloffice.berkeley.edu/",
+    },
   },
 
   // ---------------- Scholarships ----------------
@@ -292,19 +297,22 @@ export const TASKS: Task[] = [
   {
     id: "scholarships-research",
     title: "Check available scholarships and funding options",
-    description: "Identify home university, host university, government and private funding you may be eligible for.",
+    description:
+      "Identify home university, host university, government and private funding you may be eligible for.",
     category: "scholarship",
     phase: "before",
     recommendedDaysBefore: 180,
     latestDaysBefore: 120,
     priority: "medium",
     effort: "2-4 hours",
-    warning: "Scholarship deadlines are often earlier than visa or housing deadlines. Check funding options as soon as possible.",
+    warning:
+      "Scholarship deadlines are often earlier than visa or housing deadlines. Check funding options as soon as possible.",
   },
   {
     id: "scholarships-prepare",
     title: "Prepare scholarship application documents",
-    description: "Gather transcripts, motivation letter, budget, recommendation letters and any program-specific forms.",
+    description:
+      "Gather transcripts, motivation letter, budget, recommendation letters and any program-specific forms.",
     category: "scholarship",
     phase: "before",
     recommendedDaysBefore: 150,
@@ -315,45 +323,48 @@ export const TASKS: Task[] = [
   {
     id: "scholarships-submit",
     title: "Submit scholarship applications before deadlines",
-    description: "Submit each application well ahead of its deadline — many close 4–9 months before departure.",
+    description:
+      "Submit each application well ahead of its deadline — many close 4–9 months before departure.",
     category: "scholarship",
     phase: "before",
     recommendedDaysBefore: 130,
     latestDaysBefore: 90,
     priority: "medium",
     effort: "2-4 hours",
-    warning: "Scholarship deadlines are often earlier than visa or housing deadlines. Check funding options as soon as possible.",
+    warning:
+      "Scholarship deadlines are often earlier than visa or housing deadlines. Check funding options as soon as possible.",
   },
 ];
 
 export const CATEGORY_META: Record<TaskCategory, { label: string; emoji: string }> = {
-  visa: { label: "Visa", emoji: "🛂" },
-  housing: { label: "Housing", emoji: "🏠" },
-  insurance: { label: "Insurance", emoji: "🩺" },
-  banking: { label: "Banking", emoji: "💳" },
-  phone: { label: "Phone plan", emoji: "📱" },
-  travel: { label: "Travel", emoji: "✈️" },
-  university: { label: "University", emoji: "🎓" },
-  scholarship: { label: "Scholarship", emoji: "💰" },
+  visa: { label: "Visa", emoji: "" },
+  housing: { label: "Housing", emoji: "" },
+  insurance: { label: "Insurance", emoji: "" },
+  banking: { label: "Banking", emoji: "" },
+  phone: { label: "Phone plan", emoji: "" },
+  travel: { label: "Travel", emoji: "" },
+  university: { label: "University", emoji: "" },
+  scholarship: { label: "Scholarship", emoji: "" },
 };
 
-export const PRIORITY_META: Record<Priority, { label: string; emoji: string; className: string }> = {
-  high: {
-    label: "High Priority",
-    emoji: "🔴",
-    className: "bg-destructive/10 text-destructive border-destructive/30",
-  },
-  medium: {
-    label: "Medium Priority",
-    emoji: "🟡",
-    className: "bg-warning/10 text-warning-foreground border-warning/30",
-  },
-  low: {
-    label: "Low Priority",
-    emoji: "🟢",
-    className: "bg-success/10 text-success border-success/30",
-  },
-};
+export const PRIORITY_META: Record<Priority, { label: string; emoji: string; className: string }> =
+  {
+    high: {
+      label: "High Priority",
+      emoji: "🔴",
+      className: "bg-destructive/10 text-destructive border-destructive/30",
+    },
+    medium: {
+      label: "Medium Priority",
+      emoji: "🟡",
+      className: "bg-warning/10 text-warning-foreground border-warning/30",
+    },
+    low: {
+      label: "Low Priority",
+      emoji: "🟢",
+      className: "bg-success/10 text-success border-success/30",
+    },
+  };
 
 export function dateMinusDays(arrival: Date, days: number): Date {
   const d = new Date(arrival);

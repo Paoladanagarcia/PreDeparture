@@ -81,6 +81,9 @@ function Landing() {
             <Link to="/dashboard" className="hover:text-foreground">
               Dashboard
             </Link>
+            <Link to="/about" className="hover:text-foreground">
+              Sources
+            </Link>
           </nav>
           <div className="flex items-center gap-2">
             <Button asChild size="sm" className="hidden sm:inline-flex">
@@ -257,7 +260,12 @@ function Landing() {
       <footer className="border-t">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-8 text-sm text-muted-foreground md:flex-row">
           <p>© {new Date().getFullYear()} PreDeparture</p>
-          <p>Made for students, with care.</p>
+          <div className="flex items-center gap-4">
+            <Link to="/about" className="hover:text-foreground">
+              About / Sources
+            </Link>
+            <p>Made for students, with care.</p>
+          </div>
         </div>
       </footer>
     </div>

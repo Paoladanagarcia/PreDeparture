@@ -17,6 +17,7 @@ const navItems = [
   { label: "Dashboard", to: "/dashboard" },
   { label: "Assistant", to: "/assistant" },
   { label: "Profile", to: "/profile" },
+  { label: "About / Sources", to: "/about" },
   { label: "Start Planning", to: "/onboarding" },
 ] as const;
 

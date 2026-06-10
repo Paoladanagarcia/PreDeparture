@@ -156,9 +156,7 @@ function Dashboard() {
             {nextTask && (
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <PriorityBadge priority={nextTask.priority} />
-                <Badge variant="secondary">
-                  {CATEGORY_META[nextTask.category].emoji} {CATEGORY_META[nextTask.category].label}
-                </Badge>
+                <CategoryBadge category={nextTask.category} />
                 <Badge variant="outline" className="gap-1">
                   <CalendarClock className="h-3 w-3" />
                   by {formatDate(dateMinusDays(arrival, nextTask.recommendedDaysBefore))}
@@ -326,6 +324,26 @@ function PriorityBadge({ priority }: { priority: Task["priority"] }) {
   );
 }
 
+function CategoryBadge({ category }: { category: Task["category"] }) {
+  const meta = CATEGORY_META[category];
+  return (
+    <Badge variant="secondary" className="text-[10px]">
+      {meta.emoji && <span>{meta.emoji}</span>}
+      <span className={meta.emoji ? "ml-1" : ""}>{meta.label}</span>
+    </Badge>
+  );
+}
+
+function CategoryLabel({ category }: { category: Task["category"] }) {
+  const meta = CATEGORY_META[category];
+  return (
+    <span>
+      {meta.emoji && <span>{meta.emoji} </span>}
+      {meta.label}
+    </span>
+  );
+}
+
 function TaskCard({
   t,
   isDone,
@@ -367,9 +385,7 @@ function TaskCard({
               </Badge>
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
-              <span>
-                {CATEGORY_META[t.category].emoji} {CATEGORY_META[t.category].label}
-              </span>
+              <CategoryLabel category={t.category} />
               <span>Recommended: {formatDate(recommended)}</span>
               <span>Latest safe: {formatDate(latest)}</span>
             </div>
@@ -418,9 +434,7 @@ function TaskCard({
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <Badge variant="secondary" className="text-[10px]">
-              {CATEGORY_META[t.category].emoji} {CATEGORY_META[t.category].label}
-            </Badge>
+            <CategoryBadge category={t.category} />
             {t.effort && (
               <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                 <Clock className="h-3 w-3" /> {t.effort}
@@ -537,14 +551,22 @@ function Timeline({
   arrival: Date;
 }) {
   const groups = getTimelineGroups(tasks);
+  const completed = tasks.filter((task) => done[task.id]).length;
+  const total = tasks.length;
 
   return (
     <Card className="p-6">
-      <h2 className="text-lg font-semibold">What to do when</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        A simpler planning view based on your arrival on{" "}
-        {arrival.toLocaleDateString(undefined, { dateStyle: "long" })}.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Timeline</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Your preparation path from early planning to the first month after arrival.
+          </p>
+        </div>
+        <Badge variant="outline" className="shrink-0">
+          {completed} / {total} done
+        </Badge>
+      </div>
 
       <div className="mt-4 flex gap-2 rounded-md border border-primary/30 bg-primary-soft/40 p-3 text-xs text-foreground">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
@@ -555,58 +577,86 @@ function Timeline({
         </p>
       </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
+      <div className="relative mt-8 space-y-8">
+        <div className="absolute bottom-0 left-4 top-2 hidden w-px bg-border sm:block" />
         {groups.map((group) => {
           const groupDone = group.tasks.filter((task) => done[task.id]).length;
+          const groupPct = Math.round((groupDone / group.tasks.length) * 100);
 
           return (
-            <div key={group.title} className="rounded-lg border bg-card p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-primary">
-                    {group.window}
-                  </p>
-                  <h3 className="mt-1 text-base font-semibold">{group.title}</h3>
-                  <p className="mt-1 text-xs text-muted-foreground">{group.desc}</p>
-                </div>
-                <Badge variant="outline" className="shrink-0 text-[10px]">
-                  {groupDone} / {group.tasks.length}
-                </Badge>
+            <section key={group.title} className="relative sm:pl-12">
+              <div className="absolute left-0 top-1 hidden h-8 w-8 place-items-center rounded-full border bg-background text-sm font-semibold shadow-sm sm:grid">
+                {groupDone === group.tasks.length ? (
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                ) : (
+                  <span className="text-primary">{group.marker}</span>
+                )}
               </div>
 
-              <ul className="mt-4 space-y-2">
-                {group.tasks.map((task) => {
-                  const isDone = !!done[task.id];
-                  const recommended = dateMinusDays(arrival, task.recommendedDaysBefore);
-                  return (
-                    <li key={task.id} className="flex items-start gap-2 text-sm">
-                      {isDone ? (
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                      ) : (
-                        <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p
-                          className={`font-medium ${isDone ? "text-muted-foreground line-through" : ""}`}
-                        >
-                          {task.title}
-                        </p>
-                        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
-                          <span>
-                            {CATEGORY_META[task.category].emoji}{" "}
-                            {CATEGORY_META[task.category].label}
-                          </span>
-                          <span>by {formatDate(recommended)}</span>
-                          {task.priority === "high" && (
-                            <span className="font-semibold text-destructive">High priority</span>
+              <div className="rounded-lg border bg-card p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-primary">
+                      {group.window}
+                    </p>
+                    <h3 className="mt-1 text-base font-semibold">{group.title}</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">{group.desc}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full bg-primary" style={{ width: `${groupPct}%` }} />
+                    </div>
+                    <Badge variant="outline" className="text-[10px]">
+                      {groupDone} / {group.tasks.length}
+                    </Badge>
+                  </div>
+                </div>
+
+                <ul className="mt-4 grid gap-2">
+                  {group.tasks.map((task) => {
+                    const isDone = !!done[task.id];
+                    const recommended = dateMinusDays(arrival, task.recommendedDaysBefore);
+                    return (
+                      <li
+                        key={task.id}
+                        className={`rounded-md border px-3 py-2 text-sm ${
+                          isDone ? "border-success/30 bg-success/5" : "bg-muted/20"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          {isDone ? (
+                            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                          ) : (
+                            <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                           )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <p
+                                className={`font-medium ${isDone ? "text-muted-foreground line-through" : ""}`}
+                              >
+                                {task.title}
+                              </p>
+                              <span className="shrink-0 text-xs font-medium text-primary">
+                                {formatDate(recommended)}
+                              </span>
+                            </div>
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
+                              <CategoryLabel category={task.category} />
+                              <span>{task.effort}</span>
+                              {task.priority === "high" && (
+                                <span className="font-semibold text-destructive">
+                                  High priority
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </section>
           );
         })}
       </div>
@@ -726,6 +776,7 @@ function getTimelineGroups(tasks: Task[]) {
       title: "Visa and funding first",
       window: "As early as possible",
       desc: "Start with the items that can block the rest of your exchange.",
+      marker: "1",
       tasks: sortTasksByRecommendedDate(
         before.filter(
           (task) =>
@@ -739,12 +790,14 @@ function getTimelineGroups(tasks: Task[]) {
       title: "Housing window",
       window: "2-3 months before",
       desc: "Berkeley housing is competitive, so this deserves its own planning block.",
+      marker: "2",
       tasks: sortTasksByRecommendedDate(before.filter((task) => task.category === "housing")),
     },
     {
       title: "Final setup",
       window: "Last 30 days",
       desc: "Insurance, flights, banking and phone setup before you leave.",
+      marker: "3",
       tasks: sortTasksByRecommendedDate(
         before.filter(
           (task) =>
@@ -759,12 +812,14 @@ function getTimelineGroups(tasks: Task[]) {
       title: "Arrival week",
       window: "First days in Berkeley",
       desc: "Campus setup, student ID, transport and immediate admin.",
+      marker: "4",
       tasks: sortTasksByRecommendedDate(after.filter((task) => task.recommendedDaysBefore >= -14)),
     },
     {
       title: "After arrival",
       window: "First month",
       desc: "Finish the remaining campus and local-life setup.",
+      marker: "5",
       tasks: sortTasksByRecommendedDate(after.filter((task) => task.recommendedDaysBefore < -14)),
     },
   ].filter((group) => group.tasks.length > 0);
