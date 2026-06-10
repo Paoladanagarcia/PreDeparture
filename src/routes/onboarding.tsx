@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { useProfile } from "@/lib/storage";
 import type { ProfileQuestionnaire } from "@/lib/tasks";
+import { UNIVERSITY_OPTIONS } from "@/lib/universities";
 import { Logo } from "@/components/Logo";
 import { MobileNav } from "@/components/MobileNav";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -111,10 +112,11 @@ function Onboarding() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="UC Berkeley">UC Berkeley</SelectItem>
-                    <SelectItem value="other" disabled>
-                      More universities coming soon
-                    </SelectItem>
+                    {UNIVERSITY_OPTIONS.map((university) => (
+                      <SelectItem key={university} value={university}>
+                        {university}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -192,7 +194,7 @@ function stepTitle(s: number) {
 function stepSub(s: number) {
   return [
     "We'll tailor your roadmap to your destination.",
-    "More universities coming soon — we're starting with Berkeley.",
+    "Choose your host university so resources and links match your campus.",
     "Your nationality changes some visa steps.",
     "We'll build your timeline backwards from this date.",
   ][s];

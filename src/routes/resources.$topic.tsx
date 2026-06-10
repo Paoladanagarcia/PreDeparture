@@ -13,16 +13,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/Logo";
 import { MobileNav } from "@/components/MobileNav";
+import { useProfile } from "@/lib/storage";
 import {
-  ARRIVAL_GUIDE,
   BANKING,
-  BERKELEY_HOUSING,
-  OFFCAMPUS_TIPS,
   PHONE_PLANS,
   SCHOLARSHIP_CHECKLIST,
   SCHOLARSHIP_RESOURCES,
   VISA_GUIDE,
 } from "@/lib/berkeley";
+import { getUniversityConfig } from "@/lib/universities";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -46,8 +45,8 @@ const TOPICS = {
     icon: FileText,
   },
   housing: {
-    title: "Berkeley Housing Guide",
-    desc: "Campus housing, I-House, off-campus options, prices, neighborhoods and scam checks.",
+    title: "Housing Guide",
+    desc: "Campus housing, off-campus options, prices, neighborhoods and scam checks.",
     icon: Home,
   },
   banking: {
@@ -61,8 +60,8 @@ const TOPICS = {
     icon: Smartphone,
   },
   arrival: {
-    title: "Berkeley Arrival Guide",
-    desc: "Cal 1 Card, CalCentral, transport, orientation, health and emergency contacts.",
+    title: "Arrival Guide",
+    desc: "Campus setup, transport, orientation, health and emergency contacts.",
     icon: Plane,
   },
   scholarships: {
@@ -72,7 +71,7 @@ const TOPICS = {
   },
   insurance: {
     title: "Health Insurance Guide",
-    desc: "SHIP, waiver criteria and health coverage reminders.",
+    desc: "University health insurance, waiver criteria and coverage reminders.",
     icon: HeartPulse,
   },
 } as const;
@@ -88,9 +87,20 @@ const RESOURCE_SEARCH_ENTRIES = [
   },
   {
     topic: "housing",
-    title: "Berkeley housing",
-    desc: "I-House, off-campus apartments, sublets, rent, neighborhoods, scams and leases.",
-    keywords: ["housing", "rent", "lease", "ihouse", "sublet", "apartment", "roommate", "scam"],
+    title: "Housing",
+    desc: "Campus housing, off-campus apartments, sublets, rent, neighborhoods, scams and leases.",
+    keywords: [
+      "housing",
+      "rent",
+      "lease",
+      "ihouse",
+      "sublet",
+      "apartment",
+      "roommate",
+      "scam",
+      "stanford",
+      "berkeley",
+    ],
   },
   {
     topic: "banking",
@@ -107,14 +117,17 @@ const RESOURCE_SEARCH_ENTRIES = [
   {
     topic: "arrival",
     title: "Arrival and campus setup",
-    desc: "Cal 1 Card, CalCentral, BART, AC Transit, orientation and emergency contacts.",
+    desc: "Student ID, campus portal, transit, orientation and emergency contacts.",
     keywords: [
       "arrival",
       "airport",
       "bart",
       "bus",
       "calcentral",
+      "axess",
       "cal 1",
+      "stanford id",
+      "marguerite",
       "orientation",
       "emergency",
     ],
@@ -128,8 +141,8 @@ const RESOURCE_SEARCH_ENTRIES = [
   {
     topic: "insurance",
     title: "Health insurance and SHIP",
-    desc: "UC Berkeley SHIP, waiver criteria, health coverage and medical requirements.",
-    keywords: ["insurance", "ship", "health", "waiver", "medical", "doctor"],
+    desc: "University health insurance, waiver criteria, health coverage and medical requirements.",
+    keywords: ["insurance", "ship", "cardinal care", "health", "waiver", "medical", "doctor"],
   },
 ] satisfies Array<{
   topic: Topic;
@@ -153,8 +166,10 @@ export const Route = createFileRoute("/resources/$topic")({
 
 function ResourcePage() {
   const { topic: rawTopic } = Route.useParams();
+  const { profile } = useProfile();
+  const university = getUniversityConfig(profile?.university);
   const topic = normalizeTopic(rawTopic);
-  const meta = TOPICS[topic];
+  const meta = getTopicMeta(topic, university);
   const Icon = meta.icon;
   const [query, setQuery] = useState("");
   const searchResults = useMemo(() => searchResources(query), [query]);
@@ -188,12 +203,13 @@ function ResourcePage() {
 
         <div className="space-y-6">
           {topic === "visa" && <VisaGuide />}
-          {topic === "housing" && <HousingGuide />}
+          {topic === "housing" && <HousingGuide university={university} />}
           {topic === "banking" && <BankingGuide />}
           {topic === "phone" && <PhoneGuide />}
-          {topic === "arrival" && <ArrivalGuide />}
+          {topic === "arrival" && <ArrivalGuide university={university} />}
           {topic === "scholarships" && <ScholarshipsGuide />}
-          {topic === "insurance" && <InsuranceGuide />}
+          {topic === "insurance" && <InsuranceGuide university={university} />}
+          <OfficialLinks links={university.linksByTopic[topic]} />
         </div>
       </main>
     </div>
@@ -306,11 +322,11 @@ function VisaGuide() {
   );
 }
 
-function HousingGuide() {
+function HousingGuide({ university }: { university: ReturnType<typeof getUniversityConfig> }) {
   return (
     <ResourceSection title="Housing options">
       <div className="grid gap-4 md:grid-cols-2">
-        {BERKELEY_HOUSING.map((housing) => (
+        {university.housing.options.map((housing) => (
           <Card key={housing.name} className="p-5">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <h3 className="text-base font-semibold">{housing.name}</h3>
@@ -342,9 +358,16 @@ function HousingGuide() {
       <Card className="bg-muted/30 p-5">
         <h3 className="text-sm font-semibold">Off-campus tips</h3>
         <div className="mt-3 grid gap-4 md:grid-cols-3">
-          <MiniList title="Common mistakes" items={OFFCAMPUS_TIPS.commonMistakes} warning />
-          <MiniList title="Average prices" items={OFFCAMPUS_TIPS.averagePrices} />
-          <MiniList title="Best neighborhoods" items={OFFCAMPUS_TIPS.bestNeighborhoods} />
+          <MiniList
+            title="Common mistakes"
+            items={university.housing.offCampusTips.commonMistakes}
+            warning
+          />
+          <MiniList title="Average prices" items={university.housing.offCampusTips.averagePrices} />
+          <MiniList
+            title="Best neighborhoods"
+            items={university.housing.offCampusTips.bestNeighborhoods}
+          />
         </div>
       </Card>
     </ResourceSection>
@@ -387,11 +410,11 @@ function PhoneGuide() {
   );
 }
 
-function ArrivalGuide() {
+function ArrivalGuide({ university }: { university: ReturnType<typeof getUniversityConfig> }) {
   return (
     <ResourceSection title="Arrival essentials">
       <div className="grid gap-4 md:grid-cols-2">
-        {ARRIVAL_GUIDE.map((item) => (
+        {university.arrival.items.map((item) => (
           <Card key={item.title} className="p-5">
             <h3 className="text-sm font-semibold">{item.title}</h3>
             <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
@@ -453,23 +476,58 @@ function ScholarshipsGuide() {
   );
 }
 
-function InsuranceGuide() {
+function InsuranceGuide({ university }: { university: ReturnType<typeof getUniversityConfig> }) {
   return (
-    <ResourceSection title="Health insurance and SHIP">
-      <p className="text-sm text-muted-foreground">
-        Berkeley requires SHIP unless you waive with an equivalent plan. Check the waiver criteria
-        carefully because many international plans do not qualify. Confirm your plan covers
-        repatriation, mental health and care in the United States.
-      </p>
+    <ResourceSection title={university.insurance.title}>
+      <p className="text-sm text-muted-foreground">{university.insurance.body}</p>
       <div className="flex flex-wrap gap-2">
-        <ExternalLinkRow label="UC Berkeley SHIP" url="https://uhs.berkeley.edu/ship" />
-        <ExternalLinkRow
-          label="SHIP waiver info"
-          url="https://uhs.berkeley.edu/insurance/waiving-ship"
-        />
+        {university.insurance.links.map((link) => (
+          <ExternalLinkRow key={link.url} label={link.label} url={link.url} />
+        ))}
       </div>
     </ResourceSection>
   );
+}
+
+function OfficialLinks({ links }: { links: { label: string; url: string }[] }) {
+  return (
+    <ResourceSection title="Official links">
+      <div className="grid gap-2 sm:grid-cols-2">
+        {links.map((link) => (
+          <a
+            key={link.url}
+            href={link.url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-between gap-3 rounded-md border bg-muted/20 px-3 py-2 text-sm text-primary transition-colors hover:bg-muted hover:underline"
+          >
+            <span>{link.label}</span>
+            <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+          </a>
+        ))}
+      </div>
+    </ResourceSection>
+  );
+}
+
+function getTopicMeta(topic: Topic, university: ReturnType<typeof getUniversityConfig>) {
+  if (topic === "housing") {
+    return { ...TOPICS.housing, title: university.housing.title, desc: university.housing.desc };
+  }
+
+  if (topic === "arrival") {
+    return { ...TOPICS.arrival, title: university.arrival.title, desc: university.arrival.desc };
+  }
+
+  if (topic === "insurance") {
+    return {
+      ...TOPICS.insurance,
+      title: university.insurance.title,
+      desc: university.insurance.body,
+    };
+  }
+
+  return TOPICS[topic];
 }
 
 function ResourceSection({ title, children }: { title: string; children: React.ReactNode }) {

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/Logo";
 import { MobileNav } from "@/components/MobileNav";
 import { askAssistant, type AssistantReply } from "@/lib/assistant";
+import { useProfile } from "@/lib/storage";
 import {
   ArrowLeft,
   Send,
@@ -38,12 +39,13 @@ type ChatMessage =
 const SUGGESTIONS = [
   "What documents do I need for my F-1 visa interview?",
   "How does the SEVIS fee work?",
-  "Is UC Berkeley SHIP insurance mandatory?",
-  "What's the best housing option near Berkeley campus?",
+  "Is university health insurance mandatory?",
+  "How should I compare housing near campus?",
 ];
 
 function AssistantPage() {
   const navigate = useNavigate();
+  const { profile } = useProfile();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -65,6 +67,7 @@ function AssistantPage() {
     try {
       const reply: AssistantReply = await askAssistant(
         next.map((m) => ({ role: m.role, content: m.content })),
+        { university: profile?.university },
       );
       setMessages((prev) => [
         ...prev,
@@ -117,8 +120,8 @@ function AssistantPage() {
                   <div className="text-sm">
                     <p className="font-medium">Hi 👋 I'm your PreDeparture assistant.</p>
                     <p className="mt-1 text-muted-foreground">
-                      I can help with F-1 visa, SEVIS, DS-160, Berkeley housing, SHIP insurance, US
-                      banking, phone plans, scholarships and your arrival in Berkeley.
+                      I can help with F-1 visa, SEVIS, DS-160, campus housing, health insurance, US
+                      banking, phone plans, scholarships and your arrival.
                     </p>
                   </div>
                 </div>

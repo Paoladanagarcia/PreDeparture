@@ -2,7 +2,7 @@
 
 PreDeparture is a web app that helps international students prepare for an exchange abroad. It turns scattered information about visas, housing, insurance, banking, arrival logistics and funding into a personalized roadmap.
 
-The first supported destination is UC Berkeley in the United States.
+The first supported destinations are UC Berkeley and Stanford University in the United States.
 
 ## Features
 
@@ -83,4 +83,4 @@ Without this variable, the app keeps using the local fallback assistant.
 
 PreDeparture is a preparation tool, not an official university, immigration, legal, medical or financial authority.
 
-Deadlines are planning estimates based on the user's arrival date. Students should verify important requirements directly with official sources such as UC Berkeley, their home university, the relevant embassy or government websites before paying fees, booking appointments, signing housing contracts or submitting documents.
+Deadlines are planning estimates based on the user's arrival date. Students should verify important requirements directly with official sources such as their host university, their home university, the relevant embassy or government websites before paying fees, booking appointments, signing housing contracts or submitting documents.

@@ -23,11 +23,12 @@ export const Route = createFileRoute("/about")({
 const sourceGroups = [
   {
     title: "University sources",
-    desc: "Berkeley pages are used for campus-specific topics such as international student guidance, housing, SHIP insurance, CalCentral and arrival logistics.",
+    desc: "University pages are used for campus-specific topics such as international student guidance, housing, health insurance, student portals and arrival logistics.",
     links: [
       { label: "Berkeley International Office", url: "https://internationaloffice.berkeley.edu/" },
+      { label: "Stanford Bechtel International Center", url: "https://bechtel.stanford.edu/" },
       { label: "Berkeley Housing", url: "https://housing.berkeley.edu/" },
-      { label: "UC Berkeley SHIP", url: "https://uhs.berkeley.edu/ship" },
+      { label: "Stanford Student Housing", url: "https://rde.stanford.edu/studenthousing" },
     ],
   },
   {
@@ -47,8 +48,11 @@ const sourceGroups = [
     desc: "Funding, banking, phone and local transport resources are curated as starting points, not as official financial advice.",
     links: [
       { label: "Berkeley Financial Aid", url: "https://financialaid.berkeley.edu/" },
+      {
+        label: "Stanford Cardinal Care",
+        url: "https://vaden.stanford.edu/insurance-referral-office/cardinal-care-overview",
+      },
       { label: "Erasmus+", url: "https://erasmus-plus.ec.europa.eu/" },
-      { label: "AC Transit", url: "https://www.actransit.org/" },
     ],
   },
 ];
@@ -110,7 +114,8 @@ function AboutPage() {
             <h2 className="mt-3 text-sm font-semibold">Verify before acting</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Before paying fees, booking appointments, signing housing or submitting forms, verify
-              details directly with Berkeley, your home university or the relevant embassy.
+              details directly with your host university, your home university or the relevant
+              embassy.
             </p>
           </Card>
         </div>

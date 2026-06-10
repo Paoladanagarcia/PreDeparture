@@ -20,6 +20,7 @@ import {
 } from "@/lib/tasks";
 import { Logo } from "@/components/Logo";
 import { MobileNav } from "@/components/MobileNav";
+import { getUniversityConfig } from "@/lib/universities";
 import {
   ExternalLink,
   CalendarClock,
@@ -68,6 +69,7 @@ function Dashboard() {
     [profile?.startDate],
   );
 
+  const university = useMemo(() => getUniversityConfig(profile?.university), [profile?.university]);
   const personalizedTasks = useMemo(
     () => (profile ? getPersonalizedTasks(profile) : TASKS),
     [profile],
@@ -206,7 +208,7 @@ function Dashboard() {
           </TabsContent>
 
           <TabsContent value="resources" className="mt-6">
-            <Resources />
+            <Resources university={university} />
           </TabsContent>
         </Tabs>
       </main>
@@ -664,7 +666,7 @@ function Timeline({
   );
 }
 
-function Resources() {
+function Resources({ university }: { university: ReturnType<typeof getUniversityConfig> }) {
   const resources = [
     {
       topic: "visa",
@@ -675,8 +677,8 @@ function Resources() {
     {
       topic: "housing",
       icon: Home,
-      title: "Berkeley Housing",
-      desc: "I-House, off-campus housing, prices, neighborhoods and scams.",
+      title: `${university.shortName} Housing`,
+      desc: university.housing.desc,
     },
     {
       topic: "banking",
@@ -694,7 +696,7 @@ function Resources() {
       topic: "arrival",
       icon: Plane,
       title: "Arrival Guide",
-      desc: "Cal 1 Card, CalCentral, transport, orientation and emergency contacts.",
+      desc: university.arrival.desc,
     },
     {
       topic: "scholarships",
@@ -706,7 +708,7 @@ function Resources() {
       topic: "insurance",
       icon: ShieldCheck,
       title: "Health Insurance",
-      desc: "SHIP, waiver criteria and health coverage reminders.",
+      desc: "University insurance, waiver criteria and health coverage reminders.",
     },
   ] as const;
 
@@ -719,7 +721,7 @@ function Resources() {
             <h3 className="text-sm font-semibold">Need help? Ask the AI assistant</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               Get answers grounded in official sources for visa, housing, insurance, banking and
-              arrival in Berkeley.
+              arrival at {university.shortName}.
             </p>
           </div>
           <Button asChild size="sm">
@@ -789,7 +791,7 @@ function getTimelineGroups(tasks: Task[]) {
     {
       title: "Housing window",
       window: "2-3 months before",
-      desc: "Berkeley housing is competitive, so this deserves its own planning block.",
+      desc: "Housing near your host campus can be competitive, so this deserves its own planning block.",
       marker: "2",
       tasks: sortTasksByRecommendedDate(before.filter((task) => task.category === "housing")),
     },
@@ -810,7 +812,7 @@ function getTimelineGroups(tasks: Task[]) {
     },
     {
       title: "Arrival week",
-      window: "First days in Berkeley",
+      window: "First days on campus",
       desc: "Campus setup, student ID, transport and immediate admin.",
       marker: "4",
       tasks: sortTasksByRecommendedDate(after.filter((task) => task.recommendedDaysBefore >= -14)),
@@ -826,11 +828,98 @@ function getTimelineGroups(tasks: Task[]) {
 }
 
 function getPersonalizedTasks(profile: ProfileQuestionnaire) {
+  const university = getUniversityConfig(profile.university);
+  const tasks = TASKS.map((task) => personalizeTaskForUniversity(task, university));
+
   if (isLikelyUsNational(profile.nationality)) {
-    return TASKS.filter((task) => task.category !== "visa");
+    return tasks.filter((task) => task.category !== "visa");
   }
 
-  return TASKS;
+  return tasks;
+}
+
+function personalizeTaskForUniversity(
+  task: Task,
+  university: ReturnType<typeof getUniversityConfig>,
+): Task {
+  if (university.name !== "Stanford University") return task;
+
+  if (task.id === "housing-search") {
+    return {
+      ...task,
+      source: "Stanford R&DE Student Housing",
+      warning: "Stanford housing eligibility and deadlines vary by program. Start early.",
+      link: { label: "Stanford Housing", url: "https://rde.stanford.edu/studenthousing" },
+    };
+  }
+
+  if (task.id === "housing-secure") {
+    return {
+      ...task,
+      source: "Stanford R&DE Student Housing",
+      warning: "For off-campus housing near Stanford, verify listings carefully before paying.",
+    };
+  }
+
+  if (task.id === "insurance") {
+    return {
+      ...task,
+      title: "Check Cardinal Care health insurance",
+      description:
+        "US healthcare is expensive. Check whether Stanford Cardinal Care applies or whether you can waive.",
+      source: "Stanford Vaden Health Services",
+      link: {
+        label: "Cardinal Care",
+        url: "https://vaden.stanford.edu/insurance-referral-office/cardinal-care-overview",
+      },
+    };
+  }
+
+  if (task.id === "student-card") {
+    return {
+      ...task,
+      title: "Obtain your Stanford ID Card",
+      description: "Your official Stanford ID for campus access and university services.",
+      source: "Stanford University IT",
+    };
+  }
+
+  if (task.id === "register-classes") {
+    return {
+      ...task,
+      description: "Use Axess to manage enrollment and student records.",
+      source: "Stanford Axess",
+    };
+  }
+
+  if (task.id === "transport") {
+    return {
+      ...task,
+      description: "Understand Marguerite shuttle, Caltrain and local transport options.",
+    };
+  }
+
+  if (task.id === "emergency") {
+    return {
+      ...task,
+      description: "Save Stanford public safety, embassy, insurance hotline and a local contact.",
+    };
+  }
+
+  if (task.id === "arrival-reqs") {
+    return {
+      ...task,
+      description:
+        "Check Bechtel International Center guidance, immigration check-in, orientation and health requirements.",
+      source: "Bechtel International Center",
+      link: {
+        label: "Bechtel International Center",
+        url: "https://bechtel.stanford.edu/",
+      },
+    };
+  }
+
+  return task;
 }
 
 function getPersonalizedTips(profile: ProfileQuestionnaire) {

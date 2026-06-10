@@ -55,7 +55,7 @@ const features = [
   { icon: Clock, title: "Smart timeline", desc: "Deadlines calculated from your arrival date." },
   {
     icon: Library,
-    title: "Berkeley resource library",
+    title: "Campus resource library",
     desc: "Detailed guides on housing, banking, phone plans and arrival.",
   },
   {
@@ -98,7 +98,7 @@ function Landing() {
         <div className="mx-auto max-w-6xl px-6 pb-24 pt-16 text-center md:pt-24">
           <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground shadow-soft">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            Built for international students — starting with UC Berkeley
+            Built for international students — starting with UC Berkeley and Stanford
           </div>
           <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-foreground md:text-6xl">
             Your roadmap for studying abroad.
@@ -132,7 +132,7 @@ function Landing() {
                       { t: "Pay the SEVIS fee", done: true },
                       { t: "Complete DS-160", done: true },
                       { t: "Schedule visa interview", done: false },
-                      { t: "Find housing in Berkeley", done: false },
+                      { t: "Find housing near campus", done: false },
                     ].map((i) => (
                       <li key={i.t} className="flex items-center gap-3">
                         <CheckCircle2

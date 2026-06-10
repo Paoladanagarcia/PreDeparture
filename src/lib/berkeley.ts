@@ -154,10 +154,7 @@ export const BANKING: BankOption[] = [
       "Multi-currency account with US routing details",
       "Open online before arrival",
     ],
-    disadvantages: [
-      "Not a real US bank — can't take checks easily",
-      "No physical branches",
-    ],
+    disadvantages: ["Not a real US bank — can't take checks easily", "No physical branches"],
     bestUseCase:
       "Most exchange students for one semester — receive USD, pay rent, transfer EUR↔USD cheaply.",
     url: "https://wise.com/",
@@ -217,7 +214,14 @@ export const PHONE_PLANS: PhonePlan[] = [
   },
 ];
 
-export const ARRIVAL_GUIDE = [
+export type ArrivalItem = {
+  title: string;
+  description: string;
+  tip: string;
+  url: string;
+};
+
+export const ARRIVAL_GUIDE: ArrivalItem[] = [
   {
     title: "Cal 1 Card",
     description:
@@ -255,8 +259,7 @@ export const ARRIVAL_GUIDE = [
   },
   {
     title: "Berkeley International Office (BIO)",
-    description:
-      "Your primary contact for anything visa- or immigration-related during your stay.",
+    description: "Your primary contact for anything visa- or immigration-related during your stay.",
     url: "https://internationaloffice.berkeley.edu/",
     tip: "Schedule advising appointments early — slots fill fast around deadlines.",
   },
@@ -375,7 +378,8 @@ export const SCHOLARSHIP_RESOURCES: ScholarshipResource[] = [
     title: "Erasmus+ / international mobility grants",
     what: "EU-funded grants for students from European institutions, also for non-EU exchanges in some cases.",
     whoFor: "Students enrolled at an Erasmus+ partner institution.",
-    whenToApply: "Apply through your home university's Erasmus office, typically 4–6 months in advance.",
+    whenToApply:
+      "Apply through your home university's Erasmus office, typically 4–6 months in advance.",
     url: "https://erasmus-plus.ec.europa.eu/",
   },
   {
@@ -389,7 +393,8 @@ export const SCHOLARSHIP_RESOURCES: ScholarshipResource[] = [
     title: "Emergency funding options",
     what: "Short-term aid in case of unexpected hardship during your exchange.",
     whoFor: "Currently enrolled students facing financial emergencies.",
-    whenToApply: "As soon as a need arises — contact your home and host international offices immediately.",
+    whenToApply:
+      "As soon as a need arises — contact your home and host international offices immediately.",
     url: "https://financialaid.berkeley.edu/emergency-funding/",
   },
 ];
