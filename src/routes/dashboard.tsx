@@ -31,14 +31,10 @@ import {
   Info,
   ShieldCheck,
   FileText,
+  Library,
   Sparkles,
   MessageCircle,
   Users,
-  Home,
-  CreditCard,
-  Smartphone,
-  Plane,
-  DollarSign,
 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -106,6 +102,11 @@ function Dashboard() {
             <Button asChild variant="ghost" size="sm">
               <Link to="/community">
                 <MessageCircle className="mr-1 h-3.5 w-3.5" /> Community
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/resources">
+                <Library className="mr-1 h-3.5 w-3.5" /> Resources
               </Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
@@ -181,12 +182,12 @@ function Dashboard() {
         {authConfigured && !session && <CloudSyncPrompt />}
 
         <CommunityPreviewCard university={profile.university} />
+        <ResourcesPreviewCard university={university.shortName} />
 
         <Tabs defaultValue="checklist" className="mt-6 sm:mt-8">
           <TabsList>
             <TabsTrigger value="checklist">Checklist</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
-            <TabsTrigger value="resources">Resources</TabsTrigger>
           </TabsList>
 
           <TabsContent value="checklist" className="mt-6">
@@ -216,9 +217,6 @@ function Dashboard() {
             <Timeline tasks={personalizedTasks} done={done} arrival={arrival} />
           </TabsContent>
 
-          <TabsContent value="resources" className="mt-6">
-            <Resources university={university} />
-          </TabsContent>
         </Tabs>
       </main>
     </div>
@@ -284,6 +282,32 @@ function CommunityPreviewCard({ university }: { university: string }) {
         <Button asChild size="sm" className="shrink-0">
           <Link to="/community">
             Open community <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function ResourcesPreviewCard({ university }: { university: string }) {
+  return (
+    <Card className="mt-4 border-primary/20 bg-card p-4 sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
+            <Library className="h-4 w-4" />
+          </span>
+          <div>
+            <h2 className="text-sm font-semibold">Resource library</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Browse all {university} guides for visa, housing, banking, phone, arrival, funding and
+              insurance.
+            </p>
+          </div>
+        </div>
+        <Button asChild size="sm" variant="outline" className="shrink-0">
+          <Link to="/resources">
+            Open resources <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </Button>
       </div>
@@ -640,94 +664,6 @@ function Timeline({
         })}
       </div>
     </Card>
-  );
-}
-
-function Resources({ university }: { university: ReturnType<typeof getUniversityConfig> }) {
-  const resources = [
-    {
-      topic: "visa",
-      icon: FileText,
-      title: "F-1 Visa",
-      desc: "DS-160, SEVIS, interview documents and common mistakes.",
-    },
-    {
-      topic: "housing",
-      icon: Home,
-      title: `${university.shortName} Housing`,
-      desc: university.housing.desc,
-    },
-    {
-      topic: "banking",
-      icon: CreditCard,
-      title: "Banking",
-      desc: "Wise, US banks, cards, transfers and payment setup.",
-    },
-    {
-      topic: "phone",
-      icon: Smartphone,
-      title: "Phone Plans",
-      desc: "eSIMs, US numbers, prepaid plans and first-day connectivity.",
-    },
-    {
-      topic: "arrival",
-      icon: Plane,
-      title: "Arrival Guide",
-      desc: university.arrival.desc,
-    },
-    {
-      topic: "scholarships",
-      icon: DollarSign,
-      title: "Scholarships",
-      desc: "Funding options, deadlines and budget checklist.",
-    },
-    {
-      topic: "insurance",
-      icon: ShieldCheck,
-      title: "Health Insurance",
-      desc: "University insurance, waiver criteria and health coverage reminders.",
-    },
-  ] as const;
-
-  return (
-    <div className="space-y-5">
-      <Card className="border-primary/30 bg-primary-soft/40 p-5">
-        <div className="flex gap-3">
-          <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-          <div className="flex-1">
-            <h3 className="text-sm font-semibold">Need help? Ask the AI assistant</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Get answers grounded in official sources for visa, housing, insurance, banking and
-              arrival at {university.shortName}.
-            </p>
-          </div>
-          <Button asChild size="sm">
-            <Link to="/assistant">Open assistant</Link>
-          </Button>
-        </div>
-      </Card>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {resources.map((resource) => (
-          <Card key={resource.topic} className="p-5 transition-colors hover:bg-muted/40">
-            <div className="flex items-start gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
-                <resource.icon className="h-5 w-5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-semibold">{resource.title}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">{resource.desc}</p>
-                <Button asChild variant="link" className="mt-2 h-auto p-0 text-xs">
-                  <Link to="/resources/$topic" params={{ topic: resource.topic }}>
-                    Open guide <ArrowRight className="ml-1 h-3 w-3" />
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </div>
   );
 }
 

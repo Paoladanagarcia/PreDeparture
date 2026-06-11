@@ -10,6 +10,7 @@ import { askAssistant, type AssistantReply } from "@/lib/assistant";
 import { useProfile } from "@/lib/storage";
 import {
   ArrowLeft,
+  Library,
   MessageCircle,
   Send,
   ShieldCheck,
@@ -93,6 +94,11 @@ function AssistantPage() {
             <Button asChild variant="ghost" size="sm">
               <Link to="/community">
                 <MessageCircle className="mr-1 h-4 w-4" /> Community
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/resources">
+                <Library className="mr-1 h-4 w-4" /> Resources
               </Link>
             </Button>
           </div>

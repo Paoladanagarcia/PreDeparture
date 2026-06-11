@@ -68,7 +68,7 @@ function AboutPage() {
               <Link to="/">Home</Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
-              <Link to="/onboarding">Start Planning</Link>
+              <Link to="/auth">Account</Link>
             </Button>
             <Button asChild size="sm">
               <Link to="/onboarding">Start Planning</Link>

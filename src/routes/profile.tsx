@@ -1,7 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { ComponentType } from "react";
 import { useEffect, useMemo } from "react";
-import { CalendarClock, CheckCircle2, GraduationCap, MapPin, RotateCcw, User } from "lucide-react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  GraduationCap,
+  Library,
+  MapPin,
+  RotateCcw,
+  User,
+} from "lucide-react";
 
 import { Logo } from "@/components/Logo";
 import { MobileNav } from "@/components/MobileNav";
@@ -54,6 +62,11 @@ function ProfilePage() {
             </Button>
             <Button asChild variant="ghost" size="sm">
               <Link to="/community">Community</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/resources">
+                <Library className="mr-1 h-3.5 w-3.5" /> Resources
+              </Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
               <Link to="/auth">Account</Link>

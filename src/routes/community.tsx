@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Library, Sparkles } from "lucide-react";
 
 import { CommunityCard } from "@/components/CommunityCard";
 import { Logo } from "@/components/Logo";
@@ -45,6 +45,11 @@ function CommunityPage() {
             <Button asChild variant="ghost" size="sm">
               <Link to="/assistant">
                 <Sparkles className="mr-1 h-3.5 w-3.5" /> AI Assistant
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/resources">
+                <Library className="mr-1 h-3.5 w-3.5" /> Resources
               </Link>
             </Button>
             <Button asChild variant="ghost" size="sm">

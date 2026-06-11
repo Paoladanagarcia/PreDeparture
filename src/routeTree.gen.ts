@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -19,6 +20,11 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResourcesTopicRouteImport } from './routes/resources.$topic'
 
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -60,9 +66,9 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResourcesTopicRoute = ResourcesTopicRouteImport.update({
-  id: '/resources/$topic',
-  path: '/resources/$topic',
-  getParentRoute: () => rootRouteImport,
+  id: '/$topic',
+  path: '/$topic',
+  getParentRoute: () => ResourcesRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
+  '/resources': typeof ResourcesRouteWithChildren
   '/resources/$topic': typeof ResourcesTopicRoute
 }
 export interface FileRoutesByTo {
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
+  '/resources': typeof ResourcesRouteWithChildren
   '/resources/$topic': typeof ResourcesTopicRoute
 }
 export interface FileRoutesById {
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
+  '/resources': typeof ResourcesRouteWithChildren
   '/resources/$topic': typeof ResourcesTopicRoute
 }
 export interface FileRouteTypes {
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/onboarding'
     | '/profile'
+    | '/resources'
     | '/resources/$topic'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/onboarding'
     | '/profile'
+    | '/resources'
     | '/resources/$topic'
   id:
     | '__root__'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/onboarding'
     | '/profile'
+    | '/resources'
     | '/resources/$topic'
   fileRoutesById: FileRoutesById
 }
@@ -144,11 +156,18 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
-  ResourcesTopicRoute: typeof ResourcesTopicRoute
+  ResourcesRoute: typeof ResourcesRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -207,13 +226,25 @@ declare module '@tanstack/react-router' {
     }
     '/resources/$topic': {
       id: '/resources/$topic'
-      path: '/resources/$topic'
+      path: '/$topic'
       fullPath: '/resources/$topic'
       preLoaderRoute: typeof ResourcesTopicRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ResourcesRoute
     }
   }
 }
+
+interface ResourcesRouteChildren {
+  ResourcesTopicRoute: typeof ResourcesTopicRoute
+}
+
+const ResourcesRouteChildren: ResourcesRouteChildren = {
+  ResourcesTopicRoute: ResourcesTopicRoute,
+}
+
+const ResourcesRouteWithChildren = ResourcesRoute._addFileChildren(
+  ResourcesRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -224,7 +255,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,
-  ResourcesTopicRoute: ResourcesTopicRoute,
+  ResourcesRoute: ResourcesRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

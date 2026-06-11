@@ -14,6 +14,7 @@ import {
 
 const navItems = [
   { label: "Home", to: "/" },
+  { label: "Dashboard", to: "/dashboard" },
   { label: "Start Planning", to: "/onboarding" },
   { label: "Community", to: "/community" },
   { label: "Assistant", to: "/assistant" },
@@ -25,7 +26,11 @@ const navItems = [
 const resourceItems = [
   { label: "Visa guide", topic: "visa" },
   { label: "Housing guide", topic: "housing" },
+  { label: "Banking guide", topic: "banking" },
+  { label: "Phone guide", topic: "phone" },
   { label: "Arrival guide", topic: "arrival" },
+  { label: "Scholarships guide", topic: "scholarships" },
+  { label: "Insurance guide", topic: "insurance" },
 ] as const;
 
 export function MobileNav() {
@@ -56,9 +61,14 @@ export function MobileNav() {
         </nav>
 
         <div className="mt-6 border-t pt-4">
-          <p className="px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Guides
-          </p>
+          <SheetClose asChild>
+            <Link
+              to="/resources"
+              className="block rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              Guides
+            </Link>
+          </SheetClose>
           <nav className="mt-2 grid gap-1">
             {resourceItems.map((item) => (
               <SheetClose asChild key={item.topic}>

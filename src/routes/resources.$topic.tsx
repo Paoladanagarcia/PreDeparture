@@ -32,6 +32,7 @@ import {
   FileText,
   HeartPulse,
   Home,
+  Library,
   MapPin,
   MessageCircle,
   Plane,
@@ -184,6 +185,11 @@ function ResourcePage() {
             <Button asChild variant="ghost" size="sm">
               <Link to="/dashboard">
                 <ArrowLeft className="mr-1 h-4 w-4" /> Dashboard
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/resources">
+                <Library className="mr-1 h-4 w-4" /> All guides
               </Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
