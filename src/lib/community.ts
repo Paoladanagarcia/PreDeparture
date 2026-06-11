@@ -227,6 +227,16 @@ export function subscribeToMessages(
 }
 
 export function displayNameFromSession(session: AuthSession | null) {
+  const metadata = session?.user.user_metadata;
+  const fullName = metadata?.full_name?.trim();
+  const builtName = [metadata?.first_name, metadata?.last_name]
+    .map((value) => value?.trim())
+    .filter(Boolean)
+    .join(" ");
+
+  if (fullName) return fullName.slice(0, 48);
+  if (builtName) return builtName.slice(0, 48);
+
   const emailPrefix = session?.user.email?.split("@")[0]?.trim();
   if (!emailPrefix) return "Student";
   return emailPrefix

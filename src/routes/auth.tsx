@@ -30,6 +30,8 @@ function AuthPage() {
   const navigate = useNavigate();
   const { configured, session, signIn, signOut, signUp } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +49,7 @@ function AuthPage() {
         await signIn(email, password);
         navigate({ to: "/dashboard" });
       } else {
-        await signUp(email, password);
+        await signUp(email, password, { firstName, lastName });
         setMessage("Account created. If email confirmation is enabled, check your inbox.");
       }
     } catch (err) {
@@ -146,14 +148,22 @@ function AuthPage() {
                   password={password}
                   setEmail={setEmail}
                   setPassword={setPassword}
+                  mode={mode}
                 />
               </TabsContent>
               <TabsContent value="signup" className="space-y-4">
+                <NameFields
+                  firstName={firstName}
+                  lastName={lastName}
+                  setFirstName={setFirstName}
+                  setLastName={setLastName}
+                />
                 <AuthFields
                   email={email}
                   password={password}
                   setEmail={setEmail}
                   setPassword={setPassword}
+                  mode={mode}
                 />
               </TabsContent>
             </Tabs>
@@ -163,7 +173,13 @@ function AuthPage() {
 
             <Button
               className="mt-5 w-full"
-              disabled={!configured || loading || !email || password.length < 6}
+              disabled={
+                !configured ||
+                loading ||
+                !email ||
+                password.length < 6 ||
+                (mode === "signup" && (!firstName.trim() || !lastName.trim()))
+              }
               onClick={submit}
             >
               {loading ? "Please wait..." : mode === "signin" ? "Sign in" : "Create account"}
@@ -196,16 +212,57 @@ function AuthPage() {
   );
 }
 
+function NameFields({
+  firstName,
+  lastName,
+  setFirstName,
+  setLastName,
+}: {
+  firstName: string;
+  lastName: string;
+  setFirstName: (value: string) => void;
+  setLastName: (value: string) => void;
+}) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <div className="space-y-2">
+        <Label htmlFor="first-name">First name</Label>
+        <Input
+          id="first-name"
+          type="text"
+          autoComplete="given-name"
+          value={firstName}
+          onChange={(event) => setFirstName(event.target.value)}
+          placeholder="Paola"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="last-name">Last name</Label>
+        <Input
+          id="last-name"
+          type="text"
+          autoComplete="family-name"
+          value={lastName}
+          onChange={(event) => setLastName(event.target.value)}
+          placeholder="Garcia"
+        />
+      </div>
+    </div>
+  );
+}
+
 function AuthFields({
   email,
   password,
   setEmail,
   setPassword,
+  mode,
 }: {
   email: string;
   password: string;
   setEmail: (value: string) => void;
   setPassword: (value: string) => void;
+  mode: "signin" | "signup";
 }) {
   return (
     <>
@@ -225,7 +282,7 @@ function AuthFields({
         <Input
           id="password"
           type="password"
-          autoComplete="current-password"
+          autoComplete={mode === "signup" ? "new-password" : "current-password"}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="At least 6 characters"

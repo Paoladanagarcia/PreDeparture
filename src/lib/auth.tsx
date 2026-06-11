@@ -13,6 +13,11 @@ import type { ProfileQuestionnaire } from "./tasks";
 export type SupabaseUser = {
   id: string;
   email?: string;
+  user_metadata?: {
+    first_name?: string;
+    last_name?: string;
+    full_name?: string;
+  };
 };
 
 export type AuthSession = {
@@ -26,8 +31,13 @@ type AuthContextValue = {
   loading: boolean;
   session: AuthSession | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, details: SignUpDetails) => Promise<void>;
   signOut: () => Promise<void>;
+};
+
+export type SignUpDetails = {
+  firstName: string;
+  lastName: string;
 };
 
 type ProgressSnapshot = {
@@ -79,14 +89,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signUp = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string, details: SignUpDetails) => {
+      const firstName = details.firstName.trim();
+      const lastName = details.lastName.trim();
+      const fullName = [firstName, lastName].filter(Boolean).join(" ");
       const response = await authRequest<{
         access_token?: string;
         refresh_token?: string;
         user: SupabaseUser;
       }>("/auth/v1/signup", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email,
+          password,
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            full_name: fullName,
+          },
+        }),
       });
 
       if (response.access_token) {
