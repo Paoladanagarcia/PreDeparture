@@ -31,6 +31,9 @@ type AuthContextValue = {
   configured: boolean;
   loading: boolean;
   session: AuthSession | null;
+  recoveryMode: boolean;
+  requestPasswordReset: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, details: SignUpDetails) => Promise<void>;
   signOut: () => Promise<void>;
@@ -54,13 +57,9 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
+  const [recoveryMode, setRecoveryMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const configured = isSupabaseConfigured();
-
-  useEffect(() => {
-    setSession(readSession());
-    setLoading(false);
-  }, []);
 
   const persistSession = useCallback((nextSession: AuthSession | null) => {
     setSession(nextSession);
@@ -72,6 +71,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem(AUTH_STORAGE_KEY);
     }
   }, []);
+
+  useEffect(() => {
+    const recoverySession = readRecoverySession();
+
+    if (!recoverySession) {
+      setSession(readSession());
+      setLoading(false);
+      return;
+    }
+
+    setRecoveryMode(true);
+    getUser(recoverySession)
+      .then((user) => {
+        persistSession({ ...recoverySession, user });
+        if (typeof window !== "undefined") {
+          window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+        }
+      })
+      .catch(() => {
+        setSession(readSession());
+      })
+      .finally(() => setLoading(false));
+  }, [persistSession]);
 
   const signIn = useCallback(
     async (email: string, password: string) => {
@@ -97,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await authRequest<{
         access_token?: string;
         refresh_token?: string;
-        user: SupabaseUser;
+        user?: SupabaseUser;
       }>(
         `/auth/v1/signup?redirect_to=${encodeURIComponent(getAuthRedirectUrl())}`,
         {
@@ -114,11 +136,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       );
 
-      if (!response.access_token && response.user.identities?.length === 0) {
+      if (!response.access_token && response.user?.identities?.length === 0) {
         throw new Error("This email is already linked to an account. Try signing in instead.");
       }
 
-      if (response.access_token) {
+      if (response.access_token && response.user) {
         persistSession({
           access_token: response.access_token,
           refresh_token: response.refresh_token,
@@ -129,6 +151,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [persistSession],
   );
 
+  const requestPasswordReset = useCallback(async (email: string) => {
+    await authRequest(
+      `/auth/v1/recover?redirect_to=${encodeURIComponent(getAuthRedirectUrl())}`,
+      {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      },
+    );
+  }, []);
+
+  const updatePassword = useCallback(
+    async (password: string) => {
+      if (!session) throw new Error("Password reset session is missing. Please request a new link.");
+
+      await authRequest(
+        "/auth/v1/user",
+        {
+          method: "PUT",
+          body: JSON.stringify({ password }),
+        },
+        session,
+      );
+      setRecoveryMode(false);
+    },
+    [session],
+  );
+
   const signOut = useCallback(async () => {
     if (session) {
       await authRequest("/auth/v1/logout", { method: "POST" }, session).catch(() => null);
@@ -137,8 +186,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [persistSession, session]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ configured, loading, session, signIn, signUp, signOut }),
-    [configured, loading, session, signIn, signOut, signUp],
+    () => ({
+      configured,
+      loading,
+      recoveryMode,
+      session,
+      requestPasswordReset,
+      signIn,
+      signOut,
+      signUp,
+      updatePassword,
+    }),
+    [
+      configured,
+      loading,
+      recoveryMode,
+      requestPasswordReset,
+      session,
+      signIn,
+      signOut,
+      signUp,
+      updatePassword,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -157,6 +226,10 @@ export function isSupabaseConfigured() {
 function getAuthRedirectUrl() {
   if (typeof window === "undefined") return "/auth";
   return `${window.location.origin}/auth`;
+}
+
+async function getUser(session: AuthSession) {
+  return authRequest<SupabaseUser>("/auth/v1/user", { method: "GET" }, session);
 }
 
 export async function getCloudProfile(session: AuthSession) {
@@ -224,6 +297,22 @@ function readSession() {
   } catch {
     return null;
   }
+}
+
+function readRecoverySession(): AuthSession | null {
+  if (typeof window === "undefined" || !window.location.hash) return null;
+
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  if (params.get("type") !== "recovery") return null;
+
+  const accessToken = params.get("access_token");
+  if (!accessToken) return null;
+
+  return {
+    access_token: accessToken,
+    refresh_token: params.get("refresh_token") ?? undefined,
+    user: { id: "recovery" },
+  };
 }
 
 async function authRequest<T = unknown>(

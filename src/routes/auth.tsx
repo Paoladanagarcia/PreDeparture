@@ -39,13 +39,23 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { configured, session, signIn, signOut, signUp } = useAuth();
+  const {
+    configured,
+    recoveryMode,
+    requestPasswordReset,
+    session,
+    signIn,
+    signOut,
+    signUp,
+    updatePassword,
+  } = useAuth();
   const { profile, setProfile } = useProfile();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "reset">("signin");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [exchangeProfile, setExchangeProfile] = useState<AuthProfileForm>({
     country: "",
     university: "",
@@ -64,9 +74,16 @@ function AuthPage() {
     setLoading(true);
 
     try {
-      if (mode === "signin") {
+      if (recoveryMode) {
+        await updatePassword(newPassword);
+        setMessage("Password updated. You can now use your new password.");
+        navigate({ to: "/dashboard" });
+      } else if (mode === "signin") {
         await signIn(email, password);
         navigate({ to: "/dashboard" });
+      } else if (mode === "reset") {
+        await requestPasswordReset(email);
+        setMessage("If this email exists, a password reset link has been sent.");
       } else {
         await signUp(email, password, { firstName, lastName });
         if (isCompleteProfile(exchangeProfile)) {
@@ -138,7 +155,34 @@ function AuthPage() {
           </Alert>
         )}
 
-        {session ? (
+        {recoveryMode ? (
+          <Card className="max-w-xl p-5 sm:p-6">
+            <h2 className="font-semibold">Choose a new password</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Enter a new password for your PreDeparture account.
+            </p>
+            <div className="mt-5 space-y-2">
+              <Label htmlFor="new-password">New password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                placeholder="At least 6 characters"
+              />
+            </div>
+            {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
+            {message && <p className="mt-4 text-sm text-success">{message}</p>}
+            <Button
+              className="mt-5 w-full"
+              disabled={!configured || loading || newPassword.length < 6}
+              onClick={submit}
+            >
+              {loading ? "Please wait..." : "Update password"}
+            </Button>
+          </Card>
+        ) : session ? (
           <Card className="max-w-xl p-5 sm:p-6">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" />
@@ -165,6 +209,7 @@ function AuthPage() {
               <TabsList className="mb-5">
                 <TabsTrigger value="signin">Sign in</TabsTrigger>
                 <TabsTrigger value="signup">Create account</TabsTrigger>
+                <TabsTrigger value="reset">Reset password</TabsTrigger>
               </TabsList>
 
               <TabsContent value="signin" className="space-y-4">
@@ -175,6 +220,35 @@ function AuthPage() {
                   setPassword={setPassword}
                   mode={mode}
                 />
+                <div className="text-right">
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-primary hover:underline"
+                    onClick={() => {
+                      setMode("reset");
+                      setError(null);
+                      setMessage(null);
+                    }}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              </TabsContent>
+              <TabsContent value="reset" className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">Email</Label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="you@university.edu"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    We'll send a secure link to choose a new password.
+                  </p>
+                </div>
               </TabsContent>
               <TabsContent value="signup" className="space-y-4">
                 <NameFields
@@ -203,13 +277,19 @@ function AuthPage() {
                 !configured ||
                 loading ||
                 !email ||
-                password.length < 6 ||
+                (mode !== "reset" && password.length < 6) ||
                 (mode === "signup" &&
                   (!firstName.trim() || !lastName.trim() || !isCompleteProfile(exchangeProfile)))
               }
               onClick={submit}
             >
-              {loading ? "Please wait..." : mode === "signin" ? "Sign in" : "Create account"}
+              {loading
+                ? "Please wait..."
+                : mode === "signin"
+                  ? "Sign in"
+                  : mode === "reset"
+                    ? "Send reset link"
+                    : "Create account"}
             </Button>
             <Button asChild variant="ghost" className="mt-2 w-full">
               <Link to="/onboarding" search={{ mode: "guest" }}>
@@ -295,7 +375,7 @@ function AuthFields({
   password: string;
   setEmail: (value: string) => void;
   setPassword: (value: string) => void;
-  mode: "signin" | "signup";
+  mode: "signin" | "signup" | "reset";
 }) {
   return (
     <>
