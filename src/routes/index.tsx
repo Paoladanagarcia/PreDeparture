@@ -71,12 +71,12 @@ function Landing() {
       <PublicHeader active="home" />
 
       <section className="bg-hero-gradient relative">
-        <div className="mx-auto max-w-6xl px-4 pb-14 pt-10 text-center sm:px-6 sm:pb-24 sm:pt-16 md:pt-24">
+        <div className="mx-auto max-w-6xl px-4 pb-12 pt-8 text-center sm:px-6 sm:pb-20 sm:pt-14 md:pt-20">
           <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground shadow-soft">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
             Built for international students preparing for the United States
           </div>
-          <h1 className="mx-auto max-w-3xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-6xl">
+          <h1 className="mx-auto max-w-3xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
             Prepare your exchange in one clear checklist.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground md:text-lg">
@@ -84,7 +84,7 @@ function Landing() {
             visa, housing, insurance, banking, funding and arrival.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:mt-8">
-            <Button asChild size="lg" className="h-11 px-5 text-sm sm:h-12 sm:px-6 sm:text-base">
+            <Button asChild size="lg" className="h-10 px-5 text-sm sm:h-11 sm:px-6">
               <PlanningLink />
             </Button>
           </div>
@@ -143,7 +143,7 @@ function Landing() {
       <section id="pillars" className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-medium uppercase tracking-wide text-primary">The platform</p>
-          <h2 className="mt-2 text-2xl font-bold sm:text-3xl md:text-4xl">
+          <h2 className="mt-2 text-2xl font-bold sm:text-3xl">
             What PreDeparture does
           </h2>
           <p className="mt-3 text-muted-foreground">
@@ -152,7 +152,7 @@ function Landing() {
         </div>
         <div className="mt-8 grid gap-4 sm:mt-12 md:grid-cols-3">
           {pillars.map((p) => (
-            <Card key={p.title} className="p-4 transition-shadow hover:shadow-soft sm:p-6">
+            <Card key={p.title} className="p-4 transition-shadow hover:shadow-soft sm:p-5">
               <div className="mb-4 grid h-11 w-11 place-items-center rounded-lg bg-primary text-primary-foreground">
                 <p.icon className="h-5 w-5" />
               </div>
@@ -178,7 +178,7 @@ function Landing() {
       <section id="how" className="bg-muted/40 py-12 sm:py-20">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-bold sm:text-3xl md:text-4xl">How it works</h2>
+            <h2 className="text-2xl font-bold sm:text-3xl">How it works</h2>
             <p className="mt-3 text-muted-foreground">
               Three minutes to set up. Months of peace of mind.
             </p>
@@ -190,7 +190,7 @@ function Landing() {
               { n: "3", t: "Follow your timeline", d: "See what should happen early and what can wait." },
               { n: "4", t: "Use support when needed", d: "Open resources, ask the assistant or join your cohort." },
             ].map((s) => (
-              <Card key={s.n} className="p-4 sm:p-6">
+              <Card key={s.n} className="p-4 sm:p-5">
                 <div className="mb-3 grid h-8 w-8 place-items-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                   {s.n}
                 </div>
@@ -200,7 +200,7 @@ function Landing() {
             ))}
           </div>
           <div className="mt-8 text-center sm:mt-12">
-            <Button asChild size="lg" className="h-11 px-5 text-sm sm:h-12 sm:px-6 sm:text-base">
+            <Button asChild size="lg" className="h-10 px-5 text-sm sm:h-11 sm:px-6">
               <PlanningLink startLabel="Start Planning — it's free" />
             </Button>
           </div>
@@ -208,7 +208,7 @@ function Landing() {
       </section>
 
       <section id="story" className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-20">
-        <Card className="p-5 sm:p-8 md:p-10">
+        <Card className="p-5 sm:p-6 md:p-8">
           <p className="text-xs font-medium uppercase tracking-wide text-primary">Our story</p>
           <h2 className="mt-2 text-2xl font-bold md:text-3xl">
             Built from a real student experience

@@ -60,13 +60,13 @@ function AboutPage() {
     <div className="min-h-screen bg-muted/30">
       <PublicHeader active="sources" />
 
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
+      <main className="mx-auto max-w-5xl px-4 py-5 sm:px-6 sm:py-6">
         <section className="max-w-3xl">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border bg-primary-soft px-3 py-1 text-xs font-medium text-primary">
             <ShieldCheck className="h-3.5 w-3.5" />
             Source-aware guidance
           </div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
+          <h1 className="text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
             About and sources
           </h1>
           <p className="mt-3 text-base leading-relaxed text-muted-foreground">
@@ -130,7 +130,7 @@ function AboutPage() {
           </div>
         </section>
 
-        <Card className="mt-6 border-primary/20 bg-primary-soft/40 p-4 sm:mt-8 sm:p-5">
+        <Card className="mt-5 border-primary/20 bg-primary-soft/40 p-4 sm:mt-6 sm:p-5">
           <h2 className="text-sm font-semibold">Important note</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             PreDeparture is a preparation tool, not an official university, immigration, legal,

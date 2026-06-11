@@ -114,13 +114,13 @@ function AuthPage() {
     <div className="min-h-screen bg-muted/30">
       <PublicHeader active="profile" />
 
-      <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-10">
-        <div className="mb-6 max-w-2xl">
+      <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-5 max-w-2xl">
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border bg-primary-soft px-3 py-1 text-xs font-medium text-primary">
             <ShieldCheck className="h-3.5 w-3.5" />
             Cloud sync
           </div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Your account</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-2xl">Your account</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Create an account to save your profile and checklist in the database. Without an
             account, guest mode keeps your roadmap only in this browser.
@@ -128,7 +128,7 @@ function AuthPage() {
         </div>
 
         {!configured && (
-          <Alert className="mb-6">
+          <Alert className="mb-5">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Supabase is not configured yet</AlertTitle>
             <AlertDescription>
@@ -139,7 +139,7 @@ function AuthPage() {
         )}
 
         {recoveryMode ? (
-          <Card className="max-w-xl p-5 sm:p-6">
+          <Card className="max-w-xl p-5 sm:p-5">
             <h2 className="font-semibold">Choose a new password</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Enter a new password for your PreDeparture account.
@@ -165,7 +165,7 @@ function AuthPage() {
             </Button>
           </Card>
         ) : session ? (
-          <Card className="max-w-xl p-5 sm:p-6">
+          <Card className="max-w-xl p-5 sm:p-5">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" />
               <div>
@@ -175,7 +175,7 @@ function AuthPage() {
                 </p>
               </div>
             </div>
-            <div className="mt-6 flex flex-wrap gap-2">
+            <div className="mt-5 flex flex-wrap gap-2">
               <Button asChild>
                 <Link to="/dashboard">Go to dashboard</Link>
               </Button>
@@ -186,7 +186,7 @@ function AuthPage() {
             </div>
           </Card>
         ) : (
-          <Card className="max-w-xl p-5 sm:p-6">
+          <Card className="max-w-xl p-5 sm:p-5">
             <Tabs value={mode} onValueChange={(value) => setMode(value as typeof mode)}>
               <TabsList className="mb-5">
                 <TabsTrigger value="signin">Sign in</TabsTrigger>

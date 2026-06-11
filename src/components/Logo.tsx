@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import logo from "@/assets/predeparture-logo-fondblanc.png";
 
 export function Logo({
-  className = "h-12 sm:h-14",
+  className = "h-10 sm:h-11",
   to = "/",
 }: {
   className?: string;

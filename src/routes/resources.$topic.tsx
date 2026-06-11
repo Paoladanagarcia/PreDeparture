@@ -191,13 +191,13 @@ function ResourcePage() {
     <div className="min-h-screen bg-muted/30">
       <AppHeader active="resources" />
 
-      <main className="mx-auto max-w-5xl px-4 py-5 sm:px-6 sm:py-8">
-        <div className="mb-5 flex items-start gap-3 sm:mb-6 sm:gap-4">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground sm:h-12 sm:w-12">
-            <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+      <main className="mx-auto max-w-5xl px-4 py-5 sm:px-6 sm:py-6">
+        <div className="mb-5 flex items-start gap-3 sm:mb-5 sm:gap-4">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
+            <Icon className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="text-xl font-bold sm:text-2xl md:text-3xl">{meta.title}</h1>
+            <h1 className="text-xl font-bold sm:text-2xl md:text-2xl">{meta.title}</h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{meta.desc}</p>
           </div>
         </div>
@@ -229,7 +229,7 @@ function ResourceSearch({
   results: typeof RESOURCE_SEARCH_ENTRIES;
 }) {
   return (
-    <Card className="mb-5 p-3 sm:mb-6 sm:p-4">
+    <Card className="mb-5 p-3 sm:mb-5 sm:p-4">
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -535,7 +535,7 @@ function getTopicMeta(topic: Topic, university: ReturnType<typeof getUniversityC
 
 function ResourceSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <Card className="p-4 sm:p-6">
+    <Card className="p-4 sm:p-5">
       <h2 className="text-lg font-semibold">{title}</h2>
       <Separator className="my-4" />
       <div className="space-y-4">{children}</div>

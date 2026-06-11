@@ -188,9 +188,9 @@ export function CommunityCard({
   }
 
   return (
-    <Card className="mt-6 overflow-hidden border-primary/20 p-0">
+    <Card className="mt-5 overflow-hidden border-primary/20 p-0">
       <div className="bg-hero-gradient">
-        <div className="p-4 sm:p-6 md:p-8">
+        <div className="p-4 sm:p-5 md:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-2xl">
               <div className="flex flex-wrap items-center gap-2">

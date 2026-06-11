@@ -85,13 +85,13 @@ function Dashboard() {
     <div className="min-h-screen bg-muted/30">
       <AppHeader active="dashboard" />
 
-      <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-8">
+      <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-6">
         <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-          <Card className="p-4 sm:p-6">
+          <Card className="p-4 sm:p-5">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               You're heading to
             </p>
-            <h1 className="mt-1 text-xl font-bold sm:text-2xl md:text-3xl">
+            <h1 className="mt-1 text-xl font-bold sm:text-2xl md:text-2xl">
               {profile.university}, {profile.country}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -100,7 +100,7 @@ function Dashboard() {
               {durationLabel(profile.duration)}
             </p>
 
-            <div className="mt-4 sm:mt-6">
+            <div className="mt-4 sm:mt-5">
               <div className="mb-2 flex items-center justify-between text-sm">
                 <span className="font-medium">You're {pct}% ready for departure</span>
                 <span className="text-muted-foreground">
@@ -111,7 +111,7 @@ function Dashboard() {
             </div>
           </Card>
 
-          <Card className="flex flex-col justify-between p-4 sm:p-6">
+          <Card className="flex flex-col justify-between p-4 sm:p-5">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Your next step
@@ -138,13 +138,13 @@ function Dashboard() {
 
         {authConfigured && !session && <CloudSyncPrompt />}
 
-        <Tabs defaultValue="checklist" className="mt-6 sm:mt-8">
+        <Tabs defaultValue="checklist" className="mt-5 sm:mt-6">
           <TabsList>
             <TabsTrigger value="checklist">Checklist</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="checklist" className="mt-6">
+          <TabsContent value="checklist" className="mt-5">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold">Checklist</h2>
@@ -156,7 +156,7 @@ function Dashboard() {
                 <RotateCcw className="mr-1 h-3.5 w-3.5" /> Reset checklist
               </Button>
             </div>
-            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
               <ChecklistColumn
                 title="Before departure"
                 tasks={before}
@@ -178,7 +178,7 @@ function Dashboard() {
             </div>
           </TabsContent>
 
-          <TabsContent value="timeline" className="mt-6">
+          <TabsContent value="timeline" className="mt-5">
             <Timeline tasks={personalizedTasks} done={done} arrival={arrival} />
           </TabsContent>
 
@@ -415,7 +415,7 @@ function ChecklistColumn({
 }) {
   const completed = tasks.filter((t) => done[t.id]).length;
   return (
-    <Card className="p-4 sm:p-6">
+    <Card className="p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">{title}</h2>
         <span className="text-xs text-muted-foreground">
@@ -453,7 +453,7 @@ function Timeline({
   const total = tasks.length;
 
   return (
-    <Card className="p-4 sm:p-6">
+    <Card className="p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Timeline</h2>

@@ -60,10 +60,10 @@ function ProfilePage() {
     <div className="min-h-screen bg-muted/30">
       <AppHeader active="profile" />
 
-      <main className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-8">
-        <div className="mb-6">
+      <main className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6">
+        <div className="mb-5">
           <p className="text-xs font-medium uppercase tracking-wide text-primary">Your profile</p>
-          <h1 className="mt-1 text-xl font-bold sm:text-2xl md:text-3xl">Exchange details</h1>
+          <h1 className="mt-1 text-xl font-bold sm:text-2xl md:text-2xl">Exchange details</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Keep this information accurate so your roadmap stays relevant.
           </p>
@@ -73,7 +73,7 @@ function ProfilePage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
-          <Card className="p-4 sm:p-6">
+          <Card className="p-4 sm:p-5">
             <div className="grid gap-4 sm:grid-cols-2">
               <ProfileItem
                 icon={MapPin}
@@ -93,7 +93,7 @@ function ProfilePage() {
               />
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-2">
+            <div className="mt-5 flex flex-wrap gap-2">
               <Button asChild>
                 <Link to="/onboarding" search={{ mode: "edit" }}>
                   Edit profile
@@ -112,7 +112,7 @@ function ProfilePage() {
             </div>
           </Card>
 
-          <Card className="p-4 sm:p-6">
+          <Card className="p-4 sm:p-5">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-semibold">Preparation progress</h2>

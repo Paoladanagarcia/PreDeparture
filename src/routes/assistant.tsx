@@ -79,7 +79,7 @@ function AssistantPage() {
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border bg-primary-soft px-3 py-1 text-xs font-medium text-primary">
             <ShieldCheck className="h-3.5 w-3.5" /> Source-grounded assistant
           </div>
-          <h1 className="text-xl font-bold sm:text-2xl md:text-3xl">
+          <h1 className="text-xl font-bold sm:text-2xl">
             Ask anything about your exchange
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">

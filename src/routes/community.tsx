@@ -25,12 +25,12 @@ function CommunityPage() {
     <div className="min-h-screen bg-muted/30">
       <AppHeader active="community" />
 
-      <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-8">
+      <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-6">
         <div className="mb-5">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Your cohort
           </p>
-          <h1 className="mt-1 text-2xl font-bold md:text-3xl">Community</h1>
+          <h1 className="mt-1 text-2xl font-bold md:text-2xl">Community</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
             Preview the available groups, then sign in to join conversations with students in your
             cohort.

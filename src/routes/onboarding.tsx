@@ -88,7 +88,7 @@ function Onboarding() {
         <div className="mb-2 pt-5 text-right text-sm text-muted-foreground sm:pt-8">
           Step {displayStep + 1} of {totalSteps}
         </div>
-        <div className="mb-6 h-1.5 w-full rounded-full bg-muted">
+        <div className="mb-5 h-1.5 w-full rounded-full bg-muted">
           <div
             className="h-1.5 rounded-full bg-primary transition-all"
             style={{ width: `${((displayStep + 1) / totalSteps) * 100}%` }}
@@ -102,11 +102,11 @@ function Onboarding() {
             onBack={() => navigate({ to: "/" })}
           />
         ) : (
-          <Card className="p-5 sm:p-8">
+          <Card className="p-5 sm:p-5">
             <h1 className="text-xl font-bold sm:text-2xl">{stepTitle(step)}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{stepSub(step)}</p>
 
-            <div className="mt-6 space-y-4">
+            <div className="mt-5 space-y-4">
               {step === 0 && (
                 <div className="space-y-2">
                   <Label htmlFor="country">Destination country</Label>
@@ -207,7 +207,7 @@ function Onboarding() {
               )}
             </div>
 
-            <div className="mt-6 flex items-center justify-between sm:mt-8">
+            <div className="mt-5 flex items-center justify-between sm:mt-6">
               <Button variant="ghost" onClick={back}>
                 <ArrowLeft className="mr-1 h-4 w-4" /> Back
               </Button>
@@ -233,14 +233,14 @@ function StartModeChoice({
   onBack: () => void;
 }) {
   return (
-    <Card className="p-5 sm:p-8">
+    <Card className="p-5 sm:p-5">
       <h1 className="text-xl font-bold sm:text-2xl">How do you want to start?</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         You can create an account to sync your roadmap, or continue as a guest and keep everything
         only in this browser.
       </p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
         <button
           type="button"
           onClick={onAccount}
@@ -266,7 +266,7 @@ function StartModeChoice({
         </button>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-5">
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft className="mr-1 h-4 w-4" /> Back
         </Button>

@@ -102,6 +102,7 @@
 
   html {
     font-family: var(--font-sans);
+    font-size: 15px;
     -webkit-font-smoothing: antialiased;
   }
 
