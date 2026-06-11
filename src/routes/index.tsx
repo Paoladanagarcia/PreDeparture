@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Logo } from "@/components/Logo";
-import { MobileNav } from "@/components/MobileNav";
+import { PublicHeader } from "@/components/PublicHeader";
 import { PlanningLink } from "@/components/PlanningLink";
 import {
   CheckCircle2,
@@ -32,18 +31,18 @@ export const Route = createFileRoute("/")({
 const pillars = [
   {
     icon: Map,
-    title: "Personalized roadmap",
-    desc: "A complete checklist and timeline tailored to your destination, university and arrival date.",
+    title: "Answer a few questions",
+    desc: "Tell PreDeparture your destination, host university, nationality and arrival date.",
   },
   {
     icon: ShieldCheck,
-    title: "Trusted resources",
-    desc: "Curated, university-specific guides for visa, housing, insurance, banking and arrival — verified from official sources.",
+    title: "Get a clear plan",
+    desc: "See what to do first, what can wait, and which deadlines matter before departure.",
   },
   {
     icon: Users,
-    title: "Student community",
-    desc: "Connect with other students going to the same university and semester. Coming soon.",
+    title: "Prepare with support",
+    desc: "Use official-source guides, ask questions, and join students in your same cohort.",
   },
 ];
 
@@ -69,60 +68,31 @@ const features = [
 function Landing() {
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-50 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
-          <Logo />
-          <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
-            <a href="#pillars" className="hover:text-foreground">
-              Product
-            </a>
-            <a href="#how" className="hover:text-foreground">
-              How it works
-            </a>
-            <Link to="/about" className="hover:text-foreground">
-              Sources
-            </Link>
-          </nav>
-          <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
-              <Link to="/auth">Account</Link>
-            </Button>
-            <Button asChild size="sm" className="hidden sm:inline-flex">
-              <PlanningLink />
-            </Button>
-            <MobileNav />
-          </div>
-        </div>
-      </header>
+      <PublicHeader active="home" />
 
       <section className="bg-hero-gradient relative">
         <div className="mx-auto max-w-6xl px-4 pb-14 pt-10 text-center sm:px-6 sm:pb-24 sm:pt-16 md:pt-24">
           <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground shadow-soft">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            Built for international students — starting with UC Berkeley and Stanford
+            Built for international students preparing for the United States
           </div>
           <h1 className="mx-auto max-w-3xl text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-6xl">
-            Your roadmap for studying abroad.
+            Prepare your exchange in one clear checklist.
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground md:text-lg">
-            PreDeparture centralizes everything you need before and after arrival — visa, housing,
-            insurance, banking, arrival logistics and funding — into one personalized plan.
+            Answer a few questions, get a personalized timeline, and track the important steps for
+            visa, housing, insurance, banking, funding and arrival.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:mt-8">
             <Button asChild size="lg" className="h-11 px-5 text-sm sm:h-12 sm:px-6 sm:text-base">
               <PlanningLink />
             </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="h-11 px-5 text-sm sm:h-12 sm:px-6 sm:text-base"
-            >
-              <a href="#pillars">See what's inside</a>
-            </Button>
           </div>
 
           <div className="mx-auto mt-10 max-w-4xl sm:mt-16">
+            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Example dashboard preview
+            </p>
             <Card className="overflow-hidden border-border/60 p-0 text-left shadow-soft">
               <div className="grid grid-cols-1 gap-0 md:grid-cols-[1.2fr_1fr]">
                 <div className="border-b p-4 sm:p-6 md:border-b-0 md:border-r">
@@ -174,10 +144,10 @@ function Landing() {
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-medium uppercase tracking-wide text-primary">The platform</p>
           <h2 className="mt-2 text-2xl font-bold sm:text-3xl md:text-4xl">
-            Three pillars to prepare with confidence
+            What PreDeparture does
           </h2>
           <p className="mt-3 text-muted-foreground">
-            A complete exchange preparation platform — not just a checklist.
+            It turns scattered exchange information into a simple plan you can follow.
           </p>
         </div>
         <div className="mt-8 grid gap-4 sm:mt-12 md:grid-cols-3">
@@ -213,23 +183,12 @@ function Landing() {
               Three minutes to set up. Months of peace of mind.
             </p>
           </div>
-          <div className="mt-8 grid gap-4 sm:mt-12 md:grid-cols-3">
+          <div className="mt-8 grid gap-4 sm:mt-12 md:grid-cols-2 lg:grid-cols-4">
             {[
-              {
-                n: "1",
-                t: "Tell us about your exchange",
-                d: "Destination, university, dates, nationality.",
-              },
-              {
-                n: "2",
-                t: "Get your roadmap",
-                d: "A personalized checklist with deadlines based on your arrival date.",
-              },
-              {
-                n: "3",
-                t: "Tick things off",
-                d: "Track your progress and feel ready when you board the plane.",
-              },
+              { n: "1", t: "Tell us where you're going", d: "Destination, university, dates and nationality." },
+              { n: "2", t: "Get your checklist", d: "Tasks are ordered around your arrival date." },
+              { n: "3", t: "Follow your timeline", d: "See what should happen early and what can wait." },
+              { n: "4", t: "Use support when needed", d: "Open resources, ask the assistant or join your cohort." },
             ].map((s) => (
               <Card key={s.n} className="p-4 sm:p-6">
                 <div className="mb-3 grid h-8 w-8 place-items-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
@@ -248,7 +207,7 @@ function Landing() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-20">
+      <section id="story" className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-20">
         <Card className="p-5 sm:p-8 md:p-10">
           <p className="text-xs font-medium uppercase tracking-wide text-primary">Our story</p>
           <h2 className="mt-2 text-2xl font-bold md:text-3xl">

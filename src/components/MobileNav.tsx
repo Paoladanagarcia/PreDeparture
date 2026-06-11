@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/lib/auth";
 import { useProfile } from "@/lib/storage";
 import {
   Sheet,
@@ -16,10 +15,10 @@ import {
 
 const navItems = [
   { label: "Home", to: "/" },
-  { label: "Community", to: "/community" },
+  { label: "Our story", href: "/#story" },
   { label: "Assistant", to: "/assistant" },
-  { label: "Profile", to: "/profile" },
-  { label: "Account", to: "/auth" },
+  { label: "Community", to: "/community" },
+  { label: "Resources", to: "/resources" },
   { label: "About / Sources", to: "/about" },
 ] as const;
 
@@ -34,14 +33,23 @@ const resourceItems = [
 ] as const;
 
 export function MobileNav() {
-  const { session } = useAuth();
   const { profile } = useProfile();
-  const planningItem = session && profile
+  const dashboardItem = profile
     ? { label: "Dashboard", to: "/dashboard" as const }
-    : { label: "Start Planning", to: "/onboarding" as const };
-  const guestDashboardItem =
-    !session && profile ? [{ label: "Dashboard", to: "/dashboard" as const }] : [];
-  const items = [navItems[0], ...guestDashboardItem, planningItem, ...navItems.slice(1)];
+    : { label: "Dashboard", to: "/onboarding" as const };
+  const profileItem = profile
+    ? { label: "Profile", to: "/profile" as const }
+    : { label: "Profile", to: "/auth" as const };
+  const items = [
+    navItems[0],
+    navItems[1],
+    dashboardItem,
+    navItems[2],
+    navItems[3],
+    navItems[4],
+    profileItem,
+    navItems[5],
+  ];
 
   return (
     <Sheet>
@@ -58,13 +66,22 @@ export function MobileNav() {
 
         <nav className="mt-6 grid gap-1">
           {items.map((item) => (
-            <SheetClose asChild key={item.to}>
-              <Link
-                to={item.to}
-                className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-              >
-                {item.label}
-              </Link>
+            <SheetClose asChild key={"to" in item ? item.to : item.href}>
+              {"to" in item ? (
+                <Link
+                  to={item.to}
+                  className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <a
+                  href={item.href}
+                  className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                >
+                  {item.label}
+                </a>
+              )}
             </SheetClose>
           ))}
         </nav>

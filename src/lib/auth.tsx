@@ -73,20 +73,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const recoverySession = readRecoverySession();
+    const authRedirect = readAuthRedirect();
 
-    if (!recoverySession) {
+    if (!authRedirect) {
       setSession(readSession());
       setLoading(false);
       return;
     }
 
-    setRecoveryMode(true);
-    getUser(recoverySession)
+    setRecoveryMode(authRedirect.type === "recovery");
+    getUser(authRedirect.session)
       .then((user) => {
-        persistSession({ ...recoverySession, user });
+        persistSession({ ...authRedirect.session, user });
         if (typeof window !== "undefined") {
-          window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+          window.history.replaceState(
+            null,
+            "",
+            `${window.location.pathname}${window.location.search}`,
+          );
         }
       })
       .catch(() => {
@@ -299,19 +303,20 @@ function readSession() {
   }
 }
 
-function readRecoverySession(): AuthSession | null {
+function readAuthRedirect(): { session: AuthSession; type: string | null } | null {
   if (typeof window === "undefined" || !window.location.hash) return null;
 
   const params = new URLSearchParams(window.location.hash.slice(1));
-  if (params.get("type") !== "recovery") return null;
-
   const accessToken = params.get("access_token");
   if (!accessToken) return null;
 
   return {
-    access_token: accessToken,
-    refresh_token: params.get("refresh_token") ?? undefined,
-    user: { id: "recovery" },
+    type: params.get("type"),
+    session: {
+      access_token: accessToken,
+      refresh_token: params.get("refresh_token") ?? undefined,
+      user: { id: "redirect" },
+    },
   };
 }
 

@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { ComponentProps } from "react";
 
-import { useAuth } from "@/lib/auth";
 import { useProfile } from "@/lib/storage";
 
 type LinkProps = ComponentProps<typeof Link>;
@@ -15,9 +14,8 @@ export function PlanningLink({
   dashboardLabel?: string;
   startLabel?: string;
 }) {
-  const { session } = useAuth();
   const { profile } = useProfile();
-  const goesToDashboard = Boolean(session && profile);
+  const goesToDashboard = Boolean(profile);
 
   return (
     <Link to={goesToDashboard ? "/dashboard" : "/onboarding"} {...props}>

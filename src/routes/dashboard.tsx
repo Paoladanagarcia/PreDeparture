@@ -17,8 +17,7 @@ import {
   type ProfileQuestionnaire,
   type Task,
 } from "@/lib/tasks";
-import { Logo } from "@/components/Logo";
-import { MobileNav } from "@/components/MobileNav";
+import { AppHeader } from "@/components/AppHeader";
 import { getUniversityConfig } from "@/lib/universities";
 import {
   ExternalLink,
@@ -31,9 +30,6 @@ import {
   Info,
   ShieldCheck,
   FileText,
-  Library,
-  Sparkles,
-  MessageCircle,
 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -68,7 +64,6 @@ function Dashboard() {
     () => (profile ? getPersonalizedTasks(profile) : TASKS),
     [profile],
   );
-  const personalizedTips = useMemo(() => (profile ? getPersonalizedTips(profile) : []), [profile]);
 
   const completed = personalizedTasks.filter((t) => done[t.id]).length;
   const total = personalizedTasks.length;
@@ -88,43 +83,7 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-50 border-b bg-card/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
-          <Logo />
-          <div className="hidden items-center gap-2 md:flex">
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/assistant">
-                <Sparkles className="mr-1 h-3.5 w-3.5" /> AI Assistant
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/community">
-                <MessageCircle className="mr-1 h-3.5 w-3.5" /> Community
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/resources">
-                <Library className="mr-1 h-3.5 w-3.5" /> Resources
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/profile">Profile</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/auth">Account</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/onboarding" search={{ mode: "edit" }}>
-                Edit profile
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" onClick={reset}>
-              <RotateCcw className="mr-1 h-3.5 w-3.5" /> Reset
-            </Button>
-          </div>
-          <MobileNav />
-        </div>
-      </header>
+      <AppHeader active="dashboard" />
 
       <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-8">
         <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
@@ -177,8 +136,6 @@ function Dashboard() {
           </Card>
         </div>
 
-        {personalizedTips.length > 0 && <PersonalizedTips tips={personalizedTips} />}
-
         {authConfigured && !session && <CloudSyncPrompt />}
 
         <Tabs defaultValue="checklist" className="mt-6 sm:mt-8">
@@ -188,6 +145,17 @@ function Dashboard() {
           </TabsList>
 
           <TabsContent value="checklist" className="mt-6">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Checklist</h2>
+                <p className="text-sm text-muted-foreground">
+                  Track what is done before and after arrival.
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={reset}>
+                <RotateCcw className="mr-1 h-3.5 w-3.5" /> Reset checklist
+              </Button>
+            </div>
             <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
               <ChecklistColumn
                 title="Before departure"
@@ -222,40 +190,21 @@ function Dashboard() {
 
 function CloudSyncPrompt() {
   return (
-    <Card className="mt-5 border-primary/20 bg-primary-soft/40 p-4 sm:mt-6 sm:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <Card className="mt-4 border-primary/15 bg-primary-soft/30 p-3 sm:mt-5 sm:p-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-semibold">Save your roadmap</h2>
+            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+            <h2 className="text-xs font-semibold">Save your roadmap</h2>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-xs text-muted-foreground">
             You're in guest mode. Create an account to sync your profile and checklist across
             devices.
           </p>
         </div>
-        <Button asChild size="sm" className="shrink-0">
+        <Button asChild size="sm" className="h-8 shrink-0 px-3 text-xs">
           <Link to="/auth">Create account</Link>
         </Button>
-      </div>
-    </Card>
-  );
-}
-
-function PersonalizedTips({ tips }: { tips: Array<{ title: string; desc: string }> }) {
-  return (
-    <Card className="mt-5 p-4 sm:mt-6 sm:p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-primary" />
-        <h2 className="text-sm font-semibold">For your profile</h2>
-      </div>
-      <div className="grid gap-3 md:grid-cols-3">
-        {tips.map((tip) => (
-          <div key={tip.title} className="rounded-lg border bg-muted/30 p-3">
-            <p className="text-xs font-semibold">{tip.title}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{tip.desc}</p>
-          </div>
-        ))}
       </div>
     </Card>
   );
@@ -779,54 +728,6 @@ function personalizeTaskForUniversity(
   }
 
   return task;
-}
-
-function getPersonalizedTips(profile: ProfileQuestionnaire) {
-  const tips: Array<{ title: string; desc: string }> = [];
-
-  if (isLikelyUsNational(profile.nationality)) {
-    tips.push({
-      title: "Visa tasks hidden",
-      desc: "Your nationality looks US-based, so F-1 visa tasks are removed from this roadmap.",
-    });
-  } else if (isLikelyFrenchOrEu(profile.nationality)) {
-    tips.push({
-      title: "Visa timing",
-      desc: "As an EU/French student, prioritize I-20, SEVIS, DS-160 and embassy appointment timing early.",
-    });
-  } else {
-    tips.push({
-      title: "Check embassy rules",
-      desc: "Visa timing depends on your nationality and local embassy wait times. Verify deadlines early.",
-    });
-  }
-
-  if (profile.duration === "one-semester") {
-    tips.push({
-      title: "One-semester housing",
-      desc: "Avoid 12-month leases when possible. Prioritize sublets, I-House or flexible student housing.",
-    });
-    tips.push({
-      title: "Keep setup lightweight",
-      desc: "For a short stay, eSIM + Wise/card setup may be enough before opening a full US bank account.",
-    });
-  } else if (profile.duration === "two-semesters" || profile.duration === "full-year") {
-    tips.push({
-      title: "Longer stay setup",
-      desc: "A US phone number, US bank account and more stable housing can be worth setting up early.",
-    });
-    tips.push({
-      title: "Budget planning",
-      desc: "Plan for deposits, insurance, holiday housing gaps and exchange-rate changes across the year.",
-    });
-  } else {
-    tips.push({
-      title: "Flexible duration",
-      desc: "Double-check housing contracts and insurance coverage match your exact stay length.",
-    });
-  }
-
-  return tips.slice(0, 3);
 }
 
 function isLikelyUsNational(nationality: string) {

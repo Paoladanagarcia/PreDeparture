@@ -5,18 +5,18 @@ import {
   CalendarClock,
   CheckCircle2,
   GraduationCap,
-  Library,
+  LogOut,
   MapPin,
   RotateCcw,
   User,
 } from "lucide-react";
 
-import { Logo } from "@/components/Logo";
-import { MobileNav } from "@/components/MobileNav";
+import { AppHeader } from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { useProfile, useProgress } from "@/lib/storage";
+import { useAuth } from "@/lib/auth";
+import { clearLocalRoadmap, useProfile, useProgress } from "@/lib/storage";
 import { TASKS } from "@/lib/tasks";
 
 export const Route = createFileRoute("/profile")({
@@ -36,6 +36,7 @@ function ProfilePage() {
   const navigate = useNavigate();
   const { profile, loaded } = useProfile();
   const { done, reset } = useProgress();
+  const { session, signOut } = useAuth();
 
   useEffect(() => {
     if (loaded && !profile) navigate({ to: "/onboarding" });
@@ -47,34 +48,17 @@ function ProfilePage() {
   if (!profile) return null;
 
   const arrival = new Date(profile.startDate);
+  const signedInEmail = session?.user.email;
+
+  async function logout() {
+    await signOut();
+    clearLocalRoadmap();
+    navigate({ to: "/" });
+  }
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-50 border-b bg-card/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
-          <Logo />
-          <div className="hidden items-center gap-2 md:flex">
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/dashboard">Dashboard</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/assistant">Assistant</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/community">Community</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/resources">
-                <Library className="mr-1 h-3.5 w-3.5" /> Resources
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/auth">Account</Link>
-            </Button>
-          </div>
-          <MobileNav />
-        </div>
-      </header>
+      <AppHeader active="profile" />
 
       <main className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-8">
         <div className="mb-6">
@@ -82,6 +66,9 @@ function ProfilePage() {
           <h1 className="mt-1 text-xl font-bold sm:text-2xl md:text-3xl">Exchange details</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Keep this information accurate so your roadmap stays relevant.
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {signedInEmail ? `Signed in as ${signedInEmail}` : "Guest profile saved in this browser"}
           </p>
         </div>
 
@@ -112,9 +99,16 @@ function ProfilePage() {
                   Edit profile
                 </Link>
               </Button>
-              <Button asChild variant="outline">
-                <Link to="/dashboard">Back to dashboard</Link>
-              </Button>
+              {!session && (
+                <Button asChild variant="outline">
+                  <Link to="/auth">Sign in</Link>
+                </Button>
+              )}
+              {session && (
+                <Button variant="outline" onClick={logout}>
+                  <LogOut className="mr-1 h-3.5 w-3.5" /> Log out
+                </Button>
+              )}
             </div>
           </Card>
 

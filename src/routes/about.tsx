@@ -1,10 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { ExternalLink, Info, ShieldCheck, University } from "lucide-react";
 
-import { Logo } from "@/components/Logo";
-import { MobileNav } from "@/components/MobileNav";
-import { PlanningLink } from "@/components/PlanningLink";
-import { Button } from "@/components/ui/button";
+import { PublicHeader } from "@/components/PublicHeader";
 import { Card } from "@/components/ui/card";
 
 export const Route = createFileRoute("/about")({
@@ -61,23 +58,7 @@ const sourceGroups = [
 function AboutPage() {
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-50 border-b bg-card/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
-          <Logo />
-          <div className="hidden items-center gap-2 md:flex">
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/">Home</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/auth">Account</Link>
-            </Button>
-            <Button asChild size="sm">
-              <PlanningLink />
-            </Button>
-          </div>
-          <MobileNav />
-        </div>
-      </header>
+      <PublicHeader active="sources" />
 
       <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
         <section className="max-w-3xl">

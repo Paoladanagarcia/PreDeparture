@@ -16,8 +16,7 @@ import { useAuth } from "@/lib/auth";
 import type { ProfileQuestionnaire } from "@/lib/tasks";
 import { UNIVERSITY_OPTIONS } from "@/lib/universities";
 import { DURATION_OPTIONS, NATIONALITY_OPTIONS } from "@/lib/profile-options";
-import { Logo } from "@/components/Logo";
-import { MobileNav } from "@/components/MobileNav";
+import { AppHeader } from "@/components/AppHeader";
 import { ArrowLeft, ArrowRight, Cloud, UserRound } from "lucide-react";
 
 export const Route = createFileRoute("/onboarding")({
@@ -83,19 +82,12 @@ function Onboarding() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-50 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
-          <Logo />
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">
-              Step {displayStep + 1} of {totalSteps}
-            </span>
-            <MobileNav />
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="mx-auto max-w-2xl px-4 pb-12 sm:px-6 sm:pb-20">
+        <div className="mb-2 pt-5 text-right text-sm text-muted-foreground sm:pt-8">
+          Step {displayStep + 1} of {totalSteps}
+        </div>
         <div className="mb-6 h-1.5 w-full rounded-full bg-muted">
           <div
             className="h-1.5 rounded-full bg-primary transition-all"

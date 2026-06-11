@@ -1,24 +1,13 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Logo } from "@/components/Logo";
-import { MobileNav } from "@/components/MobileNav";
+import { AppHeader } from "@/components/AppHeader";
 import { askAssistant, type AssistantReply } from "@/lib/assistant";
 import { useProfile } from "@/lib/storage";
-import {
-  ArrowLeft,
-  Library,
-  MessageCircle,
-  Send,
-  ShieldCheck,
-  ExternalLink,
-  Sparkles,
-  AlertTriangle,
-  Loader2,
-} from "lucide-react";
+import { Send, ShieldCheck, ExternalLink, AlertTriangle, Loader2, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/assistant")({
   head: () => ({
@@ -46,7 +35,6 @@ const SUGGESTIONS = [
 ];
 
 function AssistantPage() {
-  const navigate = useNavigate();
   const { profile } = useProfile();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -84,27 +72,7 @@ function AssistantPage() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-50 border-b bg-card/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
-          <Logo />
-          <div className="hidden items-center gap-2 md:flex">
-            <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
-              <ArrowLeft className="mr-1 h-4 w-4" /> Dashboard
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/community">
-                <MessageCircle className="mr-1 h-4 w-4" /> Community
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/resources">
-                <Library className="mr-1 h-4 w-4" /> Resources
-              </Link>
-            </Button>
-          </div>
-          <MobileNav />
-        </div>
-      </header>
+      <AppHeader active="assistant" />
 
       <main className="mx-auto flex max-w-4xl flex-col px-4 py-5 sm:px-6 sm:py-6">
         <div className="mb-4">
@@ -253,6 +221,3 @@ function MessageBubble({ m }: { m: ChatMessage }) {
     </div>
   );
 }
-
-// Suppress unused import warning when Link isn't used yet.
-void Link;

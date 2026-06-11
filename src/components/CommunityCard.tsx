@@ -33,10 +33,16 @@ type Status = "ready" | "loading" | "unavailable";
 export function CommunityCard({
   profile,
 }: {
-  profile: Pick<ProfileQuestionnaire, "university" | "startDate">;
+  profile?: Pick<ProfileQuestionnaire, "university" | "startDate"> | null;
 }) {
   const { configured, session } = useAuth();
-  const cohort = useMemo(() => getCohort(profile), [profile]);
+  const cohort = useMemo(
+    () =>
+      profile
+        ? getCohort(profile)
+        : { key: "preview", label: "Available community groups", term: "" },
+    [profile],
+  );
   const [activeGroup, setActiveGroup] = useState<CommunityGroupKey>("general");
   const [joinedGroups, setJoinedGroups] = useState<CommunityGroupKey[]>([]);
   const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
@@ -58,7 +64,7 @@ export function CommunityCard({
     let cancelled = false;
 
     async function loadMembership() {
-      if (!configured || !session) {
+      if (!configured || !session || !profile) {
         setStatus("ready");
         setJoinedGroups([]);
         setMemberCounts({});
@@ -86,13 +92,13 @@ export function CommunityCard({
     return () => {
       cancelled = true;
     };
-  }, [cohort.key, configured, session]);
+  }, [cohort.key, configured, profile, session]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadMessages() {
-      if (!session || !joined) {
+      if (!session || !profile || !joined) {
         setMessages([]);
         return;
       }
@@ -112,17 +118,17 @@ export function CommunityCard({
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [activeGroup, cohort.key, joined, session]);
+  }, [activeGroup, cohort.key, joined, profile, session]);
 
   useEffect(() => {
-    if (!session || !joined) return;
+    if (!session || !profile || !joined) return;
     return subscribeToMessages(session, cohort.key, (message) => {
       if (message.group_key !== activeGroup) return;
       setMessages((current) =>
         current.some((item) => item.id === message.id) ? current : [...current, message],
       );
     });
-  }, [activeGroup, cohort.key, joined, session]);
+  }, [activeGroup, cohort.key, joined, profile, session]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -131,6 +137,10 @@ export function CommunityCard({
   async function handleJoin(groupKey = activeGroup) {
     if (!configured) {
       toast.error("Supabase must be configured before community groups can open.");
+      return;
+    }
+    if (!profile) {
+      toast.error("Create your exchange profile before joining a group.");
       return;
     }
     if (!session) return;
@@ -210,17 +220,23 @@ export function CommunityCard({
             </div>
           </div>
 
-          {!session && (
+          {(!session || !profile) && (
             <div className="mt-5 rounded-lg border bg-card p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="font-medium">Create an account to join groups</p>
+                  <p className="font-medium">
+                    {!session ? "Sign in to join groups" : "Create your exchange profile"}
+                  </p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Guests can preview the cohort, but posting in chat requires a saved account.
+                    {!session
+                      ? "You can preview every conversation, but joining and posting requires an account."
+                      : "Your cohort groups unlock after your destination, university and arrival date are saved."}
                   </p>
                 </div>
                 <Button asChild className="shrink-0">
-                  <Link to="/auth">Create account</Link>
+                  <Link to={!session ? "/auth" : "/onboarding"}>
+                    {!session ? "Sign in" : "Create profile"}
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -240,7 +256,7 @@ export function CommunityCard({
             <div className="space-y-2">
               {COMMUNITY_GROUPS.map((group) => {
                 const isActive = group.key === activeGroup;
-                const isJoined = joinedGroups.includes(group.key);
+                const isJoined = Boolean(session && profile && joinedGroups.includes(group.key));
                 return (
                   <button
                     key={group.key}
@@ -279,7 +295,7 @@ export function CommunityCard({
                     {activeGroupMeta?.description}
                   </p>
                 </div>
-                {session && !joined && (
+                {session && profile && !joined && (
                   <Button size="sm" onClick={() => handleJoin()}>
                     Join group
                   </Button>
@@ -335,18 +351,25 @@ export function CommunityCard({
                   <div className="max-w-sm text-center">
                     <Lock className="mx-auto h-7 w-7 text-muted-foreground" />
                     <p className="mt-3 font-medium">
-                      {session ? "Join this group to read and post" : "Sign in to unlock chat"}
+                      {!session
+                        ? "Sign in to unlock chat"
+                        : !profile
+                          ? "Create your profile to unlock cohort chat"
+                          : "Join this group to read and post"}
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Group chats are private to students who joined the same cohort group.
+                      You can preview the available groups, but chats are private to signed-in
+                      students in the same cohort.
                     </p>
-                    {session ? (
+                    {session && profile ? (
                       <Button className="mt-4" onClick={() => handleJoin()}>
                         Join group
                       </Button>
                     ) : (
                       <Button asChild className="mt-4">
-                        <Link to="/auth">Create account</Link>
+                        <Link to={!session ? "/auth" : "/onboarding"}>
+                          {!session ? "Sign in" : "Create profile"}
+                        </Link>
                       </Button>
                     )}
                   </div>

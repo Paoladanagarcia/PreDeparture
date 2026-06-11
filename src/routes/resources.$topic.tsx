@@ -11,8 +11,7 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Logo } from "@/components/Logo";
-import { MobileNav } from "@/components/MobileNav";
+import { AppHeader } from "@/components/AppHeader";
 import { useProfile } from "@/lib/storage";
 import {
   BANKING,
@@ -21,10 +20,13 @@ import {
   SCHOLARSHIP_RESOURCES,
   VISA_GUIDE,
 } from "@/lib/berkeley";
-import { getUniversityConfig } from "@/lib/universities";
+import {
+  getUniversityConfig,
+  UNIVERSITY_OPTIONS,
+  type SupportedUniversity,
+} from "@/lib/universities";
 import {
   AlertTriangle,
-  ArrowLeft,
   CheckCircle2,
   CreditCard,
   DollarSign,
@@ -34,7 +36,6 @@ import {
   Home,
   Library,
   MapPin,
-  MessageCircle,
   Plane,
   Search,
   Smartphone,
@@ -154,6 +155,15 @@ const RESOURCE_SEARCH_ENTRIES = [
 }>;
 
 export const Route = createFileRoute("/resources/$topic")({
+  validateSearch: (search: Record<string, unknown>): { university?: SupportedUniversity } => {
+    const university =
+      typeof search.university === "string" &&
+      UNIVERSITY_OPTIONS.includes(search.university as SupportedUniversity)
+        ? (search.university as SupportedUniversity)
+        : undefined;
+
+    return university ? { university } : {};
+  },
   head: ({ params }) => {
     const topic = normalizeTopic(params.topic);
     return {
@@ -168,8 +178,9 @@ export const Route = createFileRoute("/resources/$topic")({
 
 function ResourcePage() {
   const { topic: rawTopic } = Route.useParams();
+  const search = Route.useSearch();
   const { profile } = useProfile();
-  const university = getUniversityConfig(profile?.university);
+  const university = getUniversityConfig(search.university ?? profile?.university);
   const topic = normalizeTopic(rawTopic);
   const meta = getTopicMeta(topic, university);
   const Icon = meta.icon;
@@ -178,29 +189,7 @@ function ResourcePage() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-50 border-b bg-card/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
-          <Logo />
-          <div className="hidden items-center gap-2 md:flex">
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/dashboard">
-                <ArrowLeft className="mr-1 h-4 w-4" /> Dashboard
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/resources">
-                <Library className="mr-1 h-4 w-4" /> All guides
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/community">
-                <MessageCircle className="mr-1 h-4 w-4" /> Community
-              </Link>
-            </Button>
-          </div>
-          <MobileNav />
-        </div>
-      </header>
+      <AppHeader active="resources" />
 
       <main className="mx-auto max-w-5xl px-4 py-5 sm:px-6 sm:py-8">
         <div className="mb-5 flex items-start gap-3 sm:mb-6 sm:gap-4">

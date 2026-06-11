@@ -1,10 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { AlertCircle, CheckCircle2, LogOut, ShieldCheck } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, EyeOff, LogOut, ShieldCheck } from "lucide-react";
 
-import { Logo } from "@/components/Logo";
-import { MobileNav } from "@/components/MobileNav";
-import { PlanningLink } from "@/components/PlanningLink";
+import { PublicHeader } from "@/components/PublicHeader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -90,9 +88,7 @@ function AuthPage() {
           setProfile(exchangeProfile);
           setLocalRoadmap(true);
         }
-        setMessage(
-          "If this email is new, check your inbox to confirm the account. If you already used this email, sign in instead.",
-        );
+        setMessage("Account created. Check your email to confirm your account.");
       }
     } catch (err) {
       setError(err instanceof Error ? cleanAuthError(err.message) : "Authentication failed.");
@@ -116,20 +112,7 @@ function AuthPage() {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-50 border-b bg-card/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
-          <Logo />
-          <div className="hidden items-center gap-2 md:flex">
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/">Home</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <PlanningLink />
-            </Button>
-          </div>
-          <MobileNav />
-        </div>
-      </header>
+      <PublicHeader active="profile" />
 
       <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-10">
         <div className="mb-6 max-w-2xl">
@@ -163,9 +146,8 @@ function AuthPage() {
             </p>
             <div className="mt-5 space-y-2">
               <Label htmlFor="new-password">New password</Label>
-              <Input
+              <PasswordInput
                 id="new-password"
-                type="password"
                 autoComplete="new-password"
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
@@ -391,9 +373,8 @@ function AuthFields({
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
           autoComplete={mode === "signup" ? "new-password" : "current-password"}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
@@ -401,6 +382,24 @@ function AuthFields({
         />
       </div>
     </>
+  );
+}
+
+function PasswordInput(props: React.ComponentProps<typeof Input>) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="relative">
+      <Input {...props} type={visible ? "text" : "password"} className="pr-10" />
+      <button
+        type="button"
+        aria-label={visible ? "Hide password" : "Show password"}
+        className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+        onClick={() => setVisible((value) => !value)}
+      >
+        {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
   );
 }
 
