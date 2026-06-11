@@ -50,7 +50,9 @@ function AuthPage() {
         navigate({ to: "/dashboard" });
       } else {
         await signUp(email, password, { firstName, lastName });
-        setMessage("Account created. If email confirmation is enabled, check your inbox.");
+        setMessage(
+          "If this email is new, check your inbox to confirm the account. If you already used this email, sign in instead.",
+        );
       }
     } catch (err) {
       setError(err instanceof Error ? cleanAuthError(err.message) : "Authentication failed.");
@@ -233,7 +235,7 @@ function NameFields({
           autoComplete="given-name"
           value={firstName}
           onChange={(event) => setFirstName(event.target.value)}
-          placeholder="Paola"
+          placeholder="First name"
         />
       </div>
       <div className="space-y-2">
@@ -244,7 +246,7 @@ function NameFields({
           autoComplete="family-name"
           value={lastName}
           onChange={(event) => setLastName(event.target.value)}
-          placeholder="Garcia"
+          placeholder="Last name"
         />
       </div>
     </div>

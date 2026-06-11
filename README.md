@@ -90,6 +90,13 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
+In Supabase, open **Authentication -> URL Configuration** and set:
+
+- **Site URL**: your deployed site URL, for example `https://your-project.vercel.app`
+- **Redirect URLs**: add your deployed auth URL, for example `https://your-project.vercel.app/auth`
+
+For local development, you can also add `http://localhost:5173/auth`.
+
 Then run this SQL in the Supabase SQL editor:
 
 ```sql

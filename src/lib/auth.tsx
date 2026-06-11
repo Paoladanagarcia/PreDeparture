@@ -13,6 +13,7 @@ import type { ProfileQuestionnaire } from "./tasks";
 export type SupabaseUser = {
   id: string;
   email?: string;
+  identities?: unknown[];
   user_metadata?: {
     first_name?: string;
     last_name?: string;
@@ -97,18 +98,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         access_token?: string;
         refresh_token?: string;
         user: SupabaseUser;
-      }>("/auth/v1/signup", {
-        method: "POST",
-        body: JSON.stringify({
-          email,
-          password,
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-            full_name: fullName,
-          },
-        }),
-      });
+      }>(
+        `/auth/v1/signup?redirect_to=${encodeURIComponent(getAuthRedirectUrl())}`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email,
+            password,
+            data: {
+              first_name: firstName,
+              last_name: lastName,
+              full_name: fullName,
+            },
+          }),
+        },
+      );
+
+      if (!response.access_token && response.user.identities?.length === 0) {
+        throw new Error("This email is already linked to an account. Try signing in instead.");
+      }
 
       if (response.access_token) {
         persistSession({
@@ -144,6 +152,11 @@ export function useAuth() {
 
 export function isSupabaseConfigured() {
   return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+}
+
+function getAuthRedirectUrl() {
+  if (typeof window === "undefined") return "/auth";
+  return `${window.location.origin}/auth`;
 }
 
 export async function getCloudProfile(session: AuthSession) {
