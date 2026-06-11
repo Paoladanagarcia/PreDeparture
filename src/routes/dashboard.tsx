@@ -34,7 +34,6 @@ import {
   Library,
   Sparkles,
   MessageCircle,
-  Users,
 } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -65,7 +64,6 @@ function Dashboard() {
     [profile?.startDate],
   );
 
-  const university = useMemo(() => getUniversityConfig(profile?.university), [profile?.university]);
   const personalizedTasks = useMemo(
     () => (profile ? getPersonalizedTasks(profile) : TASKS),
     [profile],
@@ -116,7 +114,9 @@ function Dashboard() {
               <Link to="/auth">Account</Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
-              <Link to="/onboarding">Edit profile</Link>
+              <Link to="/onboarding" search={{ mode: "edit" }}>
+                Edit profile
+              </Link>
             </Button>
             <Button variant="outline" size="sm" onClick={reset}>
               <RotateCcw className="mr-1 h-3.5 w-3.5" /> Reset
@@ -180,9 +180,6 @@ function Dashboard() {
         {personalizedTips.length > 0 && <PersonalizedTips tips={personalizedTips} />}
 
         {authConfigured && !session && <CloudSyncPrompt />}
-
-        <CommunityPreviewCard university={profile.university} />
-        <ResourcesPreviewCard university={university.shortName} />
 
         <Tabs defaultValue="checklist" className="mt-6 sm:mt-8">
           <TabsList>
@@ -259,57 +256,6 @@ function PersonalizedTips({ tips }: { tips: Array<{ title: string; desc: string 
             <p className="mt-1 text-xs text-muted-foreground">{tip.desc}</p>
           </div>
         ))}
-      </div>
-    </Card>
-  );
-}
-
-function CommunityPreviewCard({ university }: { university: string }) {
-  return (
-    <Card className="mt-5 border-primary/20 bg-card p-4 sm:mt-6 sm:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
-            <Users className="h-4 w-4" />
-          </span>
-          <div>
-            <h2 className="text-sm font-semibold">Community groups</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Join your {university} cohort groups for housing, visa, arrival and banking chat.
-            </p>
-          </div>
-        </div>
-        <Button asChild size="sm" className="shrink-0">
-          <Link to="/community">
-            Open community <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </Button>
-      </div>
-    </Card>
-  );
-}
-
-function ResourcesPreviewCard({ university }: { university: string }) {
-  return (
-    <Card className="mt-4 border-primary/20 bg-card p-4 sm:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary">
-            <Library className="h-4 w-4" />
-          </span>
-          <div>
-            <h2 className="text-sm font-semibold">Resource library</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Browse all {university} guides for visa, housing, banking, phone, arrival, funding and
-              insurance.
-            </p>
-          </div>
-        </div>
-        <Button asChild size="sm" variant="outline" className="shrink-0">
-          <Link to="/resources">
-            Open resources <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </Button>
       </div>
     </Card>
   );

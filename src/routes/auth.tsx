@@ -4,14 +4,25 @@ import { AlertCircle, CheckCircle2, LogOut, ShieldCheck } from "lucide-react";
 
 import { Logo } from "@/components/Logo";
 import { MobileNav } from "@/components/MobileNav";
+import { PlanningLink } from "@/components/PlanningLink";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
-import { clearLocalRoadmap, hasLocalRoadmap } from "@/lib/storage";
+import { DURATION_OPTIONS, NATIONALITY_OPTIONS } from "@/lib/profile-options";
+import { clearLocalRoadmap, hasLocalRoadmap, useProfile } from "@/lib/storage";
+import type { ProfileQuestionnaire } from "@/lib/tasks";
+import { UNIVERSITY_OPTIONS } from "@/lib/universities";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -29,11 +40,19 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const { configured, session, signIn, signOut, signUp } = useAuth();
+  const { profile, setProfile } = useProfile();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [exchangeProfile, setExchangeProfile] = useState<AuthProfileForm>({
+    country: "",
+    university: "",
+    nationality: "",
+    startDate: "",
+    duration: "",
+  });
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -50,6 +69,10 @@ function AuthPage() {
         navigate({ to: "/dashboard" });
       } else {
         await signUp(email, password, { firstName, lastName });
+        if (isCompleteProfile(exchangeProfile)) {
+          setProfile(exchangeProfile);
+          setLocalRoadmap(true);
+        }
         setMessage(
           "If this email is new, check your inbox to confirm the account. If you already used this email, sign in instead.",
         );
@@ -84,7 +107,7 @@ function AuthPage() {
               <Link to="/">Home</Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
-              <Link to="/onboarding">Start Planning</Link>
+              <PlanningLink />
             </Button>
           </div>
           <MobileNav />
@@ -167,6 +190,7 @@ function AuthPage() {
                   setPassword={setPassword}
                   mode={mode}
                 />
+                <ExchangeFields profile={exchangeProfile} setProfile={setExchangeProfile} />
               </TabsContent>
             </Tabs>
 
@@ -180,14 +204,17 @@ function AuthPage() {
                 loading ||
                 !email ||
                 password.length < 6 ||
-                (mode === "signup" && (!firstName.trim() || !lastName.trim()))
+                (mode === "signup" &&
+                  (!firstName.trim() || !lastName.trim() || !isCompleteProfile(exchangeProfile)))
               }
               onClick={submit}
             >
               {loading ? "Please wait..." : mode === "signin" ? "Sign in" : "Create account"}
             </Button>
             <Button asChild variant="ghost" className="mt-2 w-full">
-              <Link to="/onboarding">Continue as guest</Link>
+              <Link to="/onboarding" search={{ mode: "guest" }}>
+                Continue as guest
+              </Link>
             </Button>
           </Card>
         )}
@@ -213,6 +240,10 @@ function AuthPage() {
     </div>
   );
 }
+
+type AuthProfileForm = Omit<ProfileQuestionnaire, "duration"> & {
+  duration: ProfileQuestionnaire["duration"] | "";
+};
 
 function NameFields({
   firstName,
@@ -291,6 +322,122 @@ function AuthFields({
         />
       </div>
     </>
+  );
+}
+
+function ExchangeFields({
+  profile,
+  setProfile,
+}: {
+  profile: AuthProfileForm;
+  setProfile: (value: AuthProfileForm) => void;
+}) {
+  return (
+    <div className="rounded-lg border bg-muted/20 p-4">
+      <p className="text-sm font-semibold">Your exchange</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        These details create your dashboard immediately after your account is ready.
+      </p>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="signup-country">Destination country</Label>
+          <Select
+            value={profile.country}
+            onValueChange={(country) => setProfile({ ...profile, country })}
+          >
+            <SelectTrigger id="signup-country">
+              <SelectValue placeholder="Choose country" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="United States">United States</SelectItem>
+              <SelectItem value="other" disabled>
+                More countries coming soon
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="signup-university">Host university</Label>
+          <Select
+            value={profile.university}
+            onValueChange={(university) => setProfile({ ...profile, university })}
+          >
+            <SelectTrigger id="signup-university">
+              <SelectValue placeholder="Choose university" />
+            </SelectTrigger>
+            <SelectContent>
+              {UNIVERSITY_OPTIONS.map((university) => (
+                <SelectItem key={university} value={university}>
+                  {university}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="signup-nationality">Nationality</Label>
+          <Select
+            value={profile.nationality}
+            onValueChange={(nationality) => setProfile({ ...profile, nationality })}
+          >
+            <SelectTrigger id="signup-nationality">
+              <SelectValue placeholder="Choose nationality" />
+            </SelectTrigger>
+            <SelectContent>
+              {NATIONALITY_OPTIONS.map((nationality) => (
+                <SelectItem key={nationality} value={nationality}>
+                  {nationality}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="signup-start-date">Arrival / start date</Label>
+          <Input
+            id="signup-start-date"
+            type="date"
+            value={profile.startDate}
+            onChange={(event) => setProfile({ ...profile, startDate: event.target.value })}
+          />
+        </div>
+
+        <div className="space-y-2 sm:col-span-2">
+          <Label htmlFor="signup-duration">Exchange duration</Label>
+          <Select
+            value={profile.duration}
+            onValueChange={(duration) =>
+              setProfile({ ...profile, duration: duration as ProfileQuestionnaire["duration"] })
+            }
+          >
+            <SelectTrigger id="signup-duration">
+              <SelectValue placeholder="Choose duration" />
+            </SelectTrigger>
+            <SelectContent>
+              {DURATION_OPTIONS.map((duration) => (
+                <SelectItem key={duration.value} value={duration.value}>
+                  {duration.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function isCompleteProfile(profile: AuthProfileForm): profile is ProfileQuestionnaire {
+  return Boolean(
+    profile.country &&
+      profile.university &&
+      profile.nationality &&
+      profile.startDate &&
+      profile.duration,
   );
 }
 

@@ -3,6 +3,7 @@ import { ExternalLink, Info, ShieldCheck, University } from "lucide-react";
 
 import { Logo } from "@/components/Logo";
 import { MobileNav } from "@/components/MobileNav";
+import { PlanningLink } from "@/components/PlanningLink";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -71,7 +72,7 @@ function AboutPage() {
               <Link to="/auth">Account</Link>
             </Button>
             <Button asChild size="sm">
-              <Link to="/onboarding">Start Planning</Link>
+              <PlanningLink />
             </Button>
           </div>
           <MobileNav />

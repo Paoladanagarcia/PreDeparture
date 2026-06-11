@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,11 +15,16 @@ import { useProfile } from "@/lib/storage";
 import { useAuth } from "@/lib/auth";
 import type { ProfileQuestionnaire } from "@/lib/tasks";
 import { UNIVERSITY_OPTIONS } from "@/lib/universities";
+import { DURATION_OPTIONS, NATIONALITY_OPTIONS } from "@/lib/profile-options";
 import { Logo } from "@/components/Logo";
 import { MobileNav } from "@/components/MobileNav";
 import { ArrowLeft, ArrowRight, Cloud, UserRound } from "lucide-react";
 
 export const Route = createFileRoute("/onboarding")({
+  validateSearch: (search: Record<string, unknown>): { mode?: "edit" | "guest" } =>
+    search.mode === "edit" || search.mode === "guest"
+      ? { mode: search.mode }
+      : {},
   head: () => ({
     meta: [
       { title: "Get started — PreDeparture" },
@@ -33,20 +38,6 @@ export const Route = createFileRoute("/onboarding")({
 });
 
 const steps = ["Destination", "University", "About you", "Dates"] as const;
-const NATIONALITY_OPTIONS = [
-  "French",
-  "American",
-  "Belgian",
-  "Canadian",
-  "German",
-  "Italian",
-  "Spanish",
-  "British",
-  "Dutch",
-  "Portuguese",
-  "Other",
-] as const;
-
 type OnboardingForm = {
   country: string;
   university: string;
@@ -57,9 +48,10 @@ type OnboardingForm = {
 
 function Onboarding() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const { setProfile } = useProfile();
   const { session } = useAuth();
-  const [choiceMade, setChoiceMade] = useState(Boolean(session));
+  const [choiceMade, setChoiceMade] = useState(Boolean(search.mode));
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<OnboardingForm>({
     country: "",
@@ -68,10 +60,6 @@ function Onboarding() {
     startDate: "",
     duration: "",
   });
-
-  useEffect(() => {
-    if (session) setChoiceMade(true);
-  }, [session]);
 
   const next = () => {
     if (step < steps.length - 1) setStep(step + 1);
@@ -82,7 +70,13 @@ function Onboarding() {
     }
   };
   const back = () =>
-    step > 0 ? setStep(step - 1) : choiceMade ? setChoiceMade(false) : navigate({ to: "/" });
+    step > 0
+      ? setStep(step - 1)
+      : choiceMade
+        ? search.mode === "edit"
+          ? navigate({ to: "/dashboard" })
+          : setChoiceMade(false)
+        : navigate({ to: "/" });
   const displayStep = choiceMade ? step + 1 : 0;
   const totalSteps = steps.length + 1;
   const canContinue = isStepComplete(step, form);
@@ -112,7 +106,7 @@ function Onboarding() {
         {!choiceMade ? (
           <StartModeChoice
             onGuest={() => setChoiceMade(true)}
-            onAccount={() => navigate({ to: "/auth" })}
+            onAccount={() => (session ? setChoiceMade(true) : navigate({ to: "/auth" }))}
             onBack={() => navigate({ to: "/" })}
           />
         ) : (
@@ -209,11 +203,11 @@ function Onboarding() {
                         <SelectValue placeholder="Choose your exchange duration" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="one-semester">One semester</SelectItem>
-                        <SelectItem value="two-semesters">
-                          Two semesters / full academic year
-                        </SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        {DURATION_OPTIONS.map((duration) => (
+                          <SelectItem key={duration.value} value={duration.value}>
+                            {duration.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

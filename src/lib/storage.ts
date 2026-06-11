@@ -43,6 +43,7 @@ export function useProfile() {
   const { session } = useAuth();
   const [profile, setProfileState] = useState<ProfileQuestionnaire | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [cloudLoaded, setCloudLoaded] = useState(false);
   const profileRef = useRef<ProfileQuestionnaire | null>(null);
 
   useEffect(() => {
@@ -53,9 +54,14 @@ export function useProfile() {
   }, []);
 
   useEffect(() => {
-    if (!session || !loaded) return;
+    if (!loaded) return;
+    if (!session) {
+      setCloudLoaded(true);
+      return;
+    }
 
     let cancelled = false;
+    setCloudLoaded(false);
 
     getCloudProfile(session)
       .then((cloudProfile) => {
@@ -69,7 +75,10 @@ export function useProfile() {
           void saveCloudProfile(session, profileRef.current);
         }
       })
-      .catch(() => null);
+      .catch(() => null)
+      .finally(() => {
+        if (!cancelled) setCloudLoaded(true);
+      });
 
     return () => {
       cancelled = true;
@@ -90,7 +99,7 @@ export function useProfile() {
     [session],
   );
 
-  return { profile, setProfile, loaded };
+  return { profile, setProfile, loaded: loaded && cloudLoaded };
 }
 
 export function useProgress() {

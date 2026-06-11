@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Logo } from "@/components/Logo";
 import { MobileNav } from "@/components/MobileNav";
+import { PlanningLink } from "@/components/PlanningLink";
 import {
   CheckCircle2,
   Clock,
@@ -87,7 +88,7 @@ function Landing() {
               <Link to="/auth">Account</Link>
             </Button>
             <Button asChild size="sm" className="hidden sm:inline-flex">
-              <Link to="/onboarding">Start Planning</Link>
+              <PlanningLink />
             </Button>
             <MobileNav />
           </div>
@@ -109,7 +110,7 @@ function Landing() {
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:mt-8">
             <Button asChild size="lg" className="h-11 px-5 text-sm sm:h-12 sm:px-6 sm:text-base">
-              <Link to="/onboarding">Start Planning</Link>
+              <PlanningLink />
             </Button>
             <Button
               asChild
@@ -241,7 +242,7 @@ function Landing() {
           </div>
           <div className="mt-8 text-center sm:mt-12">
             <Button asChild size="lg" className="h-11 px-5 text-sm sm:h-12 sm:px-6 sm:text-base">
-              <Link to="/onboarding">Start Planning — it's free</Link>
+              <PlanningLink startLabel="Start Planning — it's free" />
             </Button>
           </div>
         </div>

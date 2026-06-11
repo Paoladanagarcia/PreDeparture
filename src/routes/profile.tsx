@@ -108,7 +108,9 @@ function ProfilePage() {
 
             <div className="mt-6 flex flex-wrap gap-2">
               <Button asChild>
-                <Link to="/onboarding">Edit profile</Link>
+                <Link to="/onboarding" search={{ mode: "edit" }}>
+                  Edit profile
+                </Link>
               </Button>
               <Button asChild variant="outline">
                 <Link to="/dashboard">Back to dashboard</Link>

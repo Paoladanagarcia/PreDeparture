@@ -2,6 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
+import { useProfile } from "@/lib/storage";
 import {
   Sheet,
   SheetClose,
@@ -14,8 +16,6 @@ import {
 
 const navItems = [
   { label: "Home", to: "/" },
-  { label: "Dashboard", to: "/dashboard" },
-  { label: "Start Planning", to: "/onboarding" },
   { label: "Community", to: "/community" },
   { label: "Assistant", to: "/assistant" },
   { label: "Profile", to: "/profile" },
@@ -34,6 +34,15 @@ const resourceItems = [
 ] as const;
 
 export function MobileNav() {
+  const { session } = useAuth();
+  const { profile } = useProfile();
+  const planningItem = session && profile
+    ? { label: "Dashboard", to: "/dashboard" as const }
+    : { label: "Start Planning", to: "/onboarding" as const };
+  const guestDashboardItem =
+    !session && profile ? [{ label: "Dashboard", to: "/dashboard" as const }] : [];
+  const items = [navItems[0], ...guestDashboardItem, planningItem, ...navItems.slice(1)];
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -48,7 +57,7 @@ export function MobileNav() {
         </SheetHeader>
 
         <nav className="mt-6 grid gap-1">
-          {navItems.map((item) => (
+          {items.map((item) => (
             <SheetClose asChild key={item.to}>
               <Link
                 to={item.to}
