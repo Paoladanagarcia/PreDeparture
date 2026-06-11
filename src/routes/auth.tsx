@@ -209,7 +209,6 @@ function AuthPage() {
               <TabsList className="mb-5">
                 <TabsTrigger value="signin">Sign in</TabsTrigger>
                 <TabsTrigger value="signup">Create account</TabsTrigger>
-                <TabsTrigger value="reset">Reset password</TabsTrigger>
               </TabsList>
 
               <TabsContent value="signin" className="space-y-4">
@@ -524,8 +523,15 @@ function isCompleteProfile(profile: AuthProfileForm): profile is ProfileQuestion
 function cleanAuthError(message: string) {
   try {
     const parsed = JSON.parse(message) as { msg?: string; error_description?: string };
-    return parsed.msg ?? parsed.error_description ?? message;
+    const parsedMessage = parsed.msg ?? parsed.error_description ?? message;
+    if (parsedMessage.toLowerCase().includes("rate limit")) {
+      return "Too many emails were sent recently. Please wait a few minutes before trying again.";
+    }
+    return parsedMessage;
   } catch {
+    if (message.toLowerCase().includes("rate limit")) {
+      return "Too many emails were sent recently. Please wait a few minutes before trying again.";
+    }
     return message;
   }
 }
