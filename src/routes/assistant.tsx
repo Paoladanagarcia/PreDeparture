@@ -83,8 +83,8 @@ function AssistantPage() {
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="sticky top-0 z-50 border-b bg-card/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <Logo className="h-11" />
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
+          <Logo />
           <Button
             variant="ghost"
             size="sm"
@@ -97,23 +97,25 @@ function AssistantPage() {
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-4xl flex-col px-6 py-6">
+      <main className="mx-auto flex max-w-4xl flex-col px-4 py-5 sm:px-6 sm:py-6">
         <div className="mb-4">
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border bg-primary-soft px-3 py-1 text-xs font-medium text-primary">
             <ShieldCheck className="h-3.5 w-3.5" /> Source-grounded assistant
           </div>
-          <h1 className="text-2xl font-bold md:text-3xl">Ask anything about your exchange</h1>
+          <h1 className="text-xl font-bold sm:text-2xl md:text-3xl">
+            Ask anything about your exchange
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Answers are based on verified official sources — university websites, embassy pages and
             government documentation. Always verify critical information on the official websites.
           </p>
         </div>
 
-        <Card className="flex h-[60vh] flex-col overflow-hidden p-0">
-          <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-5">
+        <Card className="flex h-[62vh] flex-col overflow-hidden p-0 sm:h-[60vh]">
+          <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
             {messages.length === 0 && (
               <div className="space-y-4">
-                <div className="flex items-start gap-3 rounded-lg border bg-muted/40 p-4">
+                <div className="flex items-start gap-3 rounded-lg border bg-muted/40 p-3 sm:p-4">
                   <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
                     <Sparkles className="h-4 w-4" />
                   </span>
@@ -202,7 +204,7 @@ function MessageBubble({ m }: { m: ChatMessage }) {
   if (m.role === "user") {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground">
+        <div className="max-w-[92%] rounded-2xl rounded-br-sm bg-primary px-3 py-2.5 text-sm text-primary-foreground sm:max-w-[85%] sm:px-4">
           {m.content}
         </div>
       </div>
@@ -213,8 +215,8 @@ function MessageBubble({ m }: { m: ChatMessage }) {
       <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
         <Sparkles className="h-4 w-4" />
       </span>
-      <div className="max-w-[85%] space-y-3">
-        <div className="rounded-2xl rounded-tl-sm border bg-card px-4 py-3 text-sm">
+      <div className="max-w-[92%] space-y-3 sm:max-w-[85%]">
+        <div className="rounded-2xl rounded-tl-sm border bg-card px-3 py-3 text-sm sm:px-4">
           <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
         </div>
         {m.sources && m.sources.length > 0 && (

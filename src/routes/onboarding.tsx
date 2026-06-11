@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,11 +12,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useProfile } from "@/lib/storage";
+import { useAuth } from "@/lib/auth";
 import type { ProfileQuestionnaire } from "@/lib/tasks";
 import { UNIVERSITY_OPTIONS } from "@/lib/universities";
 import { Logo } from "@/components/Logo";
 import { MobileNav } from "@/components/MobileNav";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Cloud, UserRound } from "lucide-react";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -32,157 +33,259 @@ export const Route = createFileRoute("/onboarding")({
 });
 
 const steps = ["Destination", "University", "About you", "Dates"] as const;
+const NATIONALITY_OPTIONS = [
+  "French",
+  "American",
+  "Belgian",
+  "Canadian",
+  "German",
+  "Italian",
+  "Spanish",
+  "British",
+  "Dutch",
+  "Portuguese",
+  "Other",
+] as const;
+
+type OnboardingForm = {
+  country: string;
+  university: string;
+  nationality: string;
+  startDate: string;
+  duration: ProfileQuestionnaire["duration"] | "";
+};
 
 function Onboarding() {
   const navigate = useNavigate();
   const { setProfile } = useProfile();
+  const { session } = useAuth();
+  const [choiceMade, setChoiceMade] = useState(Boolean(session));
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState<ProfileQuestionnaire>({
-    country: "United States",
-    university: "UC Berkeley",
-    nationality: "French",
-    startDate: "2026-08-18",
-    duration: "one-semester",
+  const [form, setForm] = useState<OnboardingForm>({
+    country: "",
+    university: "",
+    nationality: "",
+    startDate: "",
+    duration: "",
   });
+
+  useEffect(() => {
+    if (session) setChoiceMade(true);
+  }, [session]);
 
   const next = () => {
     if (step < steps.length - 1) setStep(step + 1);
     else {
+      if (!isCompleteForm(form)) return;
       setProfile(form);
       navigate({ to: "/dashboard" });
     }
   };
-  const back = () => (step > 0 ? setStep(step - 1) : navigate({ to: "/" }));
+  const back = () =>
+    step > 0 ? setStep(step - 1) : choiceMade ? setChoiceMade(false) : navigate({ to: "/" });
+  const displayStep = choiceMade ? step + 1 : 0;
+  const totalSteps = steps.length + 1;
+  const canContinue = isStepComplete(step, form);
 
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="sticky top-0 z-50 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-5">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
           <Logo />
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">
-              Step {step + 1} of {steps.length}
+              Step {displayStep + 1} of {totalSteps}
             </span>
             <MobileNav />
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-6 pb-20">
+      <main className="mx-auto max-w-2xl px-4 pb-12 sm:px-6 sm:pb-20">
         <div className="mb-6 h-1.5 w-full rounded-full bg-muted">
           <div
             className="h-1.5 rounded-full bg-primary transition-all"
-            style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+            style={{ width: `${((displayStep + 1) / totalSteps) * 100}%` }}
           />
         </div>
 
-        <Card className="p-8">
-          <h1 className="text-2xl font-bold">{stepTitle(step)}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{stepSub(step)}</p>
+        {!choiceMade ? (
+          <StartModeChoice
+            onGuest={() => setChoiceMade(true)}
+            onAccount={() => navigate({ to: "/auth" })}
+            onBack={() => navigate({ to: "/" })}
+          />
+        ) : (
+          <Card className="p-5 sm:p-8">
+            <h1 className="text-xl font-bold sm:text-2xl">{stepTitle(step)}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{stepSub(step)}</p>
 
-          <div className="mt-6 space-y-4">
-            {step === 0 && (
-              <div className="space-y-2">
-                <Label htmlFor="country">Destination country</Label>
-                <Select
-                  value={form.country}
-                  onValueChange={(v) => setForm({ ...form, country: v })}
-                >
-                  <SelectTrigger id="country">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="United States">🇺🇸 United States</SelectItem>
-                    <SelectItem value="other" disabled>
-                      More countries coming soon
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {step === 1 && (
-              <div className="space-y-2">
-                <Label htmlFor="university">University</Label>
-                <Select
-                  value={form.university}
-                  onValueChange={(v) => setForm({ ...form, university: v })}
-                >
-                  <SelectTrigger id="university">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {UNIVERSITY_OPTIONS.map((university) => (
-                      <SelectItem key={university} value={university}>
-                        {university}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {step === 2 && (
-              <div className="space-y-2">
-                <Label htmlFor="nationality">Your nationality</Label>
-                <Input
-                  id="nationality"
-                  value={form.nationality}
-                  onChange={(e) => setForm({ ...form, nationality: e.target.value })}
-                  placeholder="e.g. French"
-                />
-                <p className="text-xs text-muted-foreground">
-                  We use this to tailor visa advice to your country.
-                </p>
-              </div>
-            )}
-
-            {step === 3 && (
-              <div className="space-y-4">
+            <div className="mt-6 space-y-4">
+              {step === 0 && (
                 <div className="space-y-2">
-                  <Label htmlFor="startDate">Arrival / start date</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={form.startDate}
-                    onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="duration">Exchange duration</Label>
+                  <Label htmlFor="country">Destination country</Label>
                   <Select
-                    value={form.duration}
-                    onValueChange={(v) =>
-                      setForm({ ...form, duration: v as ProfileQuestionnaire["duration"] })
-                    }
+                    value={form.country}
+                    onValueChange={(v) => setForm({ ...form, country: v })}
                   >
-                    <SelectTrigger id="duration">
-                      <SelectValue />
+                    <SelectTrigger id="country">
+                      <SelectValue placeholder="Choose your destination country" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="one-semester">One semester</SelectItem>
-                      <SelectItem value="two-semesters">Two semesters</SelectItem>
-                      <SelectItem value="full-year">Full academic year</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="United States">🇺🇸 United States</SelectItem>
+                      <SelectItem value="other" disabled>
+                        More countries coming soon
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
 
-          <div className="mt-8 flex items-center justify-between">
-            <Button variant="ghost" onClick={back}>
-              <ArrowLeft className="mr-1 h-4 w-4" /> Back
-            </Button>
-            <Button onClick={next}>
-              {step === steps.length - 1 ? "Generate my roadmap" : "Continue"}
-              <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
-        </Card>
+              {step === 1 && (
+                <div className="space-y-2">
+                  <Label htmlFor="university">University</Label>
+                  <Select
+                    value={form.university}
+                    onValueChange={(v) => setForm({ ...form, university: v })}
+                  >
+                    <SelectTrigger id="university">
+                      <SelectValue placeholder="Choose your host university" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {UNIVERSITY_OPTIONS.map((university) => (
+                        <SelectItem key={university} value={university}>
+                          {university}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {step === 2 && (
+                <div className="space-y-2">
+                  <Label htmlFor="nationality">Your nationality</Label>
+                  <Select
+                    value={form.nationality}
+                    onValueChange={(v) => setForm({ ...form, nationality: v })}
+                  >
+                    <SelectTrigger id="nationality">
+                      <SelectValue placeholder="Choose your nationality" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {NATIONALITY_OPTIONS.map((nationality) => (
+                        <SelectItem key={nationality} value={nationality}>
+                          {nationality}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    We use this to tailor visa advice to your country.
+                  </p>
+                </div>
+              )}
+
+              {step === 3 && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startDate">Arrival / start date</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={form.startDate}
+                      onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="duration">Exchange duration</Label>
+                    <Select
+                      value={form.duration}
+                      onValueChange={(v) =>
+                        setForm({ ...form, duration: v as ProfileQuestionnaire["duration"] })
+                      }
+                    >
+                      <SelectTrigger id="duration">
+                        <SelectValue placeholder="Choose your exchange duration" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="one-semester">One semester</SelectItem>
+                        <SelectItem value="two-semesters">
+                          Two semesters / full academic year
+                        </SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex items-center justify-between sm:mt-8">
+              <Button variant="ghost" onClick={back}>
+                <ArrowLeft className="mr-1 h-4 w-4" /> Back
+              </Button>
+              <Button onClick={next} disabled={!canContinue}>
+                {step === steps.length - 1 ? "Generate my roadmap" : "Continue"}
+                <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          </Card>
+        )}
       </main>
     </div>
+  );
+}
+
+function StartModeChoice({
+  onGuest,
+  onAccount,
+  onBack,
+}: {
+  onGuest: () => void;
+  onAccount: () => void;
+  onBack: () => void;
+}) {
+  return (
+    <Card className="p-5 sm:p-8">
+      <h1 className="text-xl font-bold sm:text-2xl">How do you want to start?</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        You can create an account to sync your roadmap, or continue as a guest and keep everything
+        only in this browser.
+      </p>
+
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={onAccount}
+          className="rounded-lg border bg-card p-4 text-left transition-colors hover:bg-muted/40"
+        >
+          <Cloud className="h-5 w-5 text-primary" />
+          <p className="mt-3 text-sm font-semibold">Create or sign in</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Save your profile and checklist online, then access them across devices.
+          </p>
+        </button>
+
+        <button
+          type="button"
+          onClick={onGuest}
+          className="rounded-lg border bg-card p-4 text-left transition-colors hover:bg-muted/40"
+        >
+          <UserRound className="h-5 w-5 text-primary" />
+          <p className="mt-3 text-sm font-semibold">Continue as guest</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Try PreDeparture now. Your roadmap stays locally in this browser.
+          </p>
+        </button>
+      </div>
+
+      <div className="mt-6">
+        <Button variant="ghost" onClick={onBack}>
+          <ArrowLeft className="mr-1 h-4 w-4" /> Back
+        </Button>
+      </div>
+    </Card>
   );
 }
 
@@ -198,6 +301,20 @@ function stepSub(s: number) {
     "Your nationality changes some visa steps.",
     "We'll build your timeline backwards from this date.",
   ][s];
+}
+
+function isStepComplete(step: number, form: OnboardingForm) {
+  if (step === 0) return Boolean(form.country);
+  if (step === 1) return Boolean(form.university);
+  if (step === 2) return Boolean(form.nationality);
+  if (step === 3) return Boolean(form.startDate && form.duration);
+  return false;
+}
+
+function isCompleteForm(form: OnboardingForm): form is ProfileQuestionnaire {
+  return Boolean(
+    form.country && form.university && form.nationality && form.startDate && form.duration,
+  );
 }
 
 void Link;

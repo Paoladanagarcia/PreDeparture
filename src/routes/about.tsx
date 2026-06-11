@@ -61,14 +61,14 @@ function AboutPage() {
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="sticky top-0 z-50 border-b bg-card/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <Logo />
           <div className="hidden items-center gap-2 md:flex">
             <Button asChild variant="ghost" size="sm">
               <Link to="/">Home</Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
-              <Link to="/dashboard">Dashboard</Link>
+              <Link to="/onboarding">Start Planning</Link>
             </Button>
             <Button asChild size="sm">
               <Link to="/onboarding">Start Planning</Link>
@@ -78,13 +78,15 @@ function AboutPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-10">
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
         <section className="max-w-3xl">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border bg-primary-soft px-3 py-1 text-xs font-medium text-primary">
             <ShieldCheck className="h-3.5 w-3.5" />
             Source-aware guidance
           </div>
-          <h1 className="text-3xl font-bold tracking-tight md:text-4xl">About and sources</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
+            About and sources
+          </h1>
           <p className="mt-3 text-base leading-relaxed text-muted-foreground">
             PreDeparture helps students organize exchange preparation in one place. The checklist,
             timeline and resources are based on official university pages, embassy or government
@@ -92,8 +94,8 @@ function AboutPage() {
           </p>
         </section>
 
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <Card className="p-5">
+        <div className="mt-6 grid gap-4 sm:mt-8 md:grid-cols-3">
+          <Card className="p-4 sm:p-5">
             <University className="h-5 w-5 text-primary" />
             <h2 className="mt-3 text-sm font-semibold">Official-first resources</h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -101,7 +103,7 @@ function AboutPage() {
               process matters.
             </p>
           </Card>
-          <Card className="p-5">
+          <Card className="p-4 sm:p-5">
             <Info className="h-5 w-5 text-primary" />
             <h2 className="mt-3 text-sm font-semibold">Indicative deadlines</h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -109,7 +111,7 @@ function AboutPage() {
               vary by program, embassy, nationality and university office.
             </p>
           </Card>
-          <Card className="p-5">
+          <Card className="p-4 sm:p-5">
             <ShieldCheck className="h-5 w-5 text-primary" />
             <h2 className="mt-3 text-sm font-semibold">Verify before acting</h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -146,7 +148,7 @@ function AboutPage() {
           </div>
         </section>
 
-        <Card className="mt-8 border-primary/20 bg-primary-soft/40 p-5">
+        <Card className="mt-6 border-primary/20 bg-primary-soft/40 p-4 sm:mt-8 sm:p-5">
           <h2 className="text-sm font-semibold">Important note</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             PreDeparture is a preparation tool, not an official university, immigration, legal,

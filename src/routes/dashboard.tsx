@@ -6,9 +6,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
 import { useProfile, useProgress } from "@/lib/storage";
+import { useAuth } from "@/lib/auth";
 import {
   TASKS,
   CATEGORY_META,
@@ -20,6 +19,7 @@ import {
 } from "@/lib/tasks";
 import { Logo } from "@/components/Logo";
 import { MobileNav } from "@/components/MobileNav";
+import { CommunityCard } from "@/components/CommunityCard";
 import { getUniversityConfig } from "@/lib/universities";
 import {
   ExternalLink,
@@ -32,8 +32,6 @@ import {
   Info,
   ShieldCheck,
   FileText,
-  Users,
-  Rocket,
   Sparkles,
   Home,
   CreditCard,
@@ -58,6 +56,7 @@ export const Route = createFileRoute("/dashboard")({
 function Dashboard() {
   const { profile, loaded } = useProfile();
   const { done, docs, toggle, toggleDoc, reset } = useProgress();
+  const { configured: authConfigured, session } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -95,7 +94,7 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="sticky top-0 z-50 border-b bg-card/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <Logo />
           <div className="hidden items-center gap-2 md:flex">
             <Button asChild variant="ghost" size="sm">
@@ -105,6 +104,9 @@ function Dashboard() {
             </Button>
             <Button asChild variant="ghost" size="sm">
               <Link to="/profile">Profile</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/auth">Account</Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
               <Link to="/onboarding">Edit profile</Link>
@@ -117,13 +119,13 @@ function Dashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-8">
         <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-          <Card className="p-6">
+          <Card className="p-4 sm:p-6">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               You're heading to
             </p>
-            <h1 className="mt-1 text-2xl font-bold md:text-3xl">
+            <h1 className="mt-1 text-xl font-bold sm:text-2xl md:text-3xl">
               {profile.university}, {profile.country}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -132,7 +134,7 @@ function Dashboard() {
               {durationLabel(profile.duration)}
             </p>
 
-            <div className="mt-6">
+            <div className="mt-4 sm:mt-6">
               <div className="mb-2 flex items-center justify-between text-sm">
                 <span className="font-medium">You're {pct}% ready for departure</span>
                 <span className="text-muted-foreground">
@@ -143,7 +145,7 @@ function Dashboard() {
             </div>
           </Card>
 
-          <Card className="flex flex-col justify-between p-6">
+          <Card className="flex flex-col justify-between p-4 sm:p-6">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Your next step
@@ -170,10 +172,12 @@ function Dashboard() {
 
         {personalizedTips.length > 0 && <PersonalizedTips tips={personalizedTips} />}
 
+        {authConfigured && !session && <CloudSyncPrompt />}
+
         {/* Community card */}
         <CommunityCard profile={profile} />
 
-        <Tabs defaultValue="checklist" className="mt-8">
+        <Tabs defaultValue="checklist" className="mt-6 sm:mt-8">
           <TabsList>
             <TabsTrigger value="checklist">Checklist</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
@@ -181,7 +185,7 @@ function Dashboard() {
           </TabsList>
 
           <TabsContent value="checklist" className="mt-6">
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
               <ChecklistColumn
                 title="Before departure"
                 tasks={before}
@@ -216,9 +220,31 @@ function Dashboard() {
   );
 }
 
+function CloudSyncPrompt() {
+  return (
+    <Card className="mt-5 border-primary/20 bg-primary-soft/40 p-4 sm:mt-6 sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold">Save your roadmap</h2>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            You're in guest mode. Create an account to sync your profile and checklist across
+            devices.
+          </p>
+        </div>
+        <Button asChild size="sm" className="shrink-0">
+          <Link to="/auth">Create account</Link>
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
 function PersonalizedTips({ tips }: { tips: Array<{ title: string; desc: string }> }) {
   return (
-    <Card className="mt-6 p-5">
+    <Card className="mt-5 p-4 sm:mt-6 sm:p-5">
       <div className="mb-3 flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-primary" />
         <h2 className="text-sm font-semibold">For your profile</h2>
@@ -230,85 +256,6 @@ function PersonalizedTips({ tips }: { tips: Array<{ title: string; desc: string 
             <p className="mt-1 text-xs text-muted-foreground">{tip.desc}</p>
           </div>
         ))}
-      </div>
-    </Card>
-  );
-}
-
-function CommunityCard({ profile }: { profile: { university: string; startDate: string } }) {
-  const [joined, setJoined] = useState(false);
-  const [email, setEmail] = useState("");
-  const semester = useMemo(() => {
-    const d = new Date(profile.startDate);
-    const m = d.getMonth() + 1;
-    const term = m >= 5 && m <= 11 ? "Fall" : "Spring";
-    return `${term} ${d.getFullYear()}`;
-  }, [profile.startDate]);
-
-  function join(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email) return;
-    setJoined(true);
-    toast.success("You're on the waitlist! We'll email you when the community opens.");
-  }
-
-  return (
-    <Card className="mt-6 overflow-hidden border-primary/20 p-0">
-      <div className="bg-hero-gradient">
-        <div className="grid gap-6 p-6 md:grid-cols-[1.4fr_1fr] md:p-8">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground">
-                <Users className="h-4 w-4" />
-              </span>
-              <h2 className="text-lg font-semibold md:text-xl">Community</h2>
-              <Badge
-                variant="outline"
-                className="border-accent/50 bg-accent/15 text-accent-foreground"
-              >
-                <Rocket className="mr-1 h-3 w-3" /> Coming Soon
-              </Badge>
-            </div>
-            <p className="mt-3 text-base font-semibold">
-              Students going to {profile.university} – {semester}
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              👥 37 students preparing their exchange
-            </p>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Connect with other students going to the same university and semester. Share housing
-              tips, visa advice, funding opportunities and arrival plans.
-            </p>
-          </div>
-          <div className="flex flex-col justify-center">
-            {joined ? (
-              <div className="rounded-lg border bg-card p-4 text-sm">
-                <p className="flex items-center gap-2 font-medium text-success">
-                  <CheckCircle2 className="h-4 w-4" /> You're on the waitlist
-                </p>
-                <p className="mt-1 text-muted-foreground">
-                  We'll email you the moment your cohort opens.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={join} className="space-y-2 rounded-lg border bg-card p-4">
-                <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Get notified
-                </label>
-                <Input
-                  type="email"
-                  required
-                  placeholder="you@university.edu"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                <Button type="submit" className="w-full">
-                  Join Waitlist
-                </Button>
-              </form>
-            )}
-          </div>
-        </div>
       </div>
     </Card>
   );
@@ -519,7 +466,7 @@ function ChecklistColumn({
 }) {
   const completed = tasks.filter((t) => done[t.id]).length;
   return (
-    <Card className="p-6">
+    <Card className="p-4 sm:p-6">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-semibold">{title}</h2>
         <span className="text-xs text-muted-foreground">
@@ -557,7 +504,7 @@ function Timeline({
   const total = tasks.length;
 
   return (
-    <Card className="p-6">
+    <Card className="p-4 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Timeline</h2>
@@ -758,8 +705,8 @@ function durationLabel(d: string) {
   return (
     {
       "one-semester": "One semester",
-      "two-semesters": "Two semesters",
-      "full-year": "Full academic year",
+      "two-semesters": "Two semesters / full academic year",
+      "full-year": "Two semesters / full academic year",
       other: "Custom duration",
     }[d] ?? d
   );

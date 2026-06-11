@@ -14,11 +14,11 @@ import {
 
 const navItems = [
   { label: "Home", to: "/" },
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "Start Planning", to: "/onboarding" },
   { label: "Assistant", to: "/assistant" },
   { label: "Profile", to: "/profile" },
+  { label: "Account", to: "/auth" },
   { label: "About / Sources", to: "/about" },
-  { label: "Start Planning", to: "/onboarding" },
 ] as const;
 
 const resourceItems = [

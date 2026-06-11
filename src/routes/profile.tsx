@@ -43,7 +43,7 @@ function ProfilePage() {
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="sticky top-0 z-50 border-b bg-card/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <Logo />
           <div className="hidden items-center gap-2 md:flex">
             <Button asChild variant="ghost" size="sm">
@@ -52,22 +52,25 @@ function ProfilePage() {
             <Button asChild variant="ghost" size="sm">
               <Link to="/assistant">Assistant</Link>
             </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/auth">Account</Link>
+            </Button>
           </div>
           <MobileNav />
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-8">
+      <main className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-8">
         <div className="mb-6">
           <p className="text-xs font-medium uppercase tracking-wide text-primary">Your profile</p>
-          <h1 className="mt-1 text-2xl font-bold md:text-3xl">Exchange details</h1>
+          <h1 className="mt-1 text-xl font-bold sm:text-2xl md:text-3xl">Exchange details</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Keep this information accurate so your roadmap stays relevant.
           </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
-          <Card className="p-6">
+          <Card className="p-4 sm:p-6">
             <div className="grid gap-4 sm:grid-cols-2">
               <ProfileItem
                 icon={MapPin}
@@ -97,7 +100,7 @@ function ProfilePage() {
             </div>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-4 sm:p-6">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-semibold">Preparation progress</h2>
@@ -145,8 +148,8 @@ function durationLabel(d: string) {
   return (
     {
       "one-semester": "One semester",
-      "two-semesters": "Two semesters",
-      "full-year": "Full academic year",
+      "two-semesters": "Two semesters / full academic year",
+      "full-year": "Two semesters / full academic year",
       other: "Custom duration",
     }[d] ?? d
   );
