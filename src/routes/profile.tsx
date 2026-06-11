@@ -53,6 +53,9 @@ function ProfilePage() {
               <Link to="/assistant">Assistant</Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
+              <Link to="/community">Community</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
               <Link to="/auth">Account</Link>
             </Button>
           </div>

@@ -33,6 +33,7 @@ import {
   HeartPulse,
   Home,
   MapPin,
+  MessageCircle,
   Plane,
   Search,
   Smartphone,
@@ -179,11 +180,18 @@ function ResourcePage() {
       <header className="sticky top-0 z-50 border-b bg-card/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <Logo />
-          <Button asChild variant="ghost" size="sm" className="hidden md:inline-flex">
-            <Link to="/dashboard">
-              <ArrowLeft className="mr-1 h-4 w-4" /> Dashboard
-            </Link>
-          </Button>
+          <div className="hidden items-center gap-2 md:flex">
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/dashboard">
+                <ArrowLeft className="mr-1 h-4 w-4" /> Dashboard
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/community">
+                <MessageCircle className="mr-1 h-4 w-4" /> Community
+              </Link>
+            </Button>
+          </div>
           <MobileNav />
         </div>
       </header>

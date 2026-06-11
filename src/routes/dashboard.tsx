@@ -19,7 +19,6 @@ import {
 } from "@/lib/tasks";
 import { Logo } from "@/components/Logo";
 import { MobileNav } from "@/components/MobileNav";
-import { CommunityCard } from "@/components/CommunityCard";
 import { getUniversityConfig } from "@/lib/universities";
 import {
   ExternalLink,
@@ -33,6 +32,8 @@ import {
   ShieldCheck,
   FileText,
   Sparkles,
+  MessageCircle,
+  Users,
   Home,
   CreditCard,
   Smartphone,
@@ -100,6 +101,11 @@ function Dashboard() {
             <Button asChild variant="ghost" size="sm">
               <Link to="/assistant">
                 <Sparkles className="mr-1 h-3.5 w-3.5" /> AI Assistant
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/community">
+                <MessageCircle className="mr-1 h-3.5 w-3.5" /> Community
               </Link>
             </Button>
             <Button asChild variant="ghost" size="sm">
@@ -174,8 +180,7 @@ function Dashboard() {
 
         {authConfigured && !session && <CloudSyncPrompt />}
 
-        {/* Community card */}
-        <CommunityCard profile={profile} />
+        <CommunityPreviewCard university={profile.university} />
 
         <Tabs defaultValue="checklist" className="mt-6 sm:mt-8">
           <TabsList>
@@ -256,6 +261,31 @@ function PersonalizedTips({ tips }: { tips: Array<{ title: string; desc: string 
             <p className="mt-1 text-xs text-muted-foreground">{tip.desc}</p>
           </div>
         ))}
+      </div>
+    </Card>
+  );
+}
+
+function CommunityPreviewCard({ university }: { university: string }) {
+  return (
+    <Card className="mt-5 border-primary/20 bg-card p-4 sm:mt-6 sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
+            <Users className="h-4 w-4" />
+          </span>
+          <div>
+            <h2 className="text-sm font-semibold">Community groups</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Join your {university} cohort groups for housing, visa, arrival and banking chat.
+            </p>
+          </div>
+        </div>
+        <Button asChild size="sm" className="shrink-0">
+          <Link to="/community">
+            Open community <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </Button>
       </div>
     </Card>
   );

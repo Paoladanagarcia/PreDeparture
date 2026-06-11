@@ -15,6 +15,7 @@ import {
 const navItems = [
   { label: "Home", to: "/" },
   { label: "Start Planning", to: "/onboarding" },
+  { label: "Community", to: "/community" },
   { label: "Assistant", to: "/assistant" },
   { label: "Profile", to: "/profile" },
   { label: "Account", to: "/auth" },

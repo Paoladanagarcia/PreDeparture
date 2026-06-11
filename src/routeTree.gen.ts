@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CommunityRouteImport } from './routes/community'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AssistantRouteImport } from './routes/assistant'
 import { Route as AboutRouteImport } from './routes/about'
@@ -31,6 +32,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommunityRoute = CommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/assistant': typeof AssistantRoute
   '/auth': typeof AuthRoute
+  '/community': typeof CommunityRoute
   '/dashboard': typeof DashboardRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/assistant': typeof AssistantRoute
   '/auth': typeof AuthRoute
+  '/community': typeof CommunityRoute
   '/dashboard': typeof DashboardRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/assistant': typeof AssistantRoute
   '/auth': typeof AuthRoute
+  '/community': typeof CommunityRoute
   '/dashboard': typeof DashboardRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/assistant'
     | '/auth'
+    | '/community'
     | '/dashboard'
     | '/onboarding'
     | '/profile'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/assistant'
     | '/auth'
+    | '/community'
     | '/dashboard'
     | '/onboarding'
     | '/profile'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/assistant'
     | '/auth'
+    | '/community'
     | '/dashboard'
     | '/onboarding'
     | '/profile'
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AssistantRoute: typeof AssistantRoute
   AuthRoute: typeof AuthRoute
+  CommunityRoute: typeof CommunityRoute
   DashboardRoute: typeof DashboardRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
@@ -162,6 +175,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community': {
+      id: '/community'
+      path: '/community'
+      fullPath: '/community'
+      preLoaderRoute: typeof CommunityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/assistant': {
@@ -200,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AssistantRoute: AssistantRoute,
   AuthRoute: AuthRoute,
+  CommunityRoute: CommunityRoute,
   DashboardRoute: DashboardRoute,
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,

@@ -10,6 +10,7 @@ import { askAssistant, type AssistantReply } from "@/lib/assistant";
 import { useProfile } from "@/lib/storage";
 import {
   ArrowLeft,
+  MessageCircle,
   Send,
   ShieldCheck,
   ExternalLink,
@@ -85,14 +86,16 @@ function AssistantPage() {
       <header className="sticky top-0 z-50 border-b bg-card/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <Logo />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hidden md:inline-flex"
-            onClick={() => navigate({ to: "/dashboard" })}
-          >
-            <ArrowLeft className="mr-1 h-4 w-4" /> Dashboard
-          </Button>
+          <div className="hidden items-center gap-2 md:flex">
+            <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/dashboard" })}>
+              <ArrowLeft className="mr-1 h-4 w-4" /> Dashboard
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/community">
+                <MessageCircle className="mr-1 h-4 w-4" /> Community
+              </Link>
+            </Button>
+          </div>
           <MobileNav />
         </div>
       </header>

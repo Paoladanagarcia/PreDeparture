@@ -75,7 +75,6 @@ export function CommunityCard({
 
         setJoinedGroups(groups);
         setMemberCounts(counts);
-        if (groups.length > 0 && !groups.includes(activeGroup)) setActiveGroup(groups[0]);
         setStatus("ready");
       } catch {
         if (cancelled) return;
@@ -87,7 +86,7 @@ export function CommunityCard({
     return () => {
       cancelled = true;
     };
-  }, [activeGroup, cohort.key, configured, session]);
+  }, [cohort.key, configured, session]);
 
   useEffect(() => {
     let cancelled = false;
