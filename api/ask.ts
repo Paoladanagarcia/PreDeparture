@@ -33,23 +33,19 @@ type GeminiResponse = {
     content?: {
       parts?: GeminiPart[];
     };
-    groundingMetadata?: {
-      groundingChunks?: Array<{
-        web?: {
-          title?: string;
-          uri?: string;
-        };
-      }>;
-    };
   }>;
   error?: {
+    code?: number;
+    status?: string;
     message?: string;
   };
 };
 
-const MODEL = "gemini-3.5-flash";
+const MODEL = "gemini-1.5-flash";
 const MAX_QUESTION_LENGTH = 1000;
 const DISCLAIMER = "Always verify critical information through official university or government websites.";
+const QUOTA_ERROR_MESSAGE =
+  "The AI assistant has reached its temporary usage limit. Please try again later.";
 
 const SYSTEM_INSTRUCTION = `
 You are the PreDeparture AI assistant.
@@ -71,8 +67,8 @@ Answer only questions related to:
 
 If the user asks about anything outside this scope, politely redirect them to exchange preparation topics.
 Keep answers short, practical and easy to act on.
-Use Google Search grounding when it can improve the answer.
-Prioritize official university, embassy and government websites. For UC Berkeley use berkeley.edu pages when possible. For Stanford use stanford.edu pages when possible. For visa topics use travel.state.gov, usembassy.gov, fmjfee.com or ceac.state.gov when possible.
+Use your general knowledge to give practical preparation guidance.
+When mentioning facts that can change, tell the user to verify them on official university, embassy or government websites.
 Do not invent exact deadlines, fees, legal requirements or university rules.
 Never claim to replace official university, embassy or government guidance.
 End every answer with this exact sentence:
@@ -129,17 +125,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               parts: [{ text: prompt }],
             },
           ],
-          tools: [
-            {
-              google_search: {},
-            },
-          ],
           generationConfig: {
             maxOutputTokens: 450,
             temperature: 0.25,
-            thinkingConfig: {
-              thinkingLevel: "low",
-            },
           },
         }),
       },
@@ -148,7 +136,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const data = (await response.json().catch(() => ({}))) as GeminiResponse;
 
     if (!response.ok) {
-      console.error("Gemini API error", response.status, data.error?.message);
+      console.error("Gemini API error", {
+        httpStatus: response.status,
+        geminiCode: data.error?.code,
+        geminiStatus: data.error?.status,
+        geminiMessage: data.error?.message,
+      });
+      if (response.status === 429 || data.error?.code === 429 || data.error?.status === "RESOURCE_EXHAUSTED") {
+        return res.status(429).json({
+          error: QUOTA_ERROR_MESSAGE,
+        });
+      }
+
       return res.status(502).json({
         error: "The AI assistant is temporarily unavailable. Please try again in a moment.",
       });
@@ -167,7 +166,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       answer: withDisclaimer(answer),
-      sources: extractGroundedSources(data),
+      sources: [],
     });
   } catch (error) {
     console.error("Assistant route error", error);
@@ -211,33 +210,4 @@ function withDisclaimer(answer: string) {
   }
 
   return `${answer}\n\n${DISCLAIMER}`;
-}
-
-function extractGroundedSources(data: GeminiResponse) {
-  const chunks = data.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-  const seen = new Set<string>();
-
-  return chunks
-    .map((chunk) => chunk.web)
-    .filter((web): web is { title?: string; uri: string } => Boolean(web?.uri))
-    .filter((web) => {
-      if (seen.has(web.uri)) {
-        return false;
-      }
-      seen.add(web.uri);
-      return true;
-    })
-    .slice(0, 5)
-    .map((web) => ({
-      title: web.title || getHostname(web.uri),
-      url: web.uri,
-    }));
-}
-
-function getHostname(uri: string) {
-  try {
-    return new URL(uri).hostname;
-  } catch {
-    return "Official source";
-  }
 }
