@@ -12,7 +12,7 @@ The first supported destinations are UC Berkeley and Stanford University in the 
 - Resource guides for visa, housing, banking, phone plans, arrival, scholarships and insurance
 - Optional user accounts with Supabase authentication
 - Cloud sync for profile and checklist progress when signed in
-- Local fallback assistant with optional external AI endpoint
+- Gemini-powered AI assistant through a secure Vercel serverless API route
 - Profile page with exchange details and progress
 - About / Sources page explaining official-source guidance and deadline limitations
 - Mobile navigation and responsive dashboard layout
@@ -71,15 +71,23 @@ For Netlify:
 - Publish directory: `dist`
 - Add a SPA redirect to send all routes to `index.html` if needed
 
-## Optional Assistant Endpoint
+## Gemini AI Assistant
 
-The assistant works locally with a free fallback knowledge base. If you later add your own API endpoint, set:
+The AI assistant calls the local Vercel serverless route at `/api/ask`. The Gemini key is used only on the server and must not be exposed with a `VITE_` prefix.
+
+For local development, create a `.env.local` file and add:
 
 ```bash
-VITE_AI_ASSISTANT_ENDPOINT=https://your-endpoint.example.com
+GEMINI_API_KEY=your_key_here
 ```
 
-Without this variable, the app keeps using the local fallback assistant.
+For Vercel deployment, add the same variable in:
+
+```text
+Project Settings -> Environment Variables -> GEMINI_API_KEY
+```
+
+The app uses Gemini Flash for short, practical answers about exchange preparation. If `GEMINI_API_KEY` is missing or the Gemini API is unavailable, the assistant shows a friendly error instead of crashing.
 
 ## Optional User Accounts and Cloud Sync
 
