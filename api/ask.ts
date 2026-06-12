@@ -33,6 +33,7 @@ type GeminiResponse = {
     content?: {
       parts?: GeminiPart[];
     };
+    finishReason?: string;
   }>;
   error?: {
     code?: number;
@@ -43,7 +44,6 @@ type GeminiResponse = {
 
 const MODELS = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-2.5-flash"];
 const MAX_QUESTION_LENGTH = 1000;
-const DISCLAIMER = "Always verify critical information through official university or government websites.";
 const QUOTA_ERROR_MESSAGE =
   "The AI assistant has reached its temporary usage limit. Please try again later.";
 
@@ -71,8 +71,7 @@ Use your general knowledge to give practical preparation guidance.
 When mentioning facts that can change, tell the user to verify them on official university, embassy or government websites.
 Do not invent exact deadlines, fees, legal requirements or university rules.
 Never claim to replace official university, embassy or government guidance.
-End every answer with this exact sentence:
-"${DISCLAIMER}"
+Use complete sentences and do not stop mid-sentence.
 `.trim();
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -141,7 +140,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(200).json({
-      answer: withDisclaimer(answer),
+      answer,
       sources: [],
     });
   } catch (error) {
@@ -176,7 +175,7 @@ async function generateWithAvailableModel(apiKey: string, prompt: string) {
             },
           ],
           generationConfig: {
-            maxOutputTokens: 450,
+            maxOutputTokens: 700,
             temperature: 0.25,
           },
         }),
@@ -189,6 +188,9 @@ async function generateWithAvailableModel(apiKey: string, prompt: string) {
     lastModel = model;
 
     if (response.ok || !isModelUnavailable(response, data)) {
+      if (data.candidates?.[0]?.finishReason === "MAX_TOKENS") {
+        console.warn("Gemini response reached max tokens", { model });
+      }
       break;
     }
 
@@ -242,12 +244,4 @@ function extractQuestion(body: RequestBody) {
     .at(-1);
 
   return typeof lastUserMessage?.content === "string" ? lastUserMessage.content.trim() : "";
-}
-
-function withDisclaimer(answer: string) {
-  if (answer.includes(DISCLAIMER)) {
-    return answer;
-  }
-
-  return `${answer}\n\n${DISCLAIMER}`;
 }
