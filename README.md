@@ -87,7 +87,7 @@ For Vercel deployment, add the same variable in:
 Project Settings -> Environment Variables -> GEMINI_API_KEY
 ```
 
-The app uses Gemini Flash for short, practical answers about exchange preparation. If `GEMINI_API_KEY` is missing or the Gemini API is unavailable, the assistant shows a friendly error instead of crashing.
+The app uses Gemini Flash with Google Search grounding for short, practical answers about exchange preparation. It asks Gemini to prioritize official university, embassy and government websites, then displays returned sources in the assistant UI. If `GEMINI_API_KEY` is missing or the Gemini API is unavailable, the assistant shows a friendly error instead of crashing.
 
 ## Optional User Accounts and Cloud Sync
 

@@ -33,6 +33,14 @@ type GeminiResponse = {
     content?: {
       parts?: GeminiPart[];
     };
+    groundingMetadata?: {
+      groundingChunks?: Array<{
+        web?: {
+          title?: string;
+          uri?: string;
+        };
+      }>;
+    };
   }>;
   error?: {
     message?: string;
@@ -63,6 +71,8 @@ Answer only questions related to:
 
 If the user asks about anything outside this scope, politely redirect them to exchange preparation topics.
 Keep answers short, practical and easy to act on.
+Use Google Search grounding when it can improve the answer.
+Prioritize official university, embassy and government websites. For UC Berkeley use berkeley.edu pages when possible. For Stanford use stanford.edu pages when possible. For visa topics use travel.state.gov, usembassy.gov, fmjfee.com or ceac.state.gov when possible.
 Do not invent exact deadlines, fees, legal requirements or university rules.
 Never claim to replace official university, embassy or government guidance.
 End every answer with this exact sentence:
@@ -119,6 +129,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               parts: [{ text: prompt }],
             },
           ],
+          tools: [
+            {
+              google_search: {},
+            },
+          ],
           generationConfig: {
             maxOutputTokens: 450,
             temperature: 0.25,
@@ -152,7 +167,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       answer: withDisclaimer(answer),
-      sources: [],
+      sources: extractGroundedSources(data),
     });
   } catch (error) {
     console.error("Assistant route error", error);
@@ -196,4 +211,33 @@ function withDisclaimer(answer: string) {
   }
 
   return `${answer}\n\n${DISCLAIMER}`;
+}
+
+function extractGroundedSources(data: GeminiResponse) {
+  const chunks = data.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+  const seen = new Set<string>();
+
+  return chunks
+    .map((chunk) => chunk.web)
+    .filter((web): web is { title?: string; uri: string } => Boolean(web?.uri))
+    .filter((web) => {
+      if (seen.has(web.uri)) {
+        return false;
+      }
+      seen.add(web.uri);
+      return true;
+    })
+    .slice(0, 5)
+    .map((web) => ({
+      title: web.title || getHostname(web.uri),
+      url: web.uri,
+    }));
+}
+
+function getHostname(uri: string) {
+  try {
+    return new URL(uri).hostname;
+  } catch {
+    return "Official source";
+  }
 }
