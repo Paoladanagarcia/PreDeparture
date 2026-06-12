@@ -194,7 +194,7 @@ function MessageBubble({ m }: { m: ChatMessage }) {
       </span>
       <div className="max-w-[92%] space-y-3 sm:max-w-[85%]">
         <div className="rounded-2xl rounded-tl-sm border bg-card px-3 py-3 text-sm sm:px-4">
-          <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
+          <p className="whitespace-pre-wrap leading-7">{m.content}</p>
         </div>
         {m.sources && m.sources.length > 0 && (
           <div className="rounded-lg border bg-muted/30 p-3">
