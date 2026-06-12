@@ -15,16 +15,13 @@ import {
 
 const navItems = [
   { label: "Home", to: "/" },
-  { label: "Our story", href: "/#story" },
-  { label: "Assistant", to: "/assistant" },
+  { label: "AI Assistant", to: "/assistant" },
   { label: "Community", to: "/community" },
-  { label: "Resources", to: "/resources" },
   { label: "About / Sources", to: "/about" },
 ] as const;
 
 const resourceItems = [
   { label: "Visa guide", topic: "visa" },
-  { label: "Housing guide", topic: "housing" },
   { label: "Banking guide", topic: "banking" },
   { label: "Phone guide", topic: "phone" },
   { label: "Arrival guide", topic: "arrival" },
@@ -42,14 +39,13 @@ export function MobileNav() {
     : { label: "Profile", to: "/auth" as const };
   const items = [
     navItems[0],
-    navItems[1],
     dashboardItem,
+    navItems[1],
     navItems[2],
-    navItems[3],
-    navItems[4],
     profileItem,
-    navItems[5],
+    navItems[3],
   ];
+  const hasUniversityProfile = Boolean(profile?.university);
 
   return (
     <Sheet>
@@ -66,22 +62,13 @@ export function MobileNav() {
 
         <nav className="mt-6 grid gap-1">
           {items.map((item) => (
-            <SheetClose asChild key={"to" in item ? item.to : item.href}>
-              {"to" in item ? (
-                <Link
-                  to={item.to}
-                  className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-                >
-                  {item.label}
-                </Link>
-              ) : (
-                <a
-                  href={item.href}
-                  className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-                >
-                  {item.label}
-                </a>
-              )}
+            <SheetClose asChild key={item.to}>
+              <Link
+                to={item.to}
+                className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+              >
+                {item.label}
+              </Link>
             </SheetClose>
           ))}
         </nav>
@@ -96,20 +83,69 @@ export function MobileNav() {
             </Link>
           </SheetClose>
           <nav className="mt-2 grid gap-1">
+            {resourceItems.slice(0, 1).map((item) => (
+              <ResourceTopicLink key={item.topic} label={item.label} topic={item.topic} />
+            ))}
+
+            {hasUniversityProfile ? (
+              <ResourceTopicLink label="Housing guide" topic="housing" />
+            ) : (
+              <>
+                <ResourceTopicLink
+                  label="Berkeley housing guide"
+                  topic="housing"
+                  university="UC Berkeley"
+                />
+                <ResourceTopicLink
+                  label="Stanford housing guide"
+                  topic="housing"
+                  university="Stanford University"
+                />
+              </>
+            )}
+
             {resourceItems.map((item) => (
-              <SheetClose asChild key={item.topic}>
-                <Link
-                  to="/resources/$topic"
-                  params={{ topic: item.topic }}
-                  className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  {item.label}
-                </Link>
-              </SheetClose>
+              item.topic === "visa" ? null : (
+                <ResourceTopicLink key={item.topic} label={item.label} topic={item.topic} />
+              )
             ))}
           </nav>
         </div>
+
+        <div className="mt-6 border-t pt-4">
+          <SheetClose asChild>
+            <a
+              href="/#story"
+              className="block rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              Our story
+            </a>
+          </SheetClose>
+        </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+function ResourceTopicLink({
+  label,
+  topic,
+  university,
+}: {
+  label: string;
+  topic: "visa" | "housing" | "banking" | "phone" | "arrival" | "scholarships" | "insurance";
+  university?: "UC Berkeley" | "Stanford University";
+}) {
+  return (
+    <SheetClose asChild>
+      <Link
+        to="/resources/$topic"
+        params={{ topic }}
+        search={university ? { university } : undefined}
+        className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+      >
+        {label}
+      </Link>
+    </SheetClose>
   );
 }
