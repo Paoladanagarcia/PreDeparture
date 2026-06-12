@@ -1,21 +1,19 @@
 # PreDeparture
 
-PreDeparture is a web app that helps international students prepare for an exchange abroad. It turns scattered information about visas, housing, insurance, banking, arrival logistics and funding into a personalized roadmap.
+PreDeparture helps international students prepare for an exchange in the United States. It turns scattered tasks around visas, housing, insurance, banking, funding and arrival logistics into a personalized roadmap.
 
-The first supported destinations are UC Berkeley and Stanford University in the United States.
+The first supported host universities are UC Berkeley and Stanford University.
 
-## Features
+## What It Does
 
-- Personalized onboarding for destination, university, nationality, arrival date and duration
-- Chronological checklist before departure and after arrival
-- Timeline view grouped by preparation phase
-- Resource guides for visa, housing, banking, phone plans, arrival, scholarships and insurance
-- Optional user accounts with Supabase authentication
-- Cloud sync for profile and checklist progress when signed in
-- Gemini-powered AI assistant through a secure Vercel serverless API route
-- Profile page with exchange details and progress
-- About / Sources page explaining official-source guidance and deadline limitations
-- Mobile navigation and responsive dashboard layout
+- Builds a personalized exchange profile from destination, host university, nationality, arrival date and duration
+- Generates a chronological checklist before departure and after arrival
+- Shows a timeline view for early, pre-departure and arrival-week priorities
+- Provides official-source resource guides for visa, housing, insurance, banking, phone setup, funding and arrival
+- Supports guest mode for local browser-only planning
+- Supports Supabase accounts for profile, checklist and community chat sync
+- Includes a Gemini-powered AI assistant through a secure Vercel API route
+- Includes cohort-based community groups for students going to the same university and term
 
 ## Tech Stack
 
@@ -25,7 +23,15 @@ The first supported destinations are UC Berkeley and Stanford University in the 
 - TanStack Router
 - Tailwind CSS
 - shadcn/radix UI components
-- Vercel-ready static deployment
+- Supabase for optional auth, database sync and community chat
+- Vercel serverless API route for the Gemini assistant
+
+## Requirements
+
+- Node.js `20.19+` or `22.12+`
+- npm
+
+The project may fail with Vite errors on older Node versions.
 
 ## Getting Started
 
@@ -35,7 +41,7 @@ Install dependencies:
 npm install
 ```
 
-Run the development server:
+Run locally:
 
 ```bash
 npm run dev
@@ -53,240 +59,102 @@ Preview the production build:
 npm run preview
 ```
 
-The production build is generated in the `dist` folder.
+The production build is generated in `dist`.
+
+## Environment Variables
+
+Create `.env.local` for local development. Use `.env.example` as the template.
+
+```bash
+GEMINI_API_KEY=your_gemini_key_here
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+`GEMINI_API_KEY` is server-side only. Do not prefix it with `VITE_`, and do not expose it in frontend code.
+
+Supabase variables are optional for local guest-only testing. Without them, account sync and community chat will not be available.
+
+## AI Assistant
+
+The frontend calls `/api/ask`. The Vercel serverless route then calls Gemini with `process.env.GEMINI_API_KEY`, so the Gemini key never reaches the browser.
+
+The assistant is scoped to exchange preparation topics such as F-1 visa, DS-160, SEVIS, housing, insurance, banking, phone plans, arrival logistics, scholarships and student community. If Gemini returns a temporary quota error, the app shows a clean usage-limit message instead of exposing backend details.
+
+## Supabase Setup
+
+PreDeparture works without Supabase in guest mode. To enable accounts, cloud checklist sync and community chat:
+
+1. Create a Supabase project.
+2. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to `.env.local` and to your Vercel environment variables.
+3. In Supabase, open `Authentication -> URL Configuration`.
+4. Set the Site URL to your deployed site, for example `https://your-project.vercel.app`.
+5. Add redirect URLs:
+
+```text
+https://your-project.vercel.app/auth
+http://localhost:5173/auth
+```
+
+6. Run [supabase/schema.sql](./supabase/schema.sql) in the Supabase SQL editor.
+7. Enable Realtime for `predeparture_community_messages` if it is not enabled automatically.
+
+The SQL file creates profile, progress, community membership and community message tables with row-level security policies.
 
 ## Deployment
 
-This project is configured as a standard Vite/React single-page app.
+### Vercel
 
-For Vercel:
+Recommended deployment target.
 
 - Build command: `npm run build`
 - Output directory: `dist`
+- Node version: `20.19+` or `22.12+`
+- Add environment variables in `Project Settings -> Environment Variables`
 - SPA rewrites are configured in `vercel.json`
 
-For Netlify:
+Required for the AI assistant:
+
+```text
+GEMINI_API_KEY
+```
+
+Optional for auth and community:
+
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+```
+
+### Netlify
+
+The static app can be deployed to Netlify, but `/api/ask` is currently implemented as a Vercel serverless function. For Netlify, create an equivalent Netlify Function or deploy the app on Vercel for the AI assistant to work without changes.
+
+Static deployment settings:
 
 - Build command: `npm run build`
 - Publish directory: `dist`
-- Add a SPA redirect to send all routes to `index.html` if needed
+- Add a SPA redirect to `index.html`
 
-## Gemini AI Assistant
-
-The AI assistant calls the local Vercel serverless route at `/api/ask`. The Gemini key is used only on the server and must not be exposed with a `VITE_` prefix.
-
-For local development, create a `.env.local` file and add:
+## Useful Commands
 
 ```bash
-GEMINI_API_KEY=your_key_here
+npm run dev
+npm run build
+npm run preview
 ```
 
-For Vercel deployment, add the same variable in:
-
-```text
-Project Settings -> Environment Variables -> GEMINI_API_KEY
-```
-
-The app uses a current Gemini Flash model for short, practical answers about exchange preparation. If one Flash model is unavailable for the API key, the backend tries another compatible Flash model before showing an error. If Gemini returns a temporary quota error, the assistant shows a clear usage-limit message instead of crashing. If `GEMINI_API_KEY` is missing or the Gemini API is unavailable, the assistant shows a friendly error.
-
-## Optional User Accounts and Cloud Sync
-
-PreDeparture works locally without an account. To enable user accounts and database sync, create a Supabase project and set:
+Type-checking:
 
 ```bash
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+./node_modules/.bin/tsc --noEmit
 ```
 
-In Supabase, open **Authentication -> URL Configuration** and set:
+## Project Notes
 
-- **Site URL**: your deployed site URL, for example `https://your-project.vercel.app`
-- **Redirect URLs**: add your deployed auth URL, for example `https://your-project.vercel.app/auth`
-
-For local development, you can also add `http://localhost:5173/auth`.
-
-Then run this SQL in the Supabase SQL editor:
-
-```sql
-create extension if not exists pgcrypto;
-
-create table if not exists public.predeparture_profiles (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  questionnaire jsonb not null,
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists public.predeparture_progress (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  done jsonb not null default '{}'::jsonb,
-  docs jsonb not null default '{}'::jsonb,
-  updated_at timestamptz not null default now()
-);
-
-alter table public.predeparture_profiles enable row level security;
-alter table public.predeparture_progress enable row level security;
-
-drop policy if exists "Users can read their profile"
-on public.predeparture_profiles;
-
-create policy "Users can read their profile"
-on public.predeparture_profiles
-for select
-using (auth.uid() = user_id);
-
-drop policy if exists "Users can insert their profile"
-on public.predeparture_profiles;
-
-create policy "Users can insert their profile"
-on public.predeparture_profiles
-for insert
-with check (auth.uid() = user_id);
-
-drop policy if exists "Users can update their profile"
-on public.predeparture_profiles;
-
-create policy "Users can update their profile"
-on public.predeparture_profiles
-for update
-using (auth.uid() = user_id)
-with check (auth.uid() = user_id);
-
-drop policy if exists "Users can read their progress"
-on public.predeparture_progress;
-
-create policy "Users can read their progress"
-on public.predeparture_progress
-for select
-using (auth.uid() = user_id);
-
-drop policy if exists "Users can insert their progress"
-on public.predeparture_progress;
-
-create policy "Users can insert their progress"
-on public.predeparture_progress
-for insert
-with check (auth.uid() = user_id);
-
-drop policy if exists "Users can update their progress"
-on public.predeparture_progress;
-
-create policy "Users can update their progress"
-on public.predeparture_progress
-for update
-using (auth.uid() = user_id)
-with check (auth.uid() = user_id);
-
-create table if not exists public.predeparture_community_members (
-  user_id uuid not null references auth.users(id) on delete cascade,
-  cohort_key text not null,
-  group_key text not null,
-  display_name text not null default 'Student',
-  joined_at timestamptz not null default now(),
-  primary key (user_id, cohort_key, group_key)
-);
-
-create table if not exists public.predeparture_community_messages (
-  id uuid primary key default gen_random_uuid(),
-  cohort_key text not null,
-  group_key text not null,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  display_name text not null default 'Student',
-  body text not null check (length(trim(body)) > 0 and length(body) <= 2000),
-  created_at timestamptz not null default now()
-);
-
-create index if not exists predeparture_community_members_cohort_idx
-on public.predeparture_community_members (cohort_key, group_key);
-
-create index if not exists predeparture_community_messages_group_idx
-on public.predeparture_community_messages (cohort_key, group_key, created_at);
-
-alter table public.predeparture_community_members enable row level security;
-alter table public.predeparture_community_messages enable row level security;
-
-drop policy if exists "Authenticated users can read community memberships"
-on public.predeparture_community_members;
-
-create policy "Authenticated users can read community memberships"
-on public.predeparture_community_members
-for select
-using (auth.uid() is not null);
-
-drop policy if exists "Users can join community groups"
-on public.predeparture_community_members;
-
-create policy "Users can join community groups"
-on public.predeparture_community_members
-for insert
-with check (auth.uid() = user_id);
-
-drop policy if exists "Users can update their community membership"
-on public.predeparture_community_members;
-
-create policy "Users can update their community membership"
-on public.predeparture_community_members
-for update
-using (auth.uid() = user_id)
-with check (auth.uid() = user_id);
-
-drop policy if exists "Users can leave community groups"
-on public.predeparture_community_members;
-
-create policy "Users can leave community groups"
-on public.predeparture_community_members
-for delete
-using (auth.uid() = user_id);
-
-drop policy if exists "Members can read group messages"
-on public.predeparture_community_messages;
-
-create policy "Members can read group messages"
-on public.predeparture_community_messages
-for select
-using (
-  exists (
-    select 1
-    from public.predeparture_community_members member
-    where member.user_id = auth.uid()
-      and member.cohort_key = predeparture_community_messages.cohort_key
-      and member.group_key = predeparture_community_messages.group_key
-  )
-);
-
-drop policy if exists "Members can post group messages"
-on public.predeparture_community_messages;
-
-create policy "Members can post group messages"
-on public.predeparture_community_messages
-for insert
-with check (
-  auth.uid() = user_id
-  and exists (
-    select 1
-    from public.predeparture_community_members member
-    where member.user_id = auth.uid()
-      and member.cohort_key = predeparture_community_messages.cohort_key
-      and member.group_key = predeparture_community_messages.group_key
-  )
-);
-
-do $$
-begin
-  alter publication supabase_realtime
-  add table public.predeparture_community_messages;
-exception
-  when duplicate_object then null;
-end $$;
-```
-
-When a user signs in, the app loads their saved profile and checklist from Supabase. If no cloud row exists yet, the current local profile/progress is uploaded.
-
-Guest mode is still available: users can start planning without an account, but the roadmap stays in the current browser only. Signing out clears the local roadmap from the browser so another person using the same device does not see the previous account's data.
-
-The Community section uses cohorts based on the user's host university and arrival term, for example "UC Berkeley - Fall 2026" or "Stanford University - Spring 2027". Signed-in users can join focused groups and chat with other students in the same cohort. Guests can preview the community card, but they need an account to join groups or post messages.
-
-## Source and Safety Note
-
-PreDeparture is a preparation tool, not an official university, immigration, legal, medical or financial authority.
-
-Deadlines are planning estimates based on the user's arrival date. Students should verify important requirements directly with official sources such as their host university, their home university, the relevant embassy or government websites before paying fees, booking appointments, signing housing contracts or submitting documents.
+- Guest mode stores the roadmap in the current browser only.
+- Signed-in users sync profile and checklist data to Supabase.
+- Signing out clears local roadmap data so another person using the same device does not see the previous account's data.
+- Community cohorts are based on host university and arrival term, for example `UC Berkeley - Fall 2026`.
+- The app is a preparation tool, not an official university, immigration, legal, medical or financial authority.
+- Deadlines and requirements are planning guidance. Students should verify important details with official university, embassy or government websites before paying fees, booking appointments, signing housing contracts or submitting documents.
