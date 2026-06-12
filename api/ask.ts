@@ -41,7 +41,7 @@ type GeminiResponse = {
   };
 };
 
-const MODEL = "gemini-1.5-flash";
+const MODELS = ["gemini-3.5-flash", "gemini-flash-latest", "gemini-2.5-flash"];
 const MAX_QUESTION_LENGTH = 1000;
 const DISCLAIMER = "Always verify critical information through official university or government websites.";
 const QUOTA_ERROR_MESSAGE =
@@ -108,35 +108,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       typeof body.context?.university === "string" ? body.context.university : "the host university";
     const prompt = `Host university context: ${university}\n\nStudent question: ${question}`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: SYSTEM_INSTRUCTION }],
-          },
-          contents: [
-            {
-              parts: [{ text: prompt }],
-            },
-          ],
-          generationConfig: {
-            maxOutputTokens: 450,
-            temperature: 0.25,
-          },
-        }),
-      },
-    );
-
-    const data = (await response.json().catch(() => ({}))) as GeminiResponse;
+    const { response, data, model } = await generateWithAvailableModel(apiKey, prompt);
 
     if (!response.ok) {
       console.error("Gemini API error", {
+        model,
         httpStatus: response.status,
         geminiCode: data.error?.code,
         geminiStatus: data.error?.status,
@@ -174,6 +150,70 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       error: "The AI assistant is temporarily unavailable. Please try again in a moment.",
     });
   }
+}
+
+async function generateWithAvailableModel(apiKey: string, prompt: string) {
+  let lastResponse: Response | null = null;
+  let lastData: GeminiResponse = {};
+  let lastModel = MODELS[0];
+
+  for (const model of MODELS) {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          system_instruction: {
+            parts: [{ text: SYSTEM_INSTRUCTION }],
+          },
+          contents: [
+            {
+              parts: [{ text: prompt }],
+            },
+          ],
+          generationConfig: {
+            maxOutputTokens: 450,
+            temperature: 0.25,
+          },
+        }),
+      },
+    );
+
+    const data = (await response.json().catch(() => ({}))) as GeminiResponse;
+    lastResponse = response;
+    lastData = data;
+    lastModel = model;
+
+    if (response.ok || !isModelUnavailable(response, data)) {
+      break;
+    }
+
+    console.warn("Gemini model unavailable, trying fallback", {
+      model,
+      httpStatus: response.status,
+      geminiStatus: data.error?.status,
+      geminiMessage: data.error?.message,
+    });
+  }
+
+  return {
+    response: lastResponse as Response,
+    data: lastData,
+    model: lastModel,
+  };
+}
+
+function isModelUnavailable(response: Response, data: GeminiResponse) {
+  return (
+    response.status === 404 ||
+    data.error?.code === 404 ||
+    data.error?.status === "NOT_FOUND" ||
+    Boolean(data.error?.message?.includes("is not found"))
+  );
 }
 
 function normalizeBody(body: unknown): RequestBody {

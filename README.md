@@ -87,7 +87,7 @@ For Vercel deployment, add the same variable in:
 Project Settings -> Environment Variables -> GEMINI_API_KEY
 ```
 
-The app uses Gemini Flash for short, practical answers about exchange preparation. If Gemini returns a temporary quota error, the assistant shows a clear usage-limit message instead of crashing. If `GEMINI_API_KEY` is missing or the Gemini API is unavailable, the assistant shows a friendly error.
+The app uses a current Gemini Flash model for short, practical answers about exchange preparation. If one Flash model is unavailable for the API key, the backend tries another compatible Flash model before showing an error. If Gemini returns a temporary quota error, the assistant shows a clear usage-limit message instead of crashing. If `GEMINI_API_KEY` is missing or the Gemini API is unavailable, the assistant shows a friendly error.
 
 ## Optional User Accounts and Cloud Sync
 
