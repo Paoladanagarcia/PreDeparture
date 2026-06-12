@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { CheckCircle2, Lock, MessageCircle, Send, ShieldCheck, Users } from "lucide-react";
+import { CheckCircle2, Lock, MessageCircle, Send, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -198,7 +198,7 @@ export function CommunityCard({
       <div className="bg-hero-gradient">
         <div className="p-4 sm:p-5 md:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-2xl">
+            <div className="max-w-4xl">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground">
                   <Users className="h-4 w-4" />
@@ -214,14 +214,6 @@ export function CommunityCard({
               </p>
             </div>
 
-            <div className="rounded-lg border bg-card/90 p-3 text-sm lg:w-80">
-              <div className="flex items-start gap-2">
-                <ShieldCheck className="mt-0.5 h-4 w-4 text-primary" />
-                <p className="text-muted-foreground">
-                  {t("community.tips")}
-                </p>
-              </div>
-            </div>
           </div>
 
           {(!session || !profile) && (

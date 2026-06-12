@@ -46,7 +46,7 @@ export type SignUpDetails = {
 
 type ProgressSnapshot = {
   done: Record<string, boolean>;
-  docs: Record<string, boolean>;
+  docs: Record<string, unknown>;
 };
 
 export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -275,7 +275,7 @@ export async function getCloudProgress(session: AuthSession): Promise<ProgressSn
 export async function saveCloudProgress(
   session: AuthSession,
   done: Record<string, boolean>,
-  docs: Record<string, boolean>,
+  docs: Record<string, unknown>,
 ) {
   await restRequest(
     "/rest/v1/predeparture_progress?on_conflict=user_id",

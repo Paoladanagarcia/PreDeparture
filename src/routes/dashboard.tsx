@@ -1,12 +1,23 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { useProfile, useProgress } from "@/lib/storage";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useProfile, useProgress, type CustomChecklistTask } from "@/lib/storage";
+import type { ResourceGuideTopic } from "@/lib/resource-guides";
 import { useAuth } from "@/lib/auth";
 import {
   TASKS,
@@ -15,14 +26,19 @@ import {
   dateMinusDays,
   formatDate,
   type ProfileQuestionnaire,
+  type Priority,
   type Task,
+  type TaskCategory,
 } from "@/lib/tasks";
 import { AppHeader } from "@/components/AppHeader";
 import { translateDuration, useI18n, type Language } from "@/lib/i18n";
-import { getUniversityConfig } from "@/lib/universities";
+import {
+  getUniversityConfig,
+  UNIVERSITY_OPTIONS,
+  type SupportedUniversity,
+} from "@/lib/universities";
 import {
   ExternalLink,
-  CalendarClock,
   ArrowRight,
   RotateCcw,
   CheckCircle2,
@@ -31,7 +47,22 @@ import {
   Info,
   ShieldCheck,
   FileText,
+  EyeOff,
+  Plus,
+  Trash2,
+  Undo2,
 } from "lucide-react";
+
+const TASK_CATEGORIES: TaskCategory[] = [
+  "visa",
+  "housing",
+  "insurance",
+  "banking",
+  "phone",
+  "travel",
+  "university",
+  "scholarship",
+];
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -47,38 +78,60 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
-  const { profile, loaded } = useProfile();
-  const { done, docs, toggle, toggleDoc, reset } = useProgress();
+  const { profile, setProfile } = useProfile();
+  const {
+    done,
+    docs,
+    customTasks,
+    hiddenTaskIds,
+    toggle,
+    toggleDoc,
+    addCustomTask,
+    deleteCustomTask,
+    hideTask,
+    restoreTask,
+    reset,
+  } = useProgress();
   const { configured: authConfigured, session } = useAuth();
-  const navigate = useNavigate();
   const { language, t } = useI18n();
+  const [previewProfile, setPreviewProfile] = useState<ProfileQuestionnaire>(() =>
+    getDefaultDashboardProfile(),
+  );
+  const savedProfile = session ? profile : null;
+  const effectiveProfile = savedProfile ?? previewProfile;
 
-  useEffect(() => {
-    if (loaded && !profile) navigate({ to: "/onboarding" });
-  }, [loaded, profile, navigate]);
+  function updateDashboardProfile(next: ProfileQuestionnaire) {
+    if (savedProfile) {
+      setProfile(next);
+    } else {
+      setPreviewProfile(next);
+    }
+  }
 
   const arrival = useMemo(
-    () => (profile?.startDate ? new Date(profile.startDate) : new Date()),
-    [profile?.startDate],
+    () => (effectiveProfile.startDate ? new Date(effectiveProfile.startDate) : new Date()),
+    [effectiveProfile.startDate],
   );
 
   const personalizedTasks = useMemo(
-    () => (profile ? getPersonalizedTasks(profile) : TASKS),
-    [profile],
+    () => {
+      const hidden = new Set(hiddenTaskIds);
+      return [
+        ...getPersonalizedTasks(effectiveProfile).filter((task) => !hidden.has(task.id)),
+        ...customTasks.map((task) => customTaskToTask(task, arrival)),
+      ];
+    },
+    [arrival, customTasks, effectiveProfile, hiddenTaskIds],
   );
+
+  const hiddenStandardTasks = useMemo(() => {
+    const hidden = new Set(hiddenTaskIds);
+    return getPersonalizedTasks(effectiveProfile).filter((task) => hidden.has(task.id));
+  }, [effectiveProfile, hiddenTaskIds]);
 
   const completed = personalizedTasks.filter((t) => done[t.id]).length;
   const total = personalizedTasks.length;
   const pct = Math.round((completed / total) * 100);
-
-  const nextTask = useMemo(() => {
-    const pending = personalizedTasks
-      .filter((t) => !done[t.id])
-      .sort((a, b) => b.recommendedDaysBefore - a.recommendedDaysBefore);
-    return pending[0];
-  }, [done, personalizedTasks]);
-
-  if (!profile) return null;
 
   const before = sortTasksByRecommendedDate(personalizedTasks.filter((t) => t.phase === "before"));
   const after = sortTasksByRecommendedDate(personalizedTasks.filter((t) => t.phase === "after"));
@@ -94,12 +147,12 @@ function Dashboard() {
               {t("dashboard.headingTo")}
             </p>
             <h1 className="mt-1 text-xl font-bold sm:text-2xl md:text-2xl">
-              {profile.university}, {profile.country}
+              {effectiveProfile.university}, {effectiveProfile.country}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {profile.nationality} {t("dashboard.student")} · {t("dashboard.arriving")}{" "}
+              {effectiveProfile.nationality} {t("dashboard.student")} · {t("dashboard.arriving")}{" "}
               {arrival.toLocaleDateString(undefined, { dateStyle: "long" })} ·{" "}
-              {translateDuration(profile.duration, t)}
+              {translateDuration(effectiveProfile.duration, t)}
             </p>
 
             <div className="mt-4 sm:mt-5">
@@ -115,31 +168,10 @@ function Dashboard() {
             </div>
           </Card>
 
-          <Card className="flex flex-col justify-between p-4 sm:p-5">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {t("dashboard.nextStep")}
-              </p>
-              <p className="mt-2 text-lg font-semibold">
-                {nextTask ? getTaskText(nextTask, language).title : `${t("dashboard.allSet")} 🎉`}
-              </p>
-              {nextTask && (
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {getTaskText(nextTask, language).description}
-                </p>
-              )}
-            </div>
-            {nextTask && (
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <PriorityBadge priority={nextTask.priority} />
-                <CategoryBadge category={nextTask.category} />
-                <Badge variant="outline" className="gap-1">
-                  <CalendarClock className="h-3 w-3" />
-                  {t("common.by")} {formatDate(dateMinusDays(arrival, nextTask.recommendedDaysBefore))}
-                </Badge>
-              </div>
-            )}
-          </Card>
+          <DashboardSettingsCard
+            profile={effectiveProfile}
+            onChange={updateDashboardProfile}
+          />
         </div>
 
         {authConfigured && !session && <CloudSyncPrompt />}
@@ -162,6 +194,14 @@ function Dashboard() {
                 <RotateCcw className="mr-1 h-3.5 w-3.5" /> {t("common.resetChecklist")}
               </Button>
             </div>
+
+            <ChecklistCustomization
+              canSync={Boolean(session)}
+              onAdd={addCustomTask}
+              hiddenTasks={hiddenStandardTasks}
+              onRestore={restoreTask}
+            />
+
             <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
               <ChecklistColumn
                 title={t("dashboard.beforeDeparture")}
@@ -170,6 +210,10 @@ function Dashboard() {
                 docs={docs}
                 toggle={toggle}
                 toggleDoc={toggleDoc}
+                hideTask={hideTask}
+                deleteCustomTask={deleteCustomTask}
+                canCustomize={Boolean(session)}
+                university={effectiveProfile.university}
                 arrival={arrival}
               />
               <ChecklistColumn
@@ -179,6 +223,10 @@ function Dashboard() {
                 docs={docs}
                 toggle={toggle}
                 toggleDoc={toggleDoc}
+                hideTask={hideTask}
+                deleteCustomTask={deleteCustomTask}
+                canCustomize={Boolean(session)}
+                university={effectiveProfile.university}
                 arrival={arrival}
               />
             </div>
@@ -206,12 +254,66 @@ function CloudSyncPrompt() {
             <h2 className="text-xs font-semibold">{t("dashboard.saveRoadmap")}</h2>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            {t("dashboard.guestModeSync")}
+            {t("dashboard.saveRoadmapDesc")}
           </p>
         </div>
         <Button asChild size="sm" className="h-8 shrink-0 px-3 text-xs">
           <Link to="/auth">{t("dashboard.createAccount")}</Link>
         </Button>
+      </div>
+    </Card>
+  );
+}
+
+function DashboardSettingsCard({
+  profile,
+  onChange,
+}: {
+  profile: ProfileQuestionnaire;
+  onChange: (profile: ProfileQuestionnaire) => void;
+}) {
+  const { language, t } = useI18n();
+
+  return (
+    <Card className="p-4 sm:p-5">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {t("dashboard.customize")}
+      </p>
+      <p className="mt-2 text-lg font-semibold">{t("dashboard.customizeTitle")}</p>
+
+      <div className="mt-4 grid gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="dashboard-university" className="text-xs">
+            {t("onboarding.universityLabel")}
+          </Label>
+          <Select
+            value={profile.university}
+            onValueChange={(university) => onChange({ ...profile, university })}
+          >
+            <SelectTrigger id="dashboard-university">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {UNIVERSITY_OPTIONS.map((university) => (
+                <SelectItem key={university} value={university}>
+                  {university}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="dashboard-arrival" className="text-xs">
+            {t("onboarding.arrivalLabel")}
+          </Label>
+          <Input
+            id="dashboard-arrival"
+            type="date"
+            value={profile.startDate}
+            onChange={(event) => onChange({ ...profile, startDate: event.target.value })}
+          />
+        </div>
       </div>
     </Card>
   );
@@ -252,12 +354,212 @@ function CategoryLabel({ category }: { category: Task["category"] }) {
   );
 }
 
+function ChecklistCustomization({
+  canSync,
+  hiddenTasks,
+  onAdd,
+  onRestore,
+}: {
+  canSync: boolean;
+  hiddenTasks: Task[];
+  onAdd: (task: Omit<CustomChecklistTask, "id">) => void;
+  onRestore: (id: string) => void;
+}) {
+  const { language, t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [recommendedDate, setRecommendedDate] = useState("");
+  const [latestDate, setLatestDate] = useState("");
+  const [phase, setPhase] = useState<"before" | "after">("before");
+  const [category, setCategory] = useState<TaskCategory>("university");
+  const [priority, setPriority] = useState<Priority>("medium");
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    const cleanTitle = title.trim();
+    if (!cleanTitle || !recommendedDate) return;
+
+    onAdd({
+      title: cleanTitle,
+      description: description.trim() || t("dashboard.customTaskDefaultDesc"),
+      category,
+      phase,
+      recommendedDate,
+      latestDate: latestDate || recommendedDate,
+      priority,
+    });
+    setTitle("");
+    setDescription("");
+    setRecommendedDate("");
+    setLatestDate("");
+    setPhase("before");
+    setCategory("university");
+    setPriority("medium");
+    setOpen(false);
+  }
+
+  if (!canSync) {
+    return (
+      <Card className="mb-4 border-primary/15 bg-primary-soft/25 p-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground">{t("dashboard.customTasksSignIn")}</p>
+          <Button asChild size="sm" className="h-8 px-3 text-xs">
+            <Link to="/auth">{t("common.signIn")}</Link>
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="mb-4 p-3 sm:p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold">{t("dashboard.customTasksTitle")}</h3>
+          <p className="text-xs text-muted-foreground">{t("dashboard.customTasksDesc")}</p>
+        </div>
+        <Button type="button" size="sm" variant="outline" onClick={() => setOpen((value) => !value)}>
+          <Plus className="mr-1 h-3.5 w-3.5" />
+          {t("dashboard.addTask")}
+        </Button>
+      </div>
+
+      {open && (
+        <form onSubmit={submit} className="mt-4 grid gap-3 border-t pt-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="custom-task-title">{t("dashboard.taskTitle")}</Label>
+              <Input
+                id="custom-task-title"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                maxLength={90}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="custom-task-date">{t("dashboard.recommendedDate")}</Label>
+              <Input
+                id="custom-task-date"
+                type="date"
+                value={recommendedDate}
+                onChange={(event) => setRecommendedDate(event.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="custom-task-description">{t("dashboard.taskDescription")}</Label>
+            <Textarea
+              id="custom-task-description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              maxLength={240}
+              rows={2}
+            />
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-4">
+            <div className="space-y-1.5">
+              <Label>{t("dashboard.phase")}</Label>
+              <Select value={phase} onValueChange={(value) => setPhase(value as "before" | "after")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="before">{t("dashboard.beforeDeparture")}</SelectItem>
+                  <SelectItem value="after">{t("dashboard.afterArrival")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("dashboard.category")}</Label>
+              <Select value={category} onValueChange={(value) => setCategory(value as TaskCategory)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TASK_CATEGORIES.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {getCategoryLabel(item, language)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>{t("dashboard.priority")}</Label>
+              <Select value={priority} onValueChange={(value) => setPriority(value as Priority)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="high">{t("common.highPriority")}</SelectItem>
+                  <SelectItem value="medium">{t("dashboard.mediumPriority")}</SelectItem>
+                  <SelectItem value="low">{t("dashboard.lowPriority")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="custom-task-latest">{t("dashboard.latestDate")}</Label>
+              <Input
+                id="custom-task-latest"
+                type="date"
+                value={latestDate}
+                onChange={(event) => setLatestDate(event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button type="submit" size="sm">
+              {t("dashboard.saveTask")}
+            </Button>
+          </div>
+        </form>
+      )}
+
+      {hiddenTasks.length > 0 && (
+        <div className="mt-4 border-t pt-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t("dashboard.hiddenTasks")}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {hiddenTasks.map((task) => (
+              <Button
+                key={task.id}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => onRestore(task.id)}
+              >
+                <Undo2 className="mr-1 h-3 w-3" />
+                {getTaskText(task, language).title}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 function TaskCard({
   t,
   isDone,
   toggle,
   docs,
   toggleDoc,
+  hideTask,
+  deleteCustomTask,
+  canCustomize,
+  university,
   arrival,
 }: {
   t: Task;
@@ -265,12 +567,25 @@ function TaskCard({
   toggle: (id: string) => void;
   docs: Record<string, boolean>;
   toggleDoc: (taskId: string, docId: string) => void;
+  hideTask: (id: string) => void;
+  deleteCustomTask: (id: string) => void;
+  canCustomize: boolean;
+  university: string;
   arrival: Date;
 }) {
   const { language, t: translate } = useI18n();
   const taskText = getTaskText(t, language);
   const recommended = dateMinusDays(arrival, t.recommendedDaysBefore);
   const latest = dateMinusDays(arrival, t.latestDaysBefore);
+  const isCustom = t.id.startsWith("custom-");
+  const removeLabel = isCustom ? translate("dashboard.deleteTask") : translate("dashboard.hideTask");
+  const RemoveIcon = isCustom ? Trash2 : EyeOff;
+  const guideTopic = getTaskGuideTopic(t);
+  const guideSearch = getGuideSearch(university);
+  const handleRemove = () => {
+    if (isCustom) deleteCustomTask(t.id);
+    else hideTask(t.id);
+  };
 
   if (isDone) {
     return (
@@ -290,9 +605,23 @@ function TaskCard({
               >
                 {taskText.title}
               </label>
-              <Badge variant="outline" className="border-success/40 bg-success/10 text-[10px]">
-                <CheckCircle2 className="mr-1 h-3 w-3" /> {translate("common.done")}
-              </Badge>
+              <div className="flex items-center gap-1">
+                <Badge variant="outline" className="border-success/40 bg-success/10 text-[10px]">
+                  <CheckCircle2 className="mr-1 h-3 w-3" /> {translate("common.done")}
+                </Badge>
+                {canCustomize && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-[10px] text-muted-foreground"
+                    onClick={handleRemove}
+                  >
+                    <RemoveIcon className="mr-1 h-3 w-3" />
+                    {removeLabel}
+                  </Button>
+                )}
+              </div>
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
               <CategoryLabel category={t.category} />
@@ -302,6 +631,16 @@ function TaskCard({
               <span>
                 {translate("common.latestSafe")}: {formatDate(latest)}
               </span>
+              {guideTopic && (
+                <Link
+                  to="/resources/$topic"
+                  params={{ topic: guideTopic }}
+                  search={guideSearch}
+                  className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+                >
+                  {translate("resources.openGuide")} <ArrowRight className="h-3 w-3" />
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -328,7 +667,21 @@ function TaskCard({
             >
               {taskText.title}
             </label>
-            <PriorityBadge priority={t.priority} />
+            <div className="flex items-center gap-1">
+              <PriorityBadge priority={t.priority} />
+              {canCustomize && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-[10px] text-muted-foreground"
+                  onClick={handleRemove}
+                >
+                  <RemoveIcon className="mr-1 h-3 w-3" />
+                  {removeLabel}
+                </Button>
+              )}
+            </div>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">{taskText.description}</p>
 
@@ -368,6 +721,13 @@ function TaskCard({
               >
                 {t.link.label} <ExternalLink className="h-3 w-3" />
               </a>
+            )}
+            {guideTopic && (
+              <Button asChild variant="outline" size="sm" className="h-7 px-2 text-[11px]">
+                <Link to="/resources/$topic" params={{ topic: guideTopic }} search={guideSearch}>
+                  {translate("resources.openGuide")} <ArrowRight className="ml-1 h-3 w-3" />
+                </Link>
+              </Button>
             )}
           </div>
 
@@ -419,6 +779,10 @@ function ChecklistColumn({
   docs,
   toggle,
   toggleDoc,
+  hideTask,
+  deleteCustomTask,
+  canCustomize,
+  university,
   arrival,
 }: {
   title: string;
@@ -427,6 +791,10 @@ function ChecklistColumn({
   docs: Record<string, boolean>;
   toggle: (id: string) => void;
   toggleDoc: (taskId: string, docId: string) => void;
+  hideTask: (id: string) => void;
+  deleteCustomTask: (id: string) => void;
+  canCustomize: boolean;
+  university: string;
   arrival: Date;
 }) {
   const completed = tasks.filter((t) => done[t.id]).length;
@@ -447,6 +815,10 @@ function ChecklistColumn({
             toggle={toggle}
             docs={docs}
             toggleDoc={toggleDoc}
+            hideTask={hideTask}
+            deleteCustomTask={deleteCustomTask}
+            canCustomize={canCustomize}
+            university={university}
             arrival={arrival}
           />
         ))}
@@ -657,6 +1029,57 @@ function getPersonalizedTasks(profile: ProfileQuestionnaire) {
   }
 
   return tasks;
+}
+
+function getDefaultDashboardProfile(): ProfileQuestionnaire {
+  const arrival = new Date();
+  arrival.setMonth(arrival.getMonth() + 3);
+
+  return {
+    country: "United States",
+    university: "UC Berkeley",
+    nationality: "International",
+    startDate: arrival.toISOString().slice(0, 10),
+    duration: "one-semester",
+  };
+}
+
+function customTaskToTask(task: CustomChecklistTask, arrival: Date): Task {
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    category: task.category,
+    phase: task.phase,
+    recommendedDaysBefore: daysBefore(arrival, task.recommendedDate),
+    latestDaysBefore: daysBefore(arrival, task.latestDate || task.recommendedDate),
+    priority: task.priority,
+    effort: "Custom",
+  };
+}
+
+function getTaskGuideTopic(task: Task): ResourceGuideTopic | null {
+  if (task.category === "visa") return "visa";
+  if (task.category === "housing") return "housing";
+  if (task.category === "insurance") return "insurance";
+  if (task.category === "banking") return "banking";
+  if (task.category === "phone") return "phone";
+  if (task.category === "scholarship") return "scholarships";
+  if (task.category === "travel" || task.category === "university") return "arrival";
+  return null;
+}
+
+function getGuideSearch(university: string): { university?: SupportedUniversity } {
+  return UNIVERSITY_OPTIONS.includes(university as SupportedUniversity)
+    ? { university: university as SupportedUniversity }
+    : {};
+}
+
+function daysBefore(arrival: Date, isoDate: string) {
+  const target = new Date(`${isoDate}T00:00:00`);
+  if (Number.isNaN(target.getTime())) return 0;
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Math.round((arrival.getTime() - target.getTime()) / msPerDay);
 }
 
 function personalizeTaskForUniversity(

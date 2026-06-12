@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import { translateDuration, useI18n } from "@/lib/i18n";
 import { DURATION_OPTIONS, NATIONALITY_OPTIONS } from "@/lib/profile-options";
-import { clearLocalRoadmap, hasLocalRoadmap, useProfile } from "@/lib/storage";
+import { clearLocalRoadmap, useProfile } from "@/lib/storage";
 import type { ProfileQuestionnaire } from "@/lib/tasks";
 import { UNIVERSITY_OPTIONS } from "@/lib/universities";
 
@@ -66,7 +66,6 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [localRoadmap, setLocalRoadmap] = useState(() => hasLocalRoadmap());
 
   async function submit() {
     setError(null);
@@ -88,7 +87,6 @@ function AuthPage() {
         await signUp(email, password, { firstName, lastName });
         if (isCompleteProfile(exchangeProfile)) {
           setProfile(exchangeProfile);
-          setLocalRoadmap(true);
         }
         setMessage(t("auth.accountCreated"));
       }
@@ -102,14 +100,7 @@ function AuthPage() {
   async function logout() {
     await signOut();
     clearLocalRoadmap();
-    setLocalRoadmap(false);
     navigate({ to: "/" });
-  }
-
-  function clearGuestRoadmap() {
-    clearLocalRoadmap();
-    setLocalRoadmap(false);
-    setMessage(t("auth.guestCleared"));
   }
 
   return (
@@ -272,28 +263,6 @@ function AuthPage() {
                     ? t("auth.sendReset")
                     : t("auth.createAccount")}
             </Button>
-            <Button asChild variant="ghost" className="mt-2 w-full">
-              <Link to="/onboarding" search={{ mode: "guest" }}>
-                {t("auth.continueGuest")}
-              </Link>
-            </Button>
-          </Card>
-        )}
-
-        {!session && localRoadmap && (
-          <Card className="mt-4 max-w-xl p-4">
-            <p className="text-sm font-medium">{t("auth.guestFound")}</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t("auth.guestFoundDesc")}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button asChild size="sm">
-                <Link to="/dashboard">{t("auth.continueGuestRoadmap")}</Link>
-              </Button>
-              <Button variant="outline" size="sm" onClick={clearGuestRoadmap}>
-                {t("auth.clearGuestRoadmap")}
-              </Button>
-            </div>
           </Card>
         )}
       </main>

@@ -3,6 +3,7 @@ import { Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { useProfile } from "@/lib/storage";
 import {
@@ -16,7 +17,6 @@ import {
 } from "@/components/ui/sheet";
 
 const navItems = [
-  { labelKey: "nav.home", to: "/" },
   { labelKey: "nav.aiAssistant", to: "/assistant" },
   { labelKey: "nav.community", to: "/community" },
 ] as const;
@@ -32,18 +32,16 @@ const resourceItems = [
 
 export function MobileNav() {
   const { profile } = useProfile();
+  const { session } = useAuth();
   const { t } = useI18n();
-  const dashboardItem = profile
-    ? { labelKey: "nav.dashboard" as const, to: "/dashboard" as const }
-    : { labelKey: "nav.dashboard" as const, to: "/onboarding" as const };
-  const profileItem = profile
-    ? { labelKey: "nav.profile" as const, to: "/profile" as const }
-    : { labelKey: "nav.profile" as const, to: "/auth" as const };
+  const dashboardItem = { label: t("nav.dashboard"), to: "/dashboard" as const };
+  const profileItem = session
+    ? { label: getProfileLabel(session.user.user_metadata, true, t), to: "/profile" as const }
+    : { label: getProfileLabel(undefined, false, t), to: "/auth" as const };
   const items = [
-    navItems[0],
     dashboardItem,
-    navItems[1],
-    navItems[2],
+    { label: t(navItems[0].labelKey), to: navItems[0].to },
+    { label: t(navItems[1].labelKey), to: navItems[1].to },
     profileItem,
   ];
   const hasUniversityProfile = Boolean(profile?.university);
@@ -72,7 +70,7 @@ export function MobileNav() {
                 to={item.to}
                 className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
               >
-                {t(item.labelKey)}
+                {item.label}
               </Link>
             </SheetClose>
           ))}
@@ -119,25 +117,31 @@ export function MobileNav() {
 
         <div className="mt-6 border-t pt-4">
           <SheetClose asChild>
-            <a
-              href="/#story"
-              className="block rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
-            >
-              {t("nav.ourStory")}
-            </a>
-          </SheetClose>
-          <SheetClose asChild>
             <Link
               to="/about"
               className="block rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
             >
-              {t("nav.aboutSources")}
+              {t("nav.sources")}
             </Link>
           </SheetClose>
         </div>
       </SheetContent>
     </Sheet>
   );
+}
+
+function getProfileLabel(
+  metadata: { first_name?: string; last_name?: string; full_name?: string } | undefined,
+  hasProfile: boolean,
+  t: (key: "nav.profile" | "nav.identify") => string,
+) {
+  const fullName = metadata?.full_name?.trim();
+  const firstLast = [metadata?.first_name, metadata?.last_name].filter(Boolean).join(" ").trim();
+
+  if (fullName) return fullName;
+  if (firstLast) return firstLast;
+  if (hasProfile) return t("nav.profile");
+  return t("nav.identify");
 }
 
 function ResourceTopicLink({

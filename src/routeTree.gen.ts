@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as LegalRouteImport } from './routes/legal'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CommunityRouteImport } from './routes/community'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -33,6 +34,11 @@ const ProfileRoute = ProfileRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalRoute = LegalRouteImport.update({
+  id: '/legal',
+  path: '/legal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/community': typeof CommunityRoute
   '/dashboard': typeof DashboardRoute
+  '/legal': typeof LegalRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/resources': typeof ResourcesRouteWithChildren
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/community': typeof CommunityRoute
   '/dashboard': typeof DashboardRoute
+  '/legal': typeof LegalRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/resources': typeof ResourcesRouteWithChildren
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/community': typeof CommunityRoute
   '/dashboard': typeof DashboardRoute
+  '/legal': typeof LegalRoute
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/resources': typeof ResourcesRouteWithChildren
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/community'
     | '/dashboard'
+    | '/legal'
     | '/onboarding'
     | '/profile'
     | '/resources'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/community'
     | '/dashboard'
+    | '/legal'
     | '/onboarding'
     | '/profile'
     | '/resources'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/community'
     | '/dashboard'
+    | '/legal'
     | '/onboarding'
     | '/profile'
     | '/resources'
@@ -154,6 +166,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CommunityRoute: typeof CommunityRoute
   DashboardRoute: typeof DashboardRoute
+  LegalRoute: typeof LegalRoute
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
   ResourcesRoute: typeof ResourcesRouteWithChildren
@@ -180,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal': {
+      id: '/legal'
+      path: '/legal'
+      fullPath: '/legal'
+      preLoaderRoute: typeof LegalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -253,6 +273,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CommunityRoute: CommunityRoute,
   DashboardRoute: DashboardRoute,
+  LegalRoute: LegalRoute,
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,
   ResourcesRoute: ResourcesRouteWithChildren,

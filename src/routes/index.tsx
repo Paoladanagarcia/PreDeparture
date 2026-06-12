@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PublicHeader } from "@/components/PublicHeader";
@@ -7,12 +8,14 @@ import { useI18n } from "@/lib/i18n";
 import {
   CheckCircle2,
   Clock,
+  FileText,
   Library,
   ListChecks,
   ShieldCheck,
   Users,
   Sparkles,
   Map,
+  Plane,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -98,47 +101,7 @@ function Landing() {
             <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {t("landing.preview")}
             </p>
-            <Card className="overflow-hidden border-border/60 p-0 text-left shadow-soft">
-              <div className="grid grid-cols-1 gap-0 md:grid-cols-[1.2fr_1fr]">
-                <div className="border-b p-4 sm:p-6 md:border-b-0 md:border-r">
-                  <div className="mb-4 flex items-center justify-between">
-                    <p className="text-sm font-medium">{t("landing.readiness")}</p>
-                    <span className="text-sm font-semibold text-primary">45%</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-muted">
-                    <div className="h-2 w-[45%] rounded-full bg-primary" />
-                  </div>
-                  <ul className="mt-6 space-y-3 text-sm">
-                    {[
-                      { t: t("task.sevis"), done: true },
-                      { t: t("task.ds160"), done: true },
-                      { t: t("task.interview"), done: false },
-                      { t: t("task.housing"), done: false },
-                    ].map((i) => (
-                      <li key={i.t} className="flex items-center gap-3">
-                        <CheckCircle2
-                          className={`h-4 w-4 ${i.done ? "text-success" : "text-muted-foreground/40"}`}
-                        />
-                        <span className={i.done ? "text-muted-foreground line-through" : ""}>
-                          {i.t}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="bg-muted/40 p-4 sm:p-6">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    {t("landing.nextDeadline")}
-                  </p>
-                  <p className="mt-2 text-lg font-semibold">{t("landing.scheduleInterview")}</p>
-                  <p className="text-sm text-muted-foreground">{t("landing.beforeJune15")}</p>
-                  <div className="mt-6 rounded-lg border bg-card p-4 text-sm">
-                    <p className="font-medium">{t("landing.headsUp")}</p>
-                    <p className="mt-1 text-muted-foreground">{t("landing.waitTimes")}</p>
-                  </div>
-                </div>
-              </div>
-            </Card>
+            <AnimatedDashboardPreview />
           </div>
         </div>
       </section>
@@ -204,7 +167,7 @@ function Landing() {
           </div>
           <div className="mt-8 text-center sm:mt-12">
             <Button asChild size="lg" className="h-10 px-5 text-sm sm:h-11 sm:px-6">
-              <PlanningLink startLabel={t("common.startPlanningFree")} />
+              <PlanningLink dashboardLabel={t("common.startPlanningFree")} />
             </Button>
           </div>
         </div>
@@ -221,6 +184,15 @@ function Landing() {
           <p className="mt-4 text-base leading-relaxed text-muted-foreground">
             {t("landing.storyBody")}
           </p>
+          <p className="mt-4 text-sm text-muted-foreground">
+            {t("landing.storyContact")}{" "}
+            <a
+              href="mailto:pao.dana.garcia@gmail.com"
+              className="font-medium text-primary hover:underline"
+            >
+              pao.dana.garcia@gmail.com
+            </a>
+          </p>
         </Card>
       </section>
 
@@ -231,10 +203,110 @@ function Landing() {
             <Link to="/about" className="hover:text-foreground">
               {t("nav.aboutSources")}
             </Link>
+            <Link to="/legal" className="hover:text-foreground">
+              {t("nav.privacyLegal")}
+            </Link>
             <p>{t("landing.footerCare")}</p>
           </div>
         </div>
       </footer>
     </div>
+  );
+}
+
+function AnimatedDashboardPreview() {
+  const { t } = useI18n();
+  const previewTasks = [
+    { label: t("task.sevis"), state: "done", delay: "0s" },
+    { label: t("task.ds160"), state: "done", delay: "0.6s" },
+    { label: t("task.interview"), state: "active", delay: "1.2s" },
+    { label: t("task.housing"), state: "todo", delay: "1.8s" },
+  ];
+
+  return (
+    <Card className="dashboard-preview relative overflow-hidden border-border/60 bg-card p-0 text-left shadow-soft">
+      <div className="dashboard-preview__glow" />
+      <div className="relative grid grid-cols-1 gap-0 md:grid-cols-[1.15fr_0.85fr]">
+        <div className="border-b p-4 sm:p-6 md:border-b-0 md:border-r">
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-sm font-medium">{t("landing.readiness")}</p>
+            <span className="dashboard-preview__percent text-sm font-semibold text-primary">
+              45%
+            </span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div className="dashboard-preview__progress h-2 rounded-full bg-primary" />
+          </div>
+
+          <ul className="mt-6 space-y-3 text-sm">
+            {previewTasks.map((item) => (
+              <li
+                key={item.label}
+                className={`dashboard-preview__task dashboard-preview__task--${item.state} flex items-center gap-3 rounded-md px-2 py-1.5`}
+                style={{ animationDelay: item.delay }}
+              >
+                <span className="dashboard-preview__check grid h-5 w-5 shrink-0 place-items-center rounded-full border">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                </span>
+                <span className={item.state === "done" ? "text-muted-foreground line-through" : ""}>
+                  {item.label}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-5 grid grid-cols-3 gap-2 text-xs">
+            {[
+              { icon: FileText, label: "DS-160" },
+              { icon: Plane, label: "Arrival" },
+              { icon: Library, label: t("nav.resources") },
+            ].map((item, index) => (
+              <div
+                key={item.label}
+                className="dashboard-preview__mini rounded-lg border bg-muted/30 p-2"
+                style={{ animationDelay: `${0.4 + index * 0.35}s` }}
+              >
+                <item.icon className="mb-1 h-3.5 w-3.5 text-primary" />
+                <p className="truncate font-medium">{item.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative bg-muted/35 p-4 sm:p-6">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t("landing.nextDeadline")}
+          </p>
+          <p className="mt-2 text-lg font-semibold">{t("landing.scheduleInterview")}</p>
+          <p className="text-sm text-muted-foreground">{t("landing.beforeJune15")}</p>
+
+          <div className="dashboard-preview__floating mt-6 rounded-lg border bg-card p-4 text-sm shadow-soft">
+            <p className="font-medium">{t("landing.headsUp")}</p>
+            <p className="mt-1 text-muted-foreground">{t("landing.waitTimes")}</p>
+          </div>
+
+          <div className="mt-5 space-y-2">
+            {[
+              { label: "Visa", width: "78%" },
+              { label: "Housing", width: "42%" },
+              { label: "Arrival", width: "64%" },
+            ].map((item, index) => (
+              <div key={item.label} className="dashboard-preview__row" style={{ animationDelay: `${index * 0.4}s` }}>
+                <div className="mb-1 flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span>{item.label}</span>
+                  <span>{index + 2} steps</span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-background">
+                  <div
+                    className="dashboard-preview__row-bar h-full rounded-full bg-primary/70"
+                    style={{ "--target-width": item.width } as CSSProperties}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }

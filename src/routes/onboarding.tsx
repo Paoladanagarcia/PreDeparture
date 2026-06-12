@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,17 +12,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useProfile } from "@/lib/storage";
-import { useAuth } from "@/lib/auth";
 import type { ProfileQuestionnaire } from "@/lib/tasks";
 import { UNIVERSITY_OPTIONS } from "@/lib/universities";
 import { DURATION_OPTIONS, NATIONALITY_OPTIONS } from "@/lib/profile-options";
 import { AppHeader } from "@/components/AppHeader";
 import { translateDuration, useI18n } from "@/lib/i18n";
-import { ArrowLeft, ArrowRight, Cloud, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/onboarding")({
-  validateSearch: (search: Record<string, unknown>): { mode?: "edit" | "guest" } =>
-    search.mode === "edit" || search.mode === "guest"
+  validateSearch: (search: Record<string, unknown>): { mode?: "edit" } =>
+    search.mode === "edit"
       ? { mode: search.mode }
       : {},
   head: () => ({
@@ -49,17 +48,15 @@ type OnboardingForm = {
 function Onboarding() {
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const { setProfile } = useProfile();
-  const { session } = useAuth();
+  const { profile, setProfile } = useProfile();
   const { t } = useI18n();
-  const [choiceMade, setChoiceMade] = useState(Boolean(search.mode));
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<OnboardingForm>({
-    country: "",
-    university: "",
-    nationality: "",
-    startDate: "",
-    duration: "",
+    country: profile?.country ?? "",
+    university: profile?.university ?? "",
+    nationality: profile?.nationality ?? "",
+    startDate: profile?.startDate ?? "",
+    duration: profile?.duration ?? "",
   });
 
   const next = () => {
@@ -73,14 +70,17 @@ function Onboarding() {
   const back = () =>
     step > 0
       ? setStep(step - 1)
-      : choiceMade
-        ? search.mode === "edit"
-          ? navigate({ to: "/dashboard" })
-          : setChoiceMade(false)
+      : search.mode === "edit"
+        ? navigate({ to: "/dashboard" })
         : navigate({ to: "/" });
-  const displayStep = choiceMade ? step + 1 : 0;
-  const totalSteps = steps.length + 1;
+  const displayStep = step;
+  const totalSteps = steps.length;
   const canContinue = isStepComplete(step, form);
+
+  useEffect(() => {
+    if (search.mode !== "edit" || !profile) return;
+    setForm(profile);
+  }, [profile, search.mode]);
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -97,14 +97,7 @@ function Onboarding() {
           />
         </div>
 
-        {!choiceMade ? (
-          <StartModeChoice
-            onGuest={() => setChoiceMade(true)}
-            onAccount={() => (session ? setChoiceMade(true) : navigate({ to: "/auth" }))}
-            onBack={() => navigate({ to: "/" })}
-          />
-        ) : (
-          <Card className="p-5 sm:p-5">
+        <Card className="p-5 sm:p-5">
             <h1 className="text-xl font-bold sm:text-2xl">{stepTitle(step, t)}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{stepSub(step, t)}</p>
 
@@ -218,62 +211,9 @@ function Onboarding() {
                 <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
             </div>
-          </Card>
-        )}
+        </Card>
       </main>
     </div>
-  );
-}
-
-function StartModeChoice({
-  onGuest,
-  onAccount,
-  onBack,
-}: {
-  onGuest: () => void;
-  onAccount: () => void;
-  onBack: () => void;
-}) {
-  const { t } = useI18n();
-  return (
-    <Card className="p-5 sm:p-5">
-      <h1 className="text-xl font-bold sm:text-2xl">{t("onboarding.startTitle")}</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {t("onboarding.startDesc")}
-      </p>
-
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <button
-          type="button"
-          onClick={onAccount}
-          className="rounded-lg border bg-card p-4 text-left transition-colors hover:bg-muted/40"
-        >
-          <Cloud className="h-5 w-5 text-primary" />
-          <p className="mt-3 text-sm font-semibold">{t("onboarding.accountTitle")}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t("onboarding.accountDesc")}
-          </p>
-        </button>
-
-        <button
-          type="button"
-          onClick={onGuest}
-          className="rounded-lg border bg-card p-4 text-left transition-colors hover:bg-muted/40"
-        >
-          <UserRound className="h-5 w-5 text-primary" />
-          <p className="mt-3 text-sm font-semibold">{t("onboarding.guestTitle")}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t("onboarding.guestDesc")}
-          </p>
-        </button>
-      </div>
-
-      <div className="mt-5">
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft className="mr-1 h-4 w-4" /> {t("onboarding.back")}
-        </Button>
-      </div>
-    </Card>
   );
 }
 
@@ -302,5 +242,3 @@ function isCompleteForm(form: OnboardingForm): form is ProfileQuestionnaire {
     form.country && form.university && form.nationality && form.startDate && form.duration,
   );
 }
-
-void Link;

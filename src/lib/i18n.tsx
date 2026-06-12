@@ -18,9 +18,10 @@ const translations = {
     "nav.community": "Community",
     "nav.resources": "Resources",
     "nav.profile": "Profile",
-    "nav.ourStory": "Our story",
-    "nav.sources": "Sources",
+    "nav.identify": "Sign in",
+    "nav.sources": "About",
     "nav.aboutSources": "About / Sources",
+    "nav.privacyLegal": "Privacy / Legal",
     "nav.openMenu": "Open menu",
     "nav.mobileDescription": "Navigate your exchange preparation.",
     "resources.visaGuide": "Visa guide",
@@ -44,6 +45,7 @@ const translations = {
     "common.editProfile": "Edit profile",
     "common.signIn": "Sign in",
     "common.logOut": "Log out",
+    "common.cancel": "Cancel",
     "common.resetProgress": "Reset progress",
     "common.resetChecklist": "Reset checklist",
     "common.officialSources": "Official sources",
@@ -100,6 +102,7 @@ const translations = {
     "landing.storyTitle": "Built from a real student experience",
     "landing.storyBody":
       "PreDeparture was inspired by the challenges of preparing for an international exchange. Information was spread across university websites, embassy pages, PDFs, emails and student groups. The goal is to centralize everything into one personalized roadmap that helps students know what to do, when to do it and what documents they need.",
+    "landing.storyContact": "Questions or feedback? Contact:",
     "landing.footerCare": "Made for students, with care.",
     "task.sevis": "Pay the SEVIS fee",
     "task.ds160": "Complete DS-160",
@@ -135,13 +138,42 @@ const translations = {
     "about.cardVerifyDesc":
       "Before paying fees, booking appointments, signing housing or submitting forms, verify details directly with your host university, your home university or the relevant embassy.",
     "about.sourcesTitle": "Main source categories",
+    "about.contactTitle": "Contact",
+    "about.contactDesc": "For questions, feedback or source corrections, you can write here.",
+    "about.sourceUniversityTitle": "University sources",
+    "about.sourceUniversityDesc":
+      "Campus-specific topics such as international student guidance, housing, health insurance, student portals and arrival logistics.",
+    "about.sourceVisaTitle": "Government and visa sources",
+    "about.sourceVisaDesc":
+      "Visa-related guidance points students toward official US government systems and embassy information whenever possible.",
+    "about.sourceSetupTitle": "Funding and local setup",
+    "about.sourceSetupDesc":
+      "Funding, banking, phone and local transport resources are curated as starting points, not financial advice.",
     "about.noteTitle": "Important note",
     "about.noteBody":
       "PreDeparture is a preparation tool, not an official university, immigration, legal, medical or financial authority. It is designed to help you stay organized, ask better questions and find the right official pages faster.",
+    "about.legalTitle": "Privacy and legal basics",
+    "about.legalDesc":
+      "A simple summary of personal data, cookies and AI use for the public version of the app.",
+    "about.legalLink": "Open privacy page",
+    "legal.badge": "Privacy basics",
+    "legal.title": "Privacy and legal information",
+    "legal.intro":
+      "This page explains, in simple terms, what PreDeparture may store and what users should know before using the public app.",
+    "legal.dataTitle": "Personal data",
+    "legal.dataDesc":
+      "If you create an account, PreDeparture may store your email, name, exchange profile, checklist progress and community messages through Supabase. This data is used to provide the app features and sync your roadmap across devices.",
+    "legal.cookiesTitle": "Cookies and local storage",
+    "legal.cookiesDesc":
+      "PreDeparture uses local browser storage for preferences such as language and may rely on authentication storage to keep users signed in. If analytics or marketing tools are added later, the cookie policy should be updated before launch.",
+    "legal.aiTitle": "AI assistant",
+    "legal.aiDesc":
+      "Questions sent to the AI assistant are processed through a secure server-side endpoint and may be sent to the Gemini API to generate an answer. Do not submit sensitive personal information in AI questions.",
+    "legal.contactTitle": "Contact and data requests",
+    "legal.contactDesc": "For privacy questions or data deletion requests, contact:",
     "profile.eyebrow": "Your profile",
     "profile.title": "Exchange details",
     "profile.description": "Keep this information accurate so your roadmap stays relevant.",
-    "profile.guest": "Guest profile saved in this browser",
     "profile.signedInAs": "Signed in as",
     "profile.destination": "Destination",
     "profile.nationality": "Nationality",
@@ -156,15 +188,35 @@ const translations = {
     "dashboard.done": "done",
     "dashboard.nextStep": "Your next step",
     "dashboard.allSet": "You're all set!",
+    "dashboard.customize": "Preview settings",
+    "dashboard.customizeTitle": "Adjust this roadmap",
     "dashboard.checklist": "Checklist",
     "dashboard.timeline": "Timeline",
     "dashboard.trackDone": "Track what is done before and after arrival.",
     "dashboard.beforeDeparture": "Before departure",
     "dashboard.afterArrival": "After arrival",
     "dashboard.saveRoadmap": "Save your roadmap",
-    "dashboard.guestModeSync":
-      "You're in guest mode. Create an account to sync your profile and checklist across devices.",
+    "dashboard.saveRoadmapDesc":
+      "Create an account to save your profile and checklist across devices.",
     "dashboard.createAccount": "Create account",
+    "dashboard.customTasksTitle": "Personalize your checklist",
+    "dashboard.customTasksDesc": "Add your own tasks or hide items that do not apply to you.",
+    "dashboard.customTasksSignIn": "Sign in to add personal tasks and save checklist changes.",
+    "dashboard.addTask": "Add personal task",
+    "dashboard.saveTask": "Save task",
+    "dashboard.taskTitle": "Task title",
+    "dashboard.taskDescription": "Description",
+    "dashboard.recommendedDate": "Recommended date",
+    "dashboard.latestDate": "Latest safe date",
+    "dashboard.phase": "Section",
+    "dashboard.category": "Category",
+    "dashboard.priority": "Priority",
+    "dashboard.mediumPriority": "Medium priority",
+    "dashboard.lowPriority": "Low priority",
+    "dashboard.hideTask": "Hide",
+    "dashboard.deleteTask": "Delete",
+    "dashboard.hiddenTasks": "Hidden tasks",
+    "dashboard.customTaskDefaultDesc": "Personal task added to your exchange checklist.",
     "timeline.description":
       "Your preparation path from early planning to the first month after arrival.",
     "timeline.note":
@@ -177,8 +229,6 @@ const translations = {
     "community.previewLabel": "Available community groups",
     "community.cardDesc":
       "Join focused groups for housing, visa, arrival and money questions with students in your same cohort.",
-    "community.tips":
-      "Community tips are student-to-student. Always verify deadlines, visa rules and payments with official sources.",
     "community.signInToJoin": "Sign in to join groups",
     "community.createProfile": "Create your exchange profile",
     "community.previewOnly":
@@ -231,13 +281,10 @@ const translations = {
     "onboarding.continue": "Continue",
     "onboarding.generate": "Generate my roadmap",
     "onboarding.startTitle": "How do you want to start?",
-    "onboarding.startDesc":
-      "You can create an account to sync your roadmap, or continue as a guest and keep everything only in this browser.",
+    "onboarding.startDesc": "Create an account to save your roadmap across devices.",
     "onboarding.accountTitle": "Create or sign in",
     "onboarding.accountDesc":
       "Save your profile and checklist online, then access them across devices.",
-    "onboarding.guestTitle": "Continue as guest",
-    "onboarding.guestDesc": "Try PreDeparture now. Your roadmap stays locally in this browser.",
     "onboarding.title0": "Where are you going?",
     "onboarding.title1": "Which university?",
     "onboarding.title2": "Tell us about you",
@@ -249,7 +296,7 @@ const translations = {
     "auth.badge": "Cloud sync",
     "auth.title": "Your account",
     "auth.description":
-      "Create an account to save your profile and checklist in the database. Without an account, guest mode keeps your roadmap only in this browser.",
+      "Sign in to save your roadmap across devices.",
     "auth.supabaseTitle": "Supabase is not configured yet",
     "auth.supabaseDesc":
       "Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment variables to enable sign in and cloud sync.",
@@ -267,12 +314,6 @@ const translations = {
     "auth.forgotPassword": "Forgot password?",
     "auth.resetHelp": "We'll send a secure link to choose a new password.",
     "auth.sendReset": "Send reset link",
-    "auth.continueGuest": "Continue as guest",
-    "auth.guestFound": "Guest roadmap found",
-    "auth.guestFoundDesc":
-      "This browser still has a local guest roadmap. You can continue it or clear it before starting fresh.",
-    "auth.continueGuestRoadmap": "Continue guest roadmap",
-    "auth.clearGuestRoadmap": "Clear guest roadmap",
     "auth.firstName": "First name",
     "auth.lastName": "Last name",
     "auth.email": "Email",
@@ -289,7 +330,6 @@ const translations = {
     "auth.passwordUpdated": "Password updated. You can now use your new password.",
     "auth.resetSent": "If this email exists, a password reset link has been sent.",
     "auth.accountCreated": "Account created. Check your email to confirm your account.",
-    "auth.guestCleared": "Guest roadmap cleared from this browser.",
     "auth.failed": "Authentication failed.",
     "duration.one": "One semester",
     "duration.two": "Two semesters / full academic year",
@@ -303,9 +343,10 @@ const translations = {
     "nav.community": "Communauté",
     "nav.resources": "Ressources",
     "nav.profile": "Profil",
-    "nav.ourStory": "Notre histoire",
-    "nav.sources": "Sources",
+    "nav.identify": "S'identifier",
+    "nav.sources": "À propos",
     "nav.aboutSources": "À propos / Sources",
+    "nav.privacyLegal": "Confidentialité / légal",
     "nav.openMenu": "Ouvrir le menu",
     "nav.mobileDescription": "Naviguer dans la préparation de votre échange.",
     "resources.visaGuide": "Guide visa",
@@ -329,6 +370,7 @@ const translations = {
     "common.editProfile": "Modifier le profil",
     "common.signIn": "Se connecter",
     "common.logOut": "Se déconnecter",
+    "common.cancel": "Annuler",
     "common.resetProgress": "Réinitialiser",
     "common.resetChecklist": "Réinitialiser la checklist",
     "common.officialSources": "Sources officielles",
@@ -386,6 +428,7 @@ const translations = {
     "landing.storyTitle": "Créé à partir d'une vraie expérience étudiante",
     "landing.storyBody":
       "PreDeparture est né des difficultés rencontrées lors de la préparation d'un échange international. Les informations étaient dispersées entre sites universitaires, pages d'ambassade, PDF, emails et groupes étudiants. L'objectif est de tout centraliser dans une roadmap personnalisée pour savoir quoi faire, quand le faire et quels documents préparer.",
+    "landing.storyContact": "Questions ou retours ? Contact :",
     "landing.footerCare": "Créé pour les étudiants, avec soin.",
     "task.sevis": "Payer les frais SEVIS",
     "task.ds160": "Compléter le DS-160",
@@ -421,13 +464,42 @@ const translations = {
     "about.cardVerifyDesc":
       "Avant de payer, réserver, signer un logement ou envoyer des formulaires, vérifiez les détails auprès de votre université d'accueil, votre école d'origine ou l'ambassade.",
     "about.sourcesTitle": "Catégories de sources",
+    "about.contactTitle": "Contact",
+    "about.contactDesc": "Pour une question, un retour ou une correction de source, vous pouvez écrire ici.",
+    "about.sourceUniversityTitle": "Sources universitaires",
+    "about.sourceUniversityDesc":
+      "Sujets liés au campus : étudiants internationaux, logement, assurance santé, portails étudiants et arrivée.",
+    "about.sourceVisaTitle": "Sources gouvernementales et visa",
+    "about.sourceVisaDesc":
+      "Les informations visa renvoient autant que possible vers les systèmes officiels américains et les informations d'ambassade.",
+    "about.sourceSetupTitle": "Financement et installation",
+    "about.sourceSetupDesc":
+      "Les ressources sur bourses, banque, téléphone et transport sont des points de départ, pas des conseils financiers.",
     "about.noteTitle": "Note importante",
     "about.noteBody":
       "PreDeparture est un outil de préparation, pas une autorité universitaire, migratoire, juridique, médicale ou financière. Il aide à rester organisé, poser de meilleures questions et trouver plus vite les bonnes pages officielles.",
+    "about.legalTitle": "Confidentialité et bases légales",
+    "about.legalDesc":
+      "Un résumé simple des données personnelles, cookies et usages IA pour la version publique de l'app.",
+    "about.legalLink": "Ouvrir la page confidentialité",
+    "legal.badge": "Bases confidentialité",
+    "legal.title": "Confidentialité et informations légales",
+    "legal.intro":
+      "Cette page explique simplement ce que PreDeparture peut stocker et ce que les utilisateurs doivent savoir avant d'utiliser l'app publique.",
+    "legal.dataTitle": "Données personnelles",
+    "legal.dataDesc":
+      "Si vous créez un compte, PreDeparture peut stocker votre email, nom, profil d'échange, progression de checklist et messages de communauté via Supabase. Ces données servent à fournir les fonctionnalités et synchroniser votre roadmap.",
+    "legal.cookiesTitle": "Cookies et stockage local",
+    "legal.cookiesDesc":
+      "PreDeparture utilise le stockage local du navigateur pour des préférences comme la langue et peut utiliser du stockage d'authentification pour garder les utilisateurs connectés. Si des outils d'analyse ou marketing sont ajoutés plus tard, la politique cookies devra être mise à jour avant lancement.",
+    "legal.aiTitle": "Assistant IA",
+    "legal.aiDesc":
+      "Les questions envoyées à l'assistant IA passent par une route serveur sécurisée et peuvent être envoyées à l'API Gemini pour générer une réponse. N'envoyez pas d'informations personnelles sensibles dans les questions IA.",
+    "legal.contactTitle": "Contact et demandes liées aux données",
+    "legal.contactDesc": "Pour une question confidentialité ou une demande de suppression de données, contactez :",
     "profile.eyebrow": "Votre profil",
     "profile.title": "Détails de l'échange",
     "profile.description": "Gardez ces informations à jour pour que votre roadmap reste pertinente.",
-    "profile.guest": "Profil invité enregistré dans ce navigateur",
     "profile.signedInAs": "Connecté avec",
     "profile.destination": "Destination",
     "profile.nationality": "Nationalité",
@@ -442,15 +514,35 @@ const translations = {
     "dashboard.done": "faits",
     "dashboard.nextStep": "Votre prochaine étape",
     "dashboard.allSet": "Tout est prêt !",
+    "dashboard.customize": "Réglages de prévisualisation",
+    "dashboard.customizeTitle": "Adapter cette roadmap",
     "dashboard.checklist": "Checklist",
     "dashboard.timeline": "Timeline",
     "dashboard.trackDone": "Suivez ce qui est fait avant et après l'arrivée.",
     "dashboard.beforeDeparture": "Avant le départ",
     "dashboard.afterArrival": "Après l'arrivée",
     "dashboard.saveRoadmap": "Sauvegarder votre roadmap",
-    "dashboard.guestModeSync":
-      "Vous êtes en mode invité. Créez un compte pour synchroniser votre profil et votre checklist sur plusieurs appareils.",
+    "dashboard.saveRoadmapDesc":
+      "Créez un compte pour sauvegarder votre profil et votre checklist sur plusieurs appareils.",
     "dashboard.createAccount": "Créer un compte",
+    "dashboard.customTasksTitle": "Personnaliser votre checklist",
+    "dashboard.customTasksDesc": "Ajoutez vos propres tâches ou masquez celles qui ne vous concernent pas.",
+    "dashboard.customTasksSignIn": "Connectez-vous pour ajouter des tâches personnelles et sauvegarder les changements.",
+    "dashboard.addTask": "Ajouter une tâche",
+    "dashboard.saveTask": "Sauvegarder la tâche",
+    "dashboard.taskTitle": "Titre de la tâche",
+    "dashboard.taskDescription": "Description",
+    "dashboard.recommendedDate": "Date recommandée",
+    "dashboard.latestDate": "Dernier délai sûr",
+    "dashboard.phase": "Section",
+    "dashboard.category": "Catégorie",
+    "dashboard.priority": "Priorité",
+    "dashboard.mediumPriority": "Priorité moyenne",
+    "dashboard.lowPriority": "Priorité basse",
+    "dashboard.hideTask": "Masquer",
+    "dashboard.deleteTask": "Supprimer",
+    "dashboard.hiddenTasks": "Tâches masquées",
+    "dashboard.customTaskDefaultDesc": "Tâche personnelle ajoutée à votre checklist d'échange.",
     "timeline.description":
       "Votre chemin de préparation, des premières démarches au premier mois après l'arrivée.",
     "timeline.note":
@@ -463,8 +555,6 @@ const translations = {
     "community.previewLabel": "Groupes communauté disponibles",
     "community.cardDesc":
       "Rejoignez des groupes dédiés au logement, visa, arrivée et budget avec les étudiants de votre cohorte.",
-    "community.tips":
-      "Les conseils de communauté viennent d'étudiants. Vérifiez toujours les échéances, règles visa et paiements auprès des sources officielles.",
     "community.signInToJoin": "Connectez-vous pour rejoindre les groupes",
     "community.createProfile": "Créez votre profil d'échange",
     "community.previewOnly":
@@ -517,13 +607,10 @@ const translations = {
     "onboarding.continue": "Continuer",
     "onboarding.generate": "Générer ma roadmap",
     "onboarding.startTitle": "Comment voulez-vous commencer ?",
-    "onboarding.startDesc":
-      "Vous pouvez créer un compte pour synchroniser votre roadmap, ou continuer en invité et tout garder dans ce navigateur.",
+    "onboarding.startDesc": "Créez un compte pour sauvegarder votre roadmap sur plusieurs appareils.",
     "onboarding.accountTitle": "Créer un compte ou se connecter",
     "onboarding.accountDesc":
       "Enregistrez votre profil et votre checklist en ligne, puis retrouvez-les sur plusieurs appareils.",
-    "onboarding.guestTitle": "Continuer en invité",
-    "onboarding.guestDesc": "Essayez PreDeparture maintenant. Votre roadmap reste dans ce navigateur.",
     "onboarding.title0": "Où partez-vous ?",
     "onboarding.title1": "Quelle université ?",
     "onboarding.title2": "Parlez-nous de vous",
@@ -535,7 +622,7 @@ const translations = {
     "auth.badge": "Synchronisation cloud",
     "auth.title": "Votre compte",
     "auth.description":
-      "Créez un compte pour enregistrer votre profil et votre checklist en base. Sans compte, le mode invité garde votre roadmap uniquement dans ce navigateur.",
+      "Connectez-vous pour sauvegarder votre roadmap sur plusieurs appareils.",
     "auth.supabaseTitle": "Supabase n'est pas encore configuré",
     "auth.supabaseDesc":
       "Ajoutez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY à vos variables d'environnement pour activer la connexion et la synchronisation.",
@@ -553,12 +640,6 @@ const translations = {
     "auth.forgotPassword": "Mot de passe oublié ?",
     "auth.resetHelp": "Nous enverrons un lien sécurisé pour choisir un nouveau mot de passe.",
     "auth.sendReset": "Envoyer le lien",
-    "auth.continueGuest": "Continuer en invité",
-    "auth.guestFound": "Roadmap invitée trouvée",
-    "auth.guestFoundDesc":
-      "Ce navigateur contient encore une roadmap invitée. Vous pouvez la continuer ou l'effacer avant de recommencer.",
-    "auth.continueGuestRoadmap": "Continuer la roadmap invitée",
-    "auth.clearGuestRoadmap": "Effacer la roadmap invitée",
     "auth.firstName": "Prénom",
     "auth.lastName": "Nom",
     "auth.email": "Email",
@@ -575,7 +656,6 @@ const translations = {
     "auth.passwordUpdated": "Mot de passe mis à jour. Vous pouvez maintenant l'utiliser.",
     "auth.resetSent": "Si cet email existe, un lien de réinitialisation a été envoyé.",
     "auth.accountCreated": "Compte créé. Vérifiez votre email pour confirmer votre compte.",
-    "auth.guestCleared": "Roadmap invitée effacée de ce navigateur.",
     "auth.failed": "Échec de l'authentification.",
     "duration.one": "Un semestre",
     "duration.two": "Deux semestres / année académique complète",

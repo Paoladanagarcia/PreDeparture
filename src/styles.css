@@ -121,3 +121,151 @@
 @utility shadow-soft {
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px -12px rgba(16, 24, 40, 0.08);
 }
+
+.dashboard-preview__glow {
+  position: absolute;
+  inset: -35% -20% auto auto;
+  width: 18rem;
+  height: 18rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--accent) 22%, transparent);
+  filter: blur(42px);
+  opacity: 0.75;
+  animation: dashboard-glow 8s ease-in-out infinite alternate;
+}
+
+.dashboard-preview__progress {
+  width: 45%;
+  transform-origin: left;
+  animation: dashboard-progress 6s ease-in-out infinite;
+}
+
+.dashboard-preview__percent {
+  animation: dashboard-pulse 6s ease-in-out infinite;
+}
+
+.dashboard-preview__task {
+  animation: dashboard-task 7s ease-in-out infinite;
+}
+
+.dashboard-preview__task--done .dashboard-preview__check {
+  border-color: color-mix(in oklab, var(--success) 65%, white);
+  background: color-mix(in oklab, var(--success) 12%, transparent);
+  color: var(--success);
+}
+
+.dashboard-preview__task--active {
+  background: color-mix(in oklab, var(--primary) 6%, transparent);
+}
+
+.dashboard-preview__task--active .dashboard-preview__check {
+  border-color: color-mix(in oklab, var(--primary) 40%, white);
+  color: var(--primary);
+}
+
+.dashboard-preview__task--todo .dashboard-preview__check {
+  border-color: var(--border);
+  color: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+}
+
+.dashboard-preview__mini {
+  animation: dashboard-float 6s ease-in-out infinite;
+}
+
+.dashboard-preview__floating {
+  animation: dashboard-float 7s ease-in-out infinite;
+}
+
+.dashboard-preview__row {
+  animation: dashboard-row 7s ease-in-out infinite;
+}
+
+.dashboard-preview__row-bar {
+  width: var(--target-width);
+  transform-origin: left;
+  animation: dashboard-row-bar 6s ease-in-out infinite;
+}
+
+@keyframes dashboard-glow {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(-2rem, 1.25rem, 0) scale(1.12);
+  }
+}
+
+@keyframes dashboard-progress {
+  0%,
+  100% {
+    width: 45%;
+  }
+  45%,
+  70% {
+    width: 68%;
+  }
+}
+
+@keyframes dashboard-pulse {
+  0%,
+  100% {
+    opacity: 0.82;
+  }
+  45%,
+  70% {
+    opacity: 1;
+  }
+}
+
+@keyframes dashboard-task {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes dashboard-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes dashboard-row {
+  0%,
+  100% {
+    opacity: 0.78;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes dashboard-row-bar {
+  0%,
+  100% {
+    transform: scaleX(0.86);
+  }
+  50% {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-preview__glow,
+  .dashboard-preview__progress,
+  .dashboard-preview__percent,
+  .dashboard-preview__task,
+  .dashboard-preview__mini,
+  .dashboard-preview__floating,
+  .dashboard-preview__row,
+  .dashboard-preview__row-bar {
+    animation: none;
+  }
+}

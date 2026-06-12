@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ExternalLink, Info, ShieldCheck, University } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ExternalLink, Info, Mail, Scale, ShieldCheck, University } from "lucide-react";
 
 import { PublicHeader } from "@/components/PublicHeader";
 import { Card } from "@/components/ui/card";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type TranslationKey } from "@/lib/i18n";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -21,8 +21,8 @@ export const Route = createFileRoute("/about")({
 
 const sourceGroups = [
   {
-    title: "University sources",
-    desc: "University pages are used for campus-specific topics such as international student guidance, housing, health insurance, student portals and arrival logistics.",
+    titleKey: "about.sourceUniversityTitle",
+    descKey: "about.sourceUniversityDesc",
     links: [
       { label: "Berkeley International Office", url: "https://internationaloffice.berkeley.edu/" },
       { label: "Stanford Bechtel International Center", url: "https://bechtel.stanford.edu/" },
@@ -31,8 +31,8 @@ const sourceGroups = [
     ],
   },
   {
-    title: "Government and visa sources",
-    desc: "Visa-related guidance points students toward official US government systems and embassy information whenever possible.",
+    titleKey: "about.sourceVisaTitle",
+    descKey: "about.sourceVisaDesc",
     links: [
       { label: "DS-160 portal", url: "https://ceac.state.gov/genniv/" },
       { label: "SEVIS fee payment", url: "https://www.fmjfee.com/" },
@@ -43,8 +43,8 @@ const sourceGroups = [
     ],
   },
   {
-    title: "Funding and local setup",
-    desc: "Funding, banking, phone and local transport resources are curated as starting points, not as official financial advice.",
+    titleKey: "about.sourceSetupTitle",
+    descKey: "about.sourceSetupDesc",
     links: [
       { label: "Berkeley Financial Aid", url: "https://financialaid.berkeley.edu/" },
       {
@@ -54,7 +54,11 @@ const sourceGroups = [
       { label: "Erasmus+", url: "https://erasmus-plus.ec.europa.eu/" },
     ],
   },
-];
+] satisfies Array<{
+  titleKey: TranslationKey;
+  descKey: TranslationKey;
+  links: Array<{ label: string; url: string }>;
+}>;
 
 function AboutPage() {
   const { t } = useI18n();
@@ -76,7 +80,33 @@ function AboutPage() {
           </p>
         </section>
 
-        <div className="mt-6 grid gap-4 sm:mt-8 md:grid-cols-3">
+        <section className="mt-6 grid gap-4 sm:mt-8 md:grid-cols-[1.4fr_0.8fr]">
+          <Card className="p-4 sm:p-5">
+            <p className="text-xs font-medium uppercase tracking-wide text-primary">
+              {t("landing.storyEyebrow")}
+            </p>
+            <h2 className="mt-2 text-lg font-semibold">{t("landing.storyTitle")}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {t("landing.storyBody")}
+            </p>
+          </Card>
+
+          <Card className="p-4 sm:p-5">
+            <Mail className="h-5 w-5 text-primary" />
+            <h2 className="mt-3 text-sm font-semibold">{t("about.contactTitle")}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t("about.contactDesc")}
+            </p>
+            <a
+              href="mailto:pao.dana.garcia@gmail.com"
+              className="mt-3 inline-flex text-sm font-medium text-primary hover:underline"
+            >
+              pao.dana.garcia@gmail.com
+            </a>
+          </Card>
+        </section>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
           <Card className="p-4 sm:p-5">
             <University className="h-5 w-5 text-primary" />
             <h2 className="mt-3 text-sm font-semibold">{t("about.cardOfficialTitle")}</h2>
@@ -104,9 +134,9 @@ function AboutPage() {
           <h2 className="text-xl font-semibold">{t("about.sourcesTitle")}</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             {sourceGroups.map((group) => (
-              <Card key={group.title} className="p-5">
-                <h3 className="text-sm font-semibold">{group.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{group.desc}</p>
+              <Card key={group.titleKey} className="p-5">
+                <h3 className="text-sm font-semibold">{t(group.titleKey)}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{t(group.descKey)}</p>
                 <div className="mt-4 grid gap-2">
                   {group.links.map((link) => (
                     <a
@@ -131,6 +161,21 @@ function AboutPage() {
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             {t("about.noteBody")}
           </p>
+        </Card>
+
+        <Card className="mt-5 p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-3">
+              <Scale className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+              <div>
+                <h2 className="text-sm font-semibold">{t("about.legalTitle")}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">{t("about.legalDesc")}</p>
+              </div>
+            </div>
+            <Link to="/legal" className="text-sm font-medium text-primary hover:underline">
+              {t("about.legalLink")}
+            </Link>
+          </div>
         </Card>
       </main>
     </div>

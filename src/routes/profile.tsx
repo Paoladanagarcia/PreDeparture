@@ -41,8 +41,10 @@ function ProfilePage() {
   const { t } = useI18n();
 
   useEffect(() => {
-    if (loaded && !profile) navigate({ to: "/onboarding" });
-  }, [loaded, profile, navigate]);
+    if (!loaded) return;
+    if (!session) navigate({ to: "/auth" });
+    else if (!profile) navigate({ to: "/onboarding", search: { mode: "edit" } });
+  }, [loaded, profile, navigate, session]);
 
   const completed = useMemo(() => TASKS.filter((task) => done[task.id]).length, [done]);
   const pct = Math.round((completed / TASKS.length) * 100);
@@ -71,9 +73,11 @@ function ProfilePage() {
           <p className="mt-1 text-sm text-muted-foreground">
             {t("profile.description")}
           </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {signedInEmail ? `${t("profile.signedInAs")} ${signedInEmail}` : t("profile.guest")}
-          </p>
+          {signedInEmail && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {t("profile.signedInAs")} {signedInEmail}
+            </p>
+          )}
         </div>
 
         <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
@@ -103,11 +107,6 @@ function ProfilePage() {
                   {t("common.editProfile")}
                 </Link>
               </Button>
-              {!session && (
-                <Button asChild variant="outline">
-                  <Link to="/auth">{t("common.signIn")}</Link>
-                </Button>
-              )}
               {session && (
                 <Button variant="outline" onClick={logout}>
                   <LogOut className="mr-1 h-3.5 w-3.5" /> {t("common.logOut")}
