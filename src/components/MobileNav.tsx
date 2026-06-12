@@ -17,7 +17,6 @@ const navItems = [
   { label: "Home", to: "/" },
   { label: "AI Assistant", to: "/assistant" },
   { label: "Community", to: "/community" },
-  { label: "About / Sources", to: "/about" },
 ] as const;
 
 const resourceItems = [
@@ -43,7 +42,6 @@ export function MobileNav() {
     navItems[1],
     navItems[2],
     profileItem,
-    navItems[3],
   ];
   const hasUniversityProfile = Boolean(profile?.university);
 
@@ -79,7 +77,7 @@ export function MobileNav() {
               to="/resources"
               className="block rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:bg-muted hover:text-foreground"
             >
-              Guides
+              Resources
             </Link>
           </SheetClose>
           <nav className="mt-2 grid gap-1">
@@ -120,6 +118,14 @@ export function MobileNav() {
             >
               Our story
             </a>
+          </SheetClose>
+          <SheetClose asChild>
+            <Link
+              to="/about"
+              className="block rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              About / Sources
+            </Link>
           </SheetClose>
         </div>
       </SheetContent>
