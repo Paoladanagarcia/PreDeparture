@@ -67,6 +67,7 @@ Answer only questions related to:
 
 If the user asks about anything outside this scope, politely redirect them to exchange preparation topics.
 Keep answers short, practical and easy to act on.
+Write in plain text. Do not use Markdown formatting, bold text, headings or tables.
 Use your general knowledge to give practical preparation guidance.
 When mentioning facts that can change, tell the user to verify them on official university, embassy or government websites.
 Do not invent exact deadlines, fees, legal requirements or university rules.
@@ -197,7 +198,7 @@ async function generateWithAvailableModel(apiKey: string, prompt: string) {
             },
           ],
           generationConfig: {
-            maxOutputTokens: 900,
+            maxOutputTokens: 1200,
             temperature: 0.25,
           },
         }),
@@ -237,6 +238,7 @@ function buildPrompt(university: string, question: string) {
     `Student question: ${question}`,
     "Answer in the same language as the student's question.",
     "Keep the answer under 180 words unless the user explicitly asks for more detail.",
+    "Use plain text only, without Markdown symbols.",
   ].join("\n\n");
 }
 
@@ -245,9 +247,10 @@ function buildRetryPrompt(university: string, question: string) {
     `Host university context: ${university}`,
     `Student question: ${question}`,
     "Your previous answer was cut off. Answer again in the same language as the question.",
-    "Use 3 to 5 short bullet points.",
+    "Use 3 to 5 short plain-text bullet points, using simple hyphens only.",
     "Keep it under 140 words.",
     "Finish every sentence.",
+    "Do not use Markdown bold, headings or tables.",
   ].join("\n\n");
 }
 
@@ -265,14 +268,33 @@ function isIncompleteAnswer(answer: string, data: GeminiResponse) {
   return (
     data.candidates?.[0]?.finishReason === "MAX_TOKENS" ||
     hasUnclosedMarkdownBold(trimmed) ||
-    /(\d+\.\s*|\*\s*|-\s*|:\s*)$/.test(trimmed) ||
-    (words < 25 && !/[.!?)]$/.test(trimmed))
+    endsWithDanglingListMarker(trimmed) ||
+    endsWithOnlyMarkdownTitle(trimmed) ||
+    !/[.!?)]$/.test(stripMarkdown(trimmed)) ||
+    (words < 25 && !/[.!?)]$/.test(stripMarkdown(trimmed)))
   );
 }
 
 function hasUnclosedMarkdownBold(value: string) {
   const matches = value.match(/\*\*/g);
   return Boolean(matches && matches.length % 2 !== 0);
+}
+
+function endsWithDanglingListMarker(value: string) {
+  return /(\d+\.\s*|\*\s*|-\s*|:\s*)$/.test(value);
+}
+
+function endsWithOnlyMarkdownTitle(value: string) {
+  const lastLine = value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .at(-1) || "";
+  return /^[-*]?\s*\*\*[^*]+\*\*:?\s*$/.test(lastLine);
+}
+
+function stripMarkdown(value: string) {
+  return value.replace(/\*\*/g, "").trim();
 }
 
 function isModelUnavailable(response: Response, data: GeminiResponse) {
