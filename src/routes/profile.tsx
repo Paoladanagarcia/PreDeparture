@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/lib/auth";
+import { translateDuration, useI18n } from "@/lib/i18n";
 import { clearLocalRoadmap, useProfile, useProgress } from "@/lib/storage";
 import { TASKS } from "@/lib/tasks";
 
@@ -37,6 +38,7 @@ function ProfilePage() {
   const { profile, loaded } = useProfile();
   const { done, reset } = useProgress();
   const { session, signOut } = useAuth();
+  const { t } = useI18n();
 
   useEffect(() => {
     if (loaded && !profile) navigate({ to: "/onboarding" });
@@ -62,13 +64,15 @@ function ProfilePage() {
 
       <main className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6">
         <div className="mb-5">
-          <p className="text-xs font-medium uppercase tracking-wide text-primary">Your profile</p>
-          <h1 className="mt-1 text-xl font-bold sm:text-2xl md:text-2xl">Exchange details</h1>
+          <p className="text-xs font-medium uppercase tracking-wide text-primary">
+            {t("profile.eyebrow")}
+          </p>
+          <h1 className="mt-1 text-xl font-bold sm:text-2xl md:text-2xl">{t("profile.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Keep this information accurate so your roadmap stays relevant.
+            {t("profile.description")}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            {signedInEmail ? `Signed in as ${signedInEmail}` : "Guest profile saved in this browser"}
+            {signedInEmail ? `${t("profile.signedInAs")} ${signedInEmail}` : t("profile.guest")}
           </p>
         </div>
 
@@ -77,36 +81,36 @@ function ProfilePage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <ProfileItem
                 icon={MapPin}
-                label="Destination"
+                label={t("profile.destination")}
                 value={`${profile.university}, ${profile.country}`}
               />
-              <ProfileItem icon={User} label="Nationality" value={profile.nationality} />
+              <ProfileItem icon={User} label={t("profile.nationality")} value={profile.nationality} />
               <ProfileItem
                 icon={CalendarClock}
-                label="Arrival date"
+                label={t("profile.arrivalDate")}
                 value={arrival.toLocaleDateString(undefined, { dateStyle: "long" })}
               />
               <ProfileItem
                 icon={GraduationCap}
-                label="Duration"
-                value={durationLabel(profile.duration)}
+                label={t("profile.duration")}
+                value={translateDuration(profile.duration, t)}
               />
             </div>
 
             <div className="mt-5 flex flex-wrap gap-2">
               <Button asChild>
                 <Link to="/onboarding" search={{ mode: "edit" }}>
-                  Edit profile
+                  {t("common.editProfile")}
                 </Link>
               </Button>
               {!session && (
                 <Button asChild variant="outline">
-                  <Link to="/auth">Sign in</Link>
+                  <Link to="/auth">{t("common.signIn")}</Link>
                 </Button>
               )}
               {session && (
                 <Button variant="outline" onClick={logout}>
-                  <LogOut className="mr-1 h-3.5 w-3.5" /> Log out
+                  <LogOut className="mr-1 h-3.5 w-3.5" /> {t("common.logOut")}
                 </Button>
               )}
             </div>
@@ -115,11 +119,13 @@ function ProfilePage() {
           <Card className="p-4 sm:p-5">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-primary" />
-              <h2 className="text-sm font-semibold">Preparation progress</h2>
+              <h2 className="text-sm font-semibold">{t("profile.progress")}</h2>
             </div>
             <div className="mt-4">
               <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="font-medium">{pct}% ready</span>
+                <span className="font-medium">
+                  {pct}% {t("profile.ready")}
+                </span>
                 <span className="text-muted-foreground">
                   {completed} / {TASKS.length}
                 </span>
@@ -127,7 +133,7 @@ function ProfilePage() {
               <Progress value={pct} className="h-2" />
             </div>
             <Button variant="outline" size="sm" className="mt-5" onClick={reset}>
-              <RotateCcw className="mr-1 h-3.5 w-3.5" /> Reset progress
+              <RotateCcw className="mr-1 h-3.5 w-3.5" /> {t("common.resetProgress")}
             </Button>
           </Card>
         </div>
@@ -153,16 +159,5 @@ function ProfileItem({
       </div>
       <p className="mt-2 text-sm font-semibold">{value}</p>
     </div>
-  );
-}
-
-function durationLabel(d: string) {
-  return (
-    {
-      "one-semester": "One semester",
-      "two-semesters": "Two semesters / full academic year",
-      "full-year": "Two semesters / full academic year",
-      other: "Custom duration",
-    }[d] ?? d
   );
 }

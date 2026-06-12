@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { AppHeader } from "@/components/AppHeader";
 import { askAssistant, type AssistantReply } from "@/lib/assistant";
+import { useI18n } from "@/lib/i18n";
 import { useProfile } from "@/lib/storage";
 import { Send, ShieldCheck, ExternalLink, AlertTriangle, Loader2, Sparkles } from "lucide-react";
 
@@ -27,15 +28,9 @@ type ChatMessage =
   | { role: "user"; content: string }
   | { role: "assistant"; content: string; sources?: { title: string; url: string }[] };
 
-const SUGGESTIONS = [
-  "What documents do I need for my F-1 visa interview?",
-  "How does the SEVIS fee work?",
-  "Is university health insurance mandatory?",
-  "How should I compare housing near campus?",
-];
-
 function AssistantPage() {
   const { profile } = useProfile();
+  const { language, t } = useI18n();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -57,7 +52,7 @@ function AssistantPage() {
     try {
       const reply: AssistantReply = await askAssistant(
         next.map((m) => ({ role: m.role, content: m.content })),
-        { university: profile?.university },
+        { university: profile?.university, language },
       );
       setMessages((prev) => [
         ...prev,
@@ -77,14 +72,13 @@ function AssistantPage() {
       <main className="mx-auto flex max-w-4xl flex-col px-4 py-5 sm:px-6 sm:py-6">
         <div className="mb-4">
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border bg-primary-soft px-3 py-1 text-xs font-medium text-primary">
-            <ShieldCheck className="h-3.5 w-3.5" /> Source-grounded assistant
+            <ShieldCheck className="h-3.5 w-3.5" /> {t("assistant.badge")}
           </div>
           <h1 className="text-xl font-bold sm:text-2xl">
-            Ask anything about your exchange
+            {t("assistant.title")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Answers are based on verified official sources — university websites, embassy pages and
-            government documentation. Always verify critical information on the official websites.
+            {t("assistant.description")}
           </p>
         </div>
 
@@ -97,19 +91,23 @@ function AssistantPage() {
                     <Sparkles className="h-4 w-4" />
                   </span>
                   <div className="text-sm">
-                    <p className="font-medium">Hi 👋 I'm your PreDeparture assistant.</p>
+                    <p className="font-medium">{t("assistant.greeting")}</p>
                     <p className="mt-1 text-muted-foreground">
-                      I can help with F-1 visa, SEVIS, DS-160, campus housing, health insurance, US
-                      banking, phone plans, scholarships and your arrival.
+                      {t("assistant.help")}
                     </p>
                   </div>
                 </div>
                 <div>
                   <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Try asking
+                    {t("assistant.tryAsking")}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {SUGGESTIONS.map((s) => (
+                    {[
+                      t("assistant.suggestionVisa"),
+                      t("assistant.suggestionSevis"),
+                      t("assistant.suggestionInsurance"),
+                      t("assistant.suggestionHousing"),
+                    ].map((s) => (
                       <button
                         key={s}
                         onClick={() => send(s)}
@@ -130,7 +128,7 @@ function AssistantPage() {
             {loading && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Looking it up in official sources…
+                {t("assistant.loading")}
               </div>
             )}
 
@@ -152,7 +150,7 @@ function AssistantPage() {
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about visa, housing, insurance, banking, arrival…"
+              placeholder={t("assistant.placeholder")}
               className="min-h-[44px] flex-1 resize-none"
               rows={1}
               onKeyDown={(e) => {
@@ -169,8 +167,7 @@ function AssistantPage() {
         </Card>
 
         <p className="mt-3 text-xs text-muted-foreground">
-          ⚠️ This assistant provides guidance only. Always verify visa requirements, deadlines and
-          fees on official government and university websites before making important decisions.
+          ⚠️ {t("assistant.disclaimer")}
         </p>
       </main>
     </div>
@@ -178,6 +175,7 @@ function AssistantPage() {
 }
 
 function MessageBubble({ m }: { m: ChatMessage }) {
+  const { t } = useI18n();
   if (m.role === "user") {
     return (
       <div className="flex justify-end">
@@ -199,7 +197,7 @@ function MessageBubble({ m }: { m: ChatMessage }) {
         {m.sources && m.sources.length > 0 && (
           <div className="rounded-lg border bg-muted/30 p-3">
             <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              <ShieldCheck className="h-3 w-3" /> Official sources
+              <ShieldCheck className="h-3 w-3" /> {t("common.officialSources")}
             </p>
             <ul className="space-y-1.5">
               {m.sources.map((s) => (

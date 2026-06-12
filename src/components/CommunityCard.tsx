@@ -25,6 +25,7 @@ import {
   type CommunityGroupKey,
   type CommunityMessage,
 } from "@/lib/community";
+import { useI18n, type TranslationKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { ProfileQuestionnaire } from "@/lib/tasks";
 
@@ -36,12 +37,13 @@ export function CommunityCard({
   profile?: Pick<ProfileQuestionnaire, "university" | "startDate"> | null;
 }) {
   const { configured, session } = useAuth();
+  const { t } = useI18n();
   const cohort = useMemo(
     () =>
       profile
         ? getCohort(profile)
-        : { key: "preview", label: "Available community groups", term: "" },
-    [profile],
+        : { key: "preview", label: t("community.previewLabel"), term: "" },
+    [profile, t],
   );
   const [activeGroup, setActiveGroup] = useState<CommunityGroupKey>("general");
   const [joinedGroups, setJoinedGroups] = useState<CommunityGroupKey[]>([]);
@@ -55,6 +57,10 @@ export function CommunityCard({
 
   const joined = joinedGroups.includes(activeGroup);
   const activeGroupMeta = COMMUNITY_GROUPS.find((group) => group.key === activeGroup);
+  const activeGroupLabel = activeGroupMeta ? getCommunityGroupLabel(activeGroupMeta.key, t) : "";
+  const activeGroupDescription = activeGroupMeta
+    ? getCommunityGroupDescription(activeGroupMeta.key, t)
+    : "";
 
   useEffect(() => {
     setDisplayName(displayNameFromSession(session));
@@ -136,11 +142,11 @@ export function CommunityCard({
 
   async function handleJoin(groupKey = activeGroup) {
     if (!configured) {
-      toast.error("Supabase must be configured before community groups can open.");
+      toast.error(t("community.supabaseRequired"));
       return;
     }
     if (!profile) {
-      toast.error("Create your exchange profile before joining a group.");
+      toast.error(t("community.profileBeforeJoin"));
       return;
     }
     if (!session) return;
@@ -154,10 +160,10 @@ export function CommunityCard({
         ...current,
         [groupKey]: (current[groupKey] ?? 0) + 1,
       }));
-      toast.success(`Joined ${COMMUNITY_GROUPS.find((group) => group.key === groupKey)?.name}`);
+      toast.success(`${t("community.joined")} ${getCommunityGroupLabel(groupKey, t)}`);
     } catch {
       setStatus("unavailable");
-      toast.error("Community database is not ready yet.");
+      toast.error(t("community.databaseTitle"));
     }
   }
 
@@ -181,7 +187,7 @@ export function CommunityCard({
         );
       }
     } catch {
-      toast.error("Message could not be sent.");
+      toast.error(t("community.messageFailed"));
     } finally {
       setSending(false);
     }
@@ -197,15 +203,14 @@ export function CommunityCard({
                 <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground">
                   <Users className="h-4 w-4" />
                 </span>
-                <h2 className="text-lg font-semibold md:text-xl">Community</h2>
+                <h2 className="text-lg font-semibold md:text-xl">{t("community.title")}</h2>
                 <Badge variant="outline" className="border-primary/30 bg-card/80">
-                  <MessageCircle className="mr-1 h-3 w-3" /> Live groups
+                  <MessageCircle className="mr-1 h-3 w-3" /> {t("community.liveGroups")}
                 </Badge>
               </div>
               <p className="mt-3 text-base font-semibold">{cohort.label}</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Join focused groups for housing, visa, arrival and money questions with students in
-                your same cohort.
+                {t("community.cardDesc")}
               </p>
             </div>
 
@@ -213,8 +218,7 @@ export function CommunityCard({
               <div className="flex items-start gap-2">
                 <ShieldCheck className="mt-0.5 h-4 w-4 text-primary" />
                 <p className="text-muted-foreground">
-                  Community tips are student-to-student. Always verify deadlines, visa rules and
-                  payments with official sources.
+                  {t("community.tips")}
                 </p>
               </div>
             </div>
@@ -225,17 +229,17 @@ export function CommunityCard({
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-medium">
-                    {!session ? "Sign in to join groups" : "Create your exchange profile"}
+                    {!session ? t("community.signInToJoin") : t("community.createProfile")}
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {!session
-                      ? "You can preview every conversation, but joining and posting requires an account."
-                      : "Your cohort groups unlock after your destination, university and arrival date are saved."}
+                      ? t("community.previewOnly")
+                      : t("community.profileRequired")}
                   </p>
                 </div>
                 <Button asChild className="shrink-0">
                   <Link to={!session ? "/auth" : "/onboarding"}>
-                    {!session ? "Sign in" : "Create profile"}
+                    {!session ? t("common.signIn") : t("community.createProfile")}
                   </Link>
                 </Button>
               </div>
@@ -244,10 +248,9 @@ export function CommunityCard({
 
           {status === "unavailable" && (
             <div className="mt-5 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm">
-              <p className="font-medium">Community database is not ready yet</p>
+              <p className="font-medium">{t("community.databaseTitle")}</p>
               <p className="mt-1 text-muted-foreground">
-                Run the community SQL from the README in Supabase, then enable Realtime for the
-                messages table.
+                {t("community.databaseDesc")}
               </p>
             </div>
           )}
@@ -268,7 +271,7 @@ export function CommunityCard({
                     )}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <p className="font-medium">{group.name}</p>
+                      <p className="font-medium">{getCommunityGroupLabel(group.key, t)}</p>
                       {isJoined ? (
                         <CheckCircle2 className="h-4 w-4 text-success" />
                       ) : (
@@ -276,11 +279,13 @@ export function CommunityCard({
                       )}
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {group.description}
+                      {getCommunityGroupDescription(group.key, t)}
                     </p>
                     <p className="mt-2 text-xs text-muted-foreground">
-                      {memberCounts[group.key] ?? 0} member
-                      {(memberCounts[group.key] ?? 0) === 1 ? "" : "s"}
+                      {memberCounts[group.key] ?? 0}{" "}
+                      {(memberCounts[group.key] ?? 0) === 1
+                        ? t("community.member")
+                        : t("community.members")}
                     </p>
                   </button>
                 );
@@ -290,14 +295,14 @@ export function CommunityCard({
             <div className="rounded-lg border bg-card">
               <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="font-semibold">{activeGroupMeta?.name}</p>
+                  <p className="font-semibold">{activeGroupLabel}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {activeGroupMeta?.description}
+                    {activeGroupDescription}
                   </p>
                 </div>
                 {session && profile && !joined && (
                   <Button size="sm" onClick={() => handleJoin()}>
-                    Join group
+                    {t("community.joinGroup")}
                   </Button>
                 )}
               </div>
@@ -308,7 +313,7 @@ export function CommunityCard({
                   <ScrollArea className="h-72 p-4 sm:h-80">
                     {messages.length === 0 ? (
                       <div className="flex h-56 items-center justify-center rounded-lg border border-dashed text-center text-sm text-muted-foreground">
-                        No messages yet. Start the conversation.
+                        {t("community.noMessages")}
                       </div>
                     ) : (
                       <div className="space-y-4">
@@ -330,18 +335,18 @@ export function CommunityCard({
                         value={displayName}
                         onChange={(event) => setDisplayName(event.target.value)}
                         maxLength={32}
-                        placeholder="Display name"
+                        placeholder={t("community.displayName")}
                       />
                       <Textarea
                         value={draft}
                         onChange={(event) => setDraft(event.target.value)}
-                        placeholder={`Message ${activeGroupMeta?.name.toLowerCase()}...`}
+                        placeholder={`${t("community.messagePlaceholder")} ${activeGroupLabel.toLowerCase()}...`}
                         className="min-h-11 resize-none"
                       />
                     </div>
                     <div className="flex justify-end">
                       <Button type="submit" disabled={sending || !draft.trim()}>
-                        <Send className="h-4 w-4" /> Send
+                        <Send className="h-4 w-4" /> {t("community.send")}
                       </Button>
                     </div>
                   </form>
@@ -352,23 +357,22 @@ export function CommunityCard({
                     <Lock className="mx-auto h-7 w-7 text-muted-foreground" />
                     <p className="mt-3 font-medium">
                       {!session
-                        ? "Sign in to unlock chat"
+                        ? t("community.signInUnlock")
                         : !profile
-                          ? "Create your profile to unlock cohort chat"
-                          : "Join this group to read and post"}
+                          ? t("community.profileUnlock")
+                          : t("community.joinReadPost")}
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      You can preview the available groups, but chats are private to signed-in
-                      students in the same cohort.
+                      {t("community.privateChats")}
                     </p>
                     {session && profile ? (
                       <Button className="mt-4" onClick={() => handleJoin()}>
-                        Join group
+                        {t("community.joinGroup")}
                       </Button>
                     ) : (
                       <Button asChild className="mt-4">
                         <Link to={!session ? "/auth" : "/onboarding"}>
-                          {!session ? "Sign in" : "Create profile"}
+                          {!session ? t("common.signIn") : t("community.createProfile")}
                         </Link>
                       </Button>
                     )}
@@ -381,6 +385,20 @@ export function CommunityCard({
       </div>
     </Card>
   );
+}
+
+function getCommunityGroupLabel(
+  groupKey: CommunityGroupKey,
+  t: (key: TranslationKey) => string,
+) {
+  return t(`community.${groupKey}` as TranslationKey);
+}
+
+function getCommunityGroupDescription(
+  groupKey: CommunityGroupKey,
+  t: (key: TranslationKey) => string,
+) {
+  return t(`community.${groupKey}Desc` as TranslationKey);
 }
 
 function ChatMessage({ message, mine }: { message: CommunityMessage; mine: boolean }) {

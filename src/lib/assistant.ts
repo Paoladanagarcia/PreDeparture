@@ -1,6 +1,6 @@
 export type AssistantSource = { title: string; url: string };
 export type AssistantReply = { answer: string; sources: AssistantSource[] };
-export type AssistantContext = { university?: string };
+export type AssistantContext = { university?: string; language?: "en" | "fr" };
 
 type AssistantMessage = {
   role: "user" | "assistant";

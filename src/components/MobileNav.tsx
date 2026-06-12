@@ -2,6 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useI18n } from "@/lib/i18n";
 import { useProfile } from "@/lib/storage";
 import {
   Sheet,
@@ -14,28 +16,29 @@ import {
 } from "@/components/ui/sheet";
 
 const navItems = [
-  { label: "Home", to: "/" },
-  { label: "AI Assistant", to: "/assistant" },
-  { label: "Community", to: "/community" },
+  { labelKey: "nav.home", to: "/" },
+  { labelKey: "nav.aiAssistant", to: "/assistant" },
+  { labelKey: "nav.community", to: "/community" },
 ] as const;
 
 const resourceItems = [
-  { label: "Visa guide", topic: "visa" },
-  { label: "Banking guide", topic: "banking" },
-  { label: "Phone guide", topic: "phone" },
-  { label: "Arrival guide", topic: "arrival" },
-  { label: "Scholarships guide", topic: "scholarships" },
-  { label: "Insurance guide", topic: "insurance" },
+  { labelKey: "resources.visaGuide", topic: "visa" },
+  { labelKey: "resources.bankingGuide", topic: "banking" },
+  { labelKey: "resources.phoneGuide", topic: "phone" },
+  { labelKey: "resources.arrivalGuide", topic: "arrival" },
+  { labelKey: "resources.scholarshipsGuide", topic: "scholarships" },
+  { labelKey: "resources.insuranceGuide", topic: "insurance" },
 ] as const;
 
 export function MobileNav() {
   const { profile } = useProfile();
+  const { t } = useI18n();
   const dashboardItem = profile
-    ? { label: "Dashboard", to: "/dashboard" as const }
-    : { label: "Dashboard", to: "/onboarding" as const };
+    ? { labelKey: "nav.dashboard" as const, to: "/dashboard" as const }
+    : { labelKey: "nav.dashboard" as const, to: "/onboarding" as const };
   const profileItem = profile
-    ? { label: "Profile", to: "/profile" as const }
-    : { label: "Profile", to: "/auth" as const };
+    ? { labelKey: "nav.profile" as const, to: "/profile" as const }
+    : { labelKey: "nav.profile" as const, to: "/auth" as const };
   const items = [
     navItems[0],
     dashboardItem,
@@ -48,15 +51,19 @@ export function MobileNav() {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="md:hidden" aria-label="Open menu">
+        <Button variant="outline" size="icon" className="md:hidden" aria-label={t("nav.openMenu")}>
           <Menu className="h-4 w-4" />
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-[82vw] max-w-xs">
         <SheetHeader>
           <SheetTitle>PreDeparture</SheetTitle>
-          <SheetDescription>Navigate your exchange preparation.</SheetDescription>
+          <SheetDescription>{t("nav.mobileDescription")}</SheetDescription>
         </SheetHeader>
+
+        <div className="mt-4">
+          <LanguageSwitcher />
+        </div>
 
         <nav className="mt-6 grid gap-1">
           {items.map((item) => (
@@ -65,7 +72,7 @@ export function MobileNav() {
                 to={item.to}
                 className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
               >
-                {item.label}
+                {t(item.labelKey)}
               </Link>
             </SheetClose>
           ))}
@@ -77,25 +84,25 @@ export function MobileNav() {
               to="/resources"
               className="block rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:bg-muted hover:text-foreground"
             >
-              Resources
+              {t("nav.resources")}
             </Link>
           </SheetClose>
           <nav className="mt-2 grid gap-1">
             {resourceItems.slice(0, 1).map((item) => (
-              <ResourceTopicLink key={item.topic} label={item.label} topic={item.topic} />
+              <ResourceTopicLink key={item.topic} label={t(item.labelKey)} topic={item.topic} />
             ))}
 
             {hasUniversityProfile ? (
-              <ResourceTopicLink label="Housing guide" topic="housing" />
+              <ResourceTopicLink label={t("resources.housingGuide")} topic="housing" />
             ) : (
               <>
                 <ResourceTopicLink
-                  label="Berkeley housing guide"
+                  label={t("resources.berkeleyHousingGuide")}
                   topic="housing"
                   university="UC Berkeley"
                 />
                 <ResourceTopicLink
-                  label="Stanford housing guide"
+                  label={t("resources.stanfordHousingGuide")}
                   topic="housing"
                   university="Stanford University"
                 />
@@ -104,7 +111,7 @@ export function MobileNav() {
 
             {resourceItems.map((item) => (
               item.topic === "visa" ? null : (
-                <ResourceTopicLink key={item.topic} label={item.label} topic={item.topic} />
+                <ResourceTopicLink key={item.topic} label={t(item.labelKey)} topic={item.topic} />
               )
             ))}
           </nav>
@@ -116,7 +123,7 @@ export function MobileNav() {
               href="/#story"
               className="block rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
             >
-              Our story
+              {t("nav.ourStory")}
             </a>
           </SheetClose>
           <SheetClose asChild>
@@ -124,7 +131,7 @@ export function MobileNav() {
               to="/about"
               className="block rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
             >
-              About / Sources
+              {t("nav.aboutSources")}
             </Link>
           </SheetClose>
         </div>

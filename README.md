@@ -14,6 +14,7 @@ The first supported host universities are UC Berkeley and Stanford University.
 - Supports Supabase accounts for profile, checklist and community chat sync
 - Includes a Gemini-powered AI assistant through a secure Vercel API route
 - Includes cohort-based community groups for students going to the same university and term
+- Supports English and French UI language selection saved in the browser
 
 ## Tech Stack
 
@@ -25,6 +26,7 @@ The first supported host universities are UC Berkeley and Stanford University.
 - shadcn/radix UI components
 - Supabase for optional auth, database sync and community chat
 - Vercel serverless API route for the Gemini assistant
+- Lightweight local i18n layer in `src/lib/i18n.tsx`
 
 ## Requirements
 

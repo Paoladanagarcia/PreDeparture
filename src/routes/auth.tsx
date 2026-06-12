@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
+import { translateDuration, useI18n } from "@/lib/i18n";
 import { DURATION_OPTIONS, NATIONALITY_OPTIONS } from "@/lib/profile-options";
 import { clearLocalRoadmap, hasLocalRoadmap, useProfile } from "@/lib/storage";
 import type { ProfileQuestionnaire } from "@/lib/tasks";
@@ -48,6 +49,7 @@ function AuthPage() {
     updatePassword,
   } = useAuth();
   const { profile, setProfile } = useProfile();
+  const { t } = useI18n();
   const [mode, setMode] = useState<"signin" | "signup" | "reset">("signin");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -74,24 +76,24 @@ function AuthPage() {
     try {
       if (recoveryMode) {
         await updatePassword(newPassword);
-        setMessage("Password updated. You can now use your new password.");
+        setMessage(t("auth.passwordUpdated"));
         navigate({ to: "/dashboard" });
       } else if (mode === "signin") {
         await signIn(email, password);
         navigate({ to: "/dashboard" });
       } else if (mode === "reset") {
         await requestPasswordReset(email);
-        setMessage("If this email exists, a password reset link has been sent.");
+        setMessage(t("auth.resetSent"));
       } else {
         await signUp(email, password, { firstName, lastName });
         if (isCompleteProfile(exchangeProfile)) {
           setProfile(exchangeProfile);
           setLocalRoadmap(true);
         }
-        setMessage("Account created. Check your email to confirm your account.");
+        setMessage(t("auth.accountCreated"));
       }
     } catch (err) {
-      setError(err instanceof Error ? cleanAuthError(err.message) : "Authentication failed.");
+      setError(err instanceof Error ? cleanAuthError(err.message) : t("auth.failed"));
     } finally {
       setLoading(false);
     }
@@ -107,7 +109,7 @@ function AuthPage() {
   function clearGuestRoadmap() {
     clearLocalRoadmap();
     setLocalRoadmap(false);
-    setMessage("Guest roadmap cleared from this browser.");
+    setMessage(t("auth.guestCleared"));
   }
 
   return (
@@ -118,40 +120,38 @@ function AuthPage() {
         <div className="mb-5 max-w-2xl">
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border bg-primary-soft px-3 py-1 text-xs font-medium text-primary">
             <ShieldCheck className="h-3.5 w-3.5" />
-            Cloud sync
+            {t("auth.badge")}
           </div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-2xl">Your account</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-2xl">{t("auth.title")}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Create an account to save your profile and checklist in the database. Without an
-            account, guest mode keeps your roadmap only in this browser.
+            {t("auth.description")}
           </p>
         </div>
 
         {!configured && (
           <Alert className="mb-5">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Supabase is not configured yet</AlertTitle>
+            <AlertTitle>{t("auth.supabaseTitle")}</AlertTitle>
             <AlertDescription>
-              Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to your environment variables to
-              enable sign in and cloud sync.
+              {t("auth.supabaseDesc")}
             </AlertDescription>
           </Alert>
         )}
 
         {recoveryMode ? (
           <Card className="max-w-xl p-5 sm:p-5">
-            <h2 className="font-semibold">Choose a new password</h2>
+            <h2 className="font-semibold">{t("auth.newPasswordTitle")}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Enter a new password for your PreDeparture account.
+              {t("auth.newPasswordDesc")}
             </p>
             <div className="mt-5 space-y-2">
-              <Label htmlFor="new-password">New password</Label>
+              <Label htmlFor="new-password">{t("auth.newPassword")}</Label>
               <PasswordInput
                 id="new-password"
                 autoComplete="new-password"
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
-                placeholder="At least 6 characters"
+                placeholder={t("auth.passwordPlaceholder")}
               />
             </div>
             {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
@@ -161,7 +161,7 @@ function AuthPage() {
               disabled={!configured || loading || newPassword.length < 6}
               onClick={submit}
             >
-              {loading ? "Please wait..." : "Update password"}
+              {loading ? t("auth.pleaseWait") : t("auth.updatePassword")}
             </Button>
           </Card>
         ) : session ? (
@@ -169,19 +169,19 @@ function AuthPage() {
             <div className="flex items-start gap-3">
               <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" />
               <div>
-                <h2 className="font-semibold">Signed in</h2>
+                <h2 className="font-semibold">{t("auth.signedIn")}</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {session.user.email ?? "Your account"} is syncing profile and checklist progress.
+                  {session.user.email ?? t("auth.title")} {t("auth.syncing")}
                 </p>
               </div>
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
               <Button asChild>
-                <Link to="/dashboard">Go to dashboard</Link>
+                <Link to="/dashboard">{t("auth.goDashboard")}</Link>
               </Button>
               <Button variant="outline" onClick={logout}>
                 <LogOut className="mr-1 h-4 w-4" />
-                Sign out
+                {t("auth.signOut")}
               </Button>
             </div>
           </Card>
@@ -189,8 +189,8 @@ function AuthPage() {
           <Card className="max-w-xl p-5 sm:p-5">
             <Tabs value={mode} onValueChange={(value) => setMode(value as typeof mode)}>
               <TabsList className="mb-5">
-                <TabsTrigger value="signin">Sign in</TabsTrigger>
-                <TabsTrigger value="signup">Create account</TabsTrigger>
+                <TabsTrigger value="signin">{t("common.signIn")}</TabsTrigger>
+                <TabsTrigger value="signup">{t("auth.createAccount")}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="signin" className="space-y-4">
@@ -211,13 +211,13 @@ function AuthPage() {
                       setMessage(null);
                     }}
                   >
-                    Forgot password?
+                    {t("auth.forgotPassword")}
                   </button>
                 </div>
               </TabsContent>
               <TabsContent value="reset" className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="reset-email">Email</Label>
+                  <Label htmlFor="reset-email">{t("auth.email")}</Label>
                   <Input
                     id="reset-email"
                     type="email"
@@ -227,7 +227,7 @@ function AuthPage() {
                     placeholder="you@university.edu"
                   />
                   <p className="text-xs text-muted-foreground">
-                    We'll send a secure link to choose a new password.
+                    {t("auth.resetHelp")}
                   </p>
                 </div>
               </TabsContent>
@@ -264,17 +264,17 @@ function AuthPage() {
               }
               onClick={submit}
             >
-              {loading
-                ? "Please wait..."
+                {loading
+                ? t("auth.pleaseWait")
                 : mode === "signin"
-                  ? "Sign in"
+                  ? t("common.signIn")
                   : mode === "reset"
-                    ? "Send reset link"
-                    : "Create account"}
+                    ? t("auth.sendReset")
+                    : t("auth.createAccount")}
             </Button>
             <Button asChild variant="ghost" className="mt-2 w-full">
               <Link to="/onboarding" search={{ mode: "guest" }}>
-                Continue as guest
+                {t("auth.continueGuest")}
               </Link>
             </Button>
           </Card>
@@ -282,17 +282,16 @@ function AuthPage() {
 
         {!session && localRoadmap && (
           <Card className="mt-4 max-w-xl p-4">
-            <p className="text-sm font-medium">Guest roadmap found</p>
+            <p className="text-sm font-medium">{t("auth.guestFound")}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              This browser still has a local guest roadmap. You can continue it or clear it before
-              starting fresh.
+              {t("auth.guestFoundDesc")}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <Button asChild size="sm">
-                <Link to="/dashboard">Continue guest roadmap</Link>
+                <Link to="/dashboard">{t("auth.continueGuestRoadmap")}</Link>
               </Button>
               <Button variant="outline" size="sm" onClick={clearGuestRoadmap}>
-                Clear guest roadmap
+                {t("auth.clearGuestRoadmap")}
               </Button>
             </div>
           </Card>
@@ -317,28 +316,29 @@ function NameFields({
   setFirstName: (value: string) => void;
   setLastName: (value: string) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="space-y-2">
-        <Label htmlFor="first-name">First name</Label>
+        <Label htmlFor="first-name">{t("auth.firstName")}</Label>
         <Input
           id="first-name"
           type="text"
           autoComplete="given-name"
           value={firstName}
           onChange={(event) => setFirstName(event.target.value)}
-          placeholder="First name"
+          placeholder={t("auth.firstName")}
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="last-name">Last name</Label>
+        <Label htmlFor="last-name">{t("auth.lastName")}</Label>
         <Input
           id="last-name"
           type="text"
           autoComplete="family-name"
           value={lastName}
           onChange={(event) => setLastName(event.target.value)}
-          placeholder="Last name"
+          placeholder={t("auth.lastName")}
         />
       </div>
     </div>
@@ -358,10 +358,11 @@ function AuthFields({
   setPassword: (value: string) => void;
   mode: "signin" | "signup" | "reset";
 }) {
+  const { t } = useI18n();
   return (
     <>
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("auth.email")}</Label>
         <Input
           id="email"
           type="email"
@@ -372,13 +373,13 @@ function AuthFields({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">{t("auth.password")}</Label>
         <PasswordInput
           id="password"
           autoComplete={mode === "signup" ? "new-password" : "current-password"}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          placeholder="At least 6 characters"
+          placeholder={t("auth.passwordPlaceholder")}
         />
       </div>
     </>
@@ -387,13 +388,14 @@ function AuthFields({
 
 function PasswordInput(props: React.ComponentProps<typeof Input>) {
   const [visible, setVisible] = useState(false);
+  const { t } = useI18n();
 
   return (
     <div className="relative">
       <Input {...props} type={visible ? "text" : "password"} className="pr-10" />
       <button
         type="button"
-        aria-label={visible ? "Hide password" : "Show password"}
+        aria-label={visible ? t("auth.hidePassword") : t("auth.showPassword")}
         className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
         onClick={() => setVisible((value) => !value)}
       >
@@ -410,40 +412,41 @@ function ExchangeFields({
   profile: AuthProfileForm;
   setProfile: (value: AuthProfileForm) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-lg border bg-muted/20 p-4">
-      <p className="text-sm font-semibold">Your exchange</p>
+      <p className="text-sm font-semibold">{t("auth.exchangeTitle")}</p>
       <p className="mt-1 text-xs text-muted-foreground">
-        These details create your dashboard immediately after your account is ready.
+        {t("auth.exchangeDesc")}
       </p>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="signup-country">Destination country</Label>
+          <Label htmlFor="signup-country">{t("onboarding.countryLabel")}</Label>
           <Select
             value={profile.country}
             onValueChange={(country) => setProfile({ ...profile, country })}
           >
             <SelectTrigger id="signup-country">
-              <SelectValue placeholder="Choose country" />
+              <SelectValue placeholder={t("auth.chooseCountry")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="United States">United States</SelectItem>
               <SelectItem value="other" disabled>
-                More countries coming soon
+                {t("onboarding.moreCountries")}
               </SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="signup-university">Host university</Label>
+          <Label htmlFor="signup-university">{t("auth.hostUniversity")}</Label>
           <Select
             value={profile.university}
             onValueChange={(university) => setProfile({ ...profile, university })}
           >
             <SelectTrigger id="signup-university">
-              <SelectValue placeholder="Choose university" />
+              <SelectValue placeholder={t("auth.chooseUniversity")} />
             </SelectTrigger>
             <SelectContent>
               {UNIVERSITY_OPTIONS.map((university) => (
@@ -456,13 +459,13 @@ function ExchangeFields({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="signup-nationality">Nationality</Label>
+          <Label htmlFor="signup-nationality">{t("profile.nationality")}</Label>
           <Select
             value={profile.nationality}
             onValueChange={(nationality) => setProfile({ ...profile, nationality })}
           >
             <SelectTrigger id="signup-nationality">
-              <SelectValue placeholder="Choose nationality" />
+              <SelectValue placeholder={t("auth.chooseNationality")} />
             </SelectTrigger>
             <SelectContent>
               {NATIONALITY_OPTIONS.map((nationality) => (
@@ -475,7 +478,7 @@ function ExchangeFields({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="signup-start-date">Arrival / start date</Label>
+          <Label htmlFor="signup-start-date">{t("onboarding.arrivalLabel")}</Label>
           <Input
             id="signup-start-date"
             type="date"
@@ -485,7 +488,7 @@ function ExchangeFields({
         </div>
 
         <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="signup-duration">Exchange duration</Label>
+          <Label htmlFor="signup-duration">{t("onboarding.durationLabel")}</Label>
           <Select
             value={profile.duration}
             onValueChange={(duration) =>
@@ -493,12 +496,12 @@ function ExchangeFields({
             }
           >
             <SelectTrigger id="signup-duration">
-              <SelectValue placeholder="Choose duration" />
+              <SelectValue placeholder={t("auth.chooseDuration")} />
             </SelectTrigger>
             <SelectContent>
               {DURATION_OPTIONS.map((duration) => (
                 <SelectItem key={duration.value} value={duration.value}>
-                  {duration.label}
+                  {translateDuration(duration.value, t)}
                 </SelectItem>
               ))}
             </SelectContent>

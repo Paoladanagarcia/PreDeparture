@@ -18,6 +18,7 @@ import {
   type Task,
 } from "@/lib/tasks";
 import { AppHeader } from "@/components/AppHeader";
+import { translateDuration, useI18n, type Language } from "@/lib/i18n";
 import { getUniversityConfig } from "@/lib/universities";
 import {
   ExternalLink,
@@ -50,6 +51,7 @@ function Dashboard() {
   const { done, docs, toggle, toggleDoc, reset } = useProgress();
   const { configured: authConfigured, session } = useAuth();
   const navigate = useNavigate();
+  const { language, t } = useI18n();
 
   useEffect(() => {
     if (loaded && !profile) navigate({ to: "/onboarding" });
@@ -89,22 +91,24 @@ function Dashboard() {
         <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
           <Card className="p-4 sm:p-5">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              You're heading to
+              {t("dashboard.headingTo")}
             </p>
             <h1 className="mt-1 text-xl font-bold sm:text-2xl md:text-2xl">
               {profile.university}, {profile.country}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {profile.nationality} student · arriving{" "}
+              {profile.nationality} {t("dashboard.student")} · {t("dashboard.arriving")}{" "}
               {arrival.toLocaleDateString(undefined, { dateStyle: "long" })} ·{" "}
-              {durationLabel(profile.duration)}
+              {translateDuration(profile.duration, t)}
             </p>
 
             <div className="mt-4 sm:mt-5">
               <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="font-medium">You're {pct}% ready for departure</span>
+                <span className="font-medium">
+                  {pct}% {t("dashboard.ready")}
+                </span>
                 <span className="text-muted-foreground">
-                  {completed} / {total} done
+                  {completed} / {total} {t("dashboard.done")}
                 </span>
               </div>
               <Progress value={pct} className="h-2" />
@@ -114,13 +118,15 @@ function Dashboard() {
           <Card className="flex flex-col justify-between p-4 sm:p-5">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Your next step
+                {t("dashboard.nextStep")}
               </p>
               <p className="mt-2 text-lg font-semibold">
-                {nextTask ? nextTask.title : "You're all set! 🎉"}
+                {nextTask ? getTaskText(nextTask, language).title : `${t("dashboard.allSet")} 🎉`}
               </p>
               {nextTask && (
-                <p className="mt-1 text-sm text-muted-foreground">{nextTask.description}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {getTaskText(nextTask, language).description}
+                </p>
               )}
             </div>
             {nextTask && (
@@ -129,7 +135,7 @@ function Dashboard() {
                 <CategoryBadge category={nextTask.category} />
                 <Badge variant="outline" className="gap-1">
                   <CalendarClock className="h-3 w-3" />
-                  by {formatDate(dateMinusDays(arrival, nextTask.recommendedDaysBefore))}
+                  {t("common.by")} {formatDate(dateMinusDays(arrival, nextTask.recommendedDaysBefore))}
                 </Badge>
               </div>
             )}
@@ -140,25 +146,25 @@ function Dashboard() {
 
         <Tabs defaultValue="checklist" className="mt-5 sm:mt-6">
           <TabsList>
-            <TabsTrigger value="checklist">Checklist</TabsTrigger>
-            <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            <TabsTrigger value="checklist">{t("dashboard.checklist")}</TabsTrigger>
+            <TabsTrigger value="timeline">{t("dashboard.timeline")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="checklist" className="mt-5">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-lg font-semibold">Checklist</h2>
+                <h2 className="text-lg font-semibold">{t("dashboard.checklist")}</h2>
                 <p className="text-sm text-muted-foreground">
-                  Track what is done before and after arrival.
+                  {t("dashboard.trackDone")}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={reset}>
-                <RotateCcw className="mr-1 h-3.5 w-3.5" /> Reset checklist
+                <RotateCcw className="mr-1 h-3.5 w-3.5" /> {t("common.resetChecklist")}
               </Button>
             </div>
             <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
               <ChecklistColumn
-                title="Before departure"
+                title={t("dashboard.beforeDeparture")}
                 tasks={before}
                 done={done}
                 docs={docs}
@@ -167,7 +173,7 @@ function Dashboard() {
                 arrival={arrival}
               />
               <ChecklistColumn
-                title="After arrival"
+                title={t("dashboard.afterArrival")}
                 tasks={after}
                 done={done}
                 docs={docs}
@@ -189,21 +195,22 @@ function Dashboard() {
 }
 
 function CloudSyncPrompt() {
+  const { t } = useI18n();
+
   return (
     <Card className="mt-4 border-primary/15 bg-primary-soft/30 p-3 sm:mt-5 sm:p-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-            <h2 className="text-xs font-semibold">Save your roadmap</h2>
+            <h2 className="text-xs font-semibold">{t("dashboard.saveRoadmap")}</h2>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            You're in guest mode. Create an account to sync your profile and checklist across
-            devices.
+            {t("dashboard.guestModeSync")}
           </p>
         </div>
         <Button asChild size="sm" className="h-8 shrink-0 px-3 text-xs">
-          <Link to="/auth">Create account</Link>
+          <Link to="/auth">{t("dashboard.createAccount")}</Link>
         </Button>
       </div>
     </Card>
@@ -211,33 +218,36 @@ function CloudSyncPrompt() {
 }
 
 function PriorityBadge({ priority }: { priority: Task["priority"] }) {
+  const { language } = useI18n();
   const meta = PRIORITY_META[priority];
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-semibold ${meta.className}`}
     >
       <span>{meta.emoji}</span>
-      {meta.label}
+      {getPriorityLabel(priority, language)}
     </span>
   );
 }
 
 function CategoryBadge({ category }: { category: Task["category"] }) {
+  const { language } = useI18n();
   const meta = CATEGORY_META[category];
   return (
     <Badge variant="secondary" className="text-[10px]">
       {meta.emoji && <span>{meta.emoji}</span>}
-      <span className={meta.emoji ? "ml-1" : ""}>{meta.label}</span>
+      <span className={meta.emoji ? "ml-1" : ""}>{getCategoryLabel(category, language)}</span>
     </Badge>
   );
 }
 
 function CategoryLabel({ category }: { category: Task["category"] }) {
+  const { language } = useI18n();
   const meta = CATEGORY_META[category];
   return (
     <span>
       {meta.emoji && <span>{meta.emoji} </span>}
-      {meta.label}
+      {getCategoryLabel(category, language)}
     </span>
   );
 }
@@ -257,6 +267,8 @@ function TaskCard({
   toggleDoc: (taskId: string, docId: string) => void;
   arrival: Date;
 }) {
+  const { language, t: translate } = useI18n();
+  const taskText = getTaskText(t, language);
   const recommended = dateMinusDays(arrival, t.recommendedDaysBefore);
   const latest = dateMinusDays(arrival, t.latestDaysBefore);
 
@@ -276,16 +288,20 @@ function TaskCard({
                 htmlFor={t.id}
                 className="block cursor-pointer text-sm font-medium text-muted-foreground line-through"
               >
-                {t.title}
+                {taskText.title}
               </label>
               <Badge variant="outline" className="border-success/40 bg-success/10 text-[10px]">
-                <CheckCircle2 className="mr-1 h-3 w-3" /> Done
+                <CheckCircle2 className="mr-1 h-3 w-3" /> {translate("common.done")}
               </Badge>
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
               <CategoryLabel category={t.category} />
-              <span>Recommended: {formatDate(recommended)}</span>
-              <span>Latest safe: {formatDate(latest)}</span>
+              <span>
+                {translate("common.recommended")}: {formatDate(recommended)}
+              </span>
+              <span>
+                {translate("common.latestSafe")}: {formatDate(latest)}
+              </span>
             </div>
           </div>
         </div>
@@ -310,22 +326,22 @@ function TaskCard({
               htmlFor={t.id}
               className={`block cursor-pointer text-sm font-medium ${isDone ? "text-muted-foreground line-through" : ""}`}
             >
-              {t.title}
+              {taskText.title}
             </label>
             <PriorityBadge priority={t.priority} />
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{taskText.description}</p>
 
           <div className="mt-3 grid gap-2 rounded-md border bg-muted/30 p-2 sm:grid-cols-2">
             <div>
               <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                Recommended
+                {translate("common.recommended")}
               </p>
               <p className="text-xs font-semibold">{formatDate(recommended)}</p>
             </div>
             <div>
               <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                Latest safe
+                {translate("common.latestSafe")}
               </p>
               <p className="text-xs font-semibold">{formatDate(latest)}</p>
             </div>
@@ -340,7 +356,7 @@ function TaskCard({
             )}
             {t.source && (
               <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                <ShieldCheck className="h-3 w-3" /> Source: {t.source}
+                <ShieldCheck className="h-3 w-3" /> {translate("common.source")}: {t.source}
               </span>
             )}
             {t.link && (
@@ -358,14 +374,14 @@ function TaskCard({
           {t.warning && (
             <div className="mt-3 flex gap-2 rounded-md border border-warning/40 bg-warning/10 p-2 text-xs text-warning-foreground">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>{t.warning}</span>
+              <span>{taskText.warning ?? t.warning}</span>
             </div>
           )}
 
           {t.requiredDocuments && t.requiredDocuments.length > 0 && (
             <div className="mt-3 rounded-md border bg-card p-3">
               <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <FileText className="h-3 w-3" /> Required documents
+                <FileText className="h-3 w-3" /> {translate("common.requiredDocuments")}
               </p>
               <ul className="space-y-1.5">
                 {t.requiredDocuments.map((d) => {
@@ -382,7 +398,7 @@ function TaskCard({
                         htmlFor={key}
                         className={`cursor-pointer text-xs ${checked ? "text-muted-foreground line-through" : ""}`}
                       >
-                        {d.label}
+                        {taskText.docs?.[d.id] ?? d.label}
                       </label>
                     </li>
                   );
@@ -448,6 +464,7 @@ function Timeline({
   done: Record<string, boolean>;
   arrival: Date;
 }) {
+  const { t } = useI18n();
   const groups = getTimelineGroups(tasks);
   const completed = tasks.filter((task) => done[task.id]).length;
   const total = tasks.length;
@@ -456,23 +473,19 @@ function Timeline({
     <Card className="p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Timeline</h2>
+          <h2 className="text-lg font-semibold">{t("dashboard.timeline")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Your preparation path from early planning to the first month after arrival.
+            {t("timeline.description")}
           </p>
         </div>
         <Badge variant="outline" className="shrink-0">
-          {completed} / {total} done
+          {completed} / {total} {t("common.done")}
         </Badge>
       </div>
 
       <div className="mt-4 flex gap-2 rounded-md border border-primary/30 bg-primary-soft/40 p-3 text-xs text-foreground">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-        <p>
-          Timeline recommendations are based on typical preparation schedules. Requirements and
-          processing times may vary by university, country and visa type. Always verify information
-          through official sources.
-        </p>
+        <p>{t("timeline.note")}</p>
       </div>
 
       <div className="relative mt-8 space-y-8">
@@ -543,7 +556,7 @@ function Timeline({
                               <span>{task.effort}</span>
                               {task.priority === "high" && (
                                 <span className="font-semibold text-destructive">
-                                  High priority
+                                  {t("common.highPriority")}
                                 </span>
                               )}
                             </div>
@@ -728,6 +741,164 @@ function personalizeTaskForUniversity(
   }
 
   return task;
+}
+
+const FRENCH_TASK_TEXT: Record<
+  string,
+  {
+    title: string;
+    description: string;
+    warning?: string;
+    docs?: Record<string, string>;
+  }
+> = {
+  sevis: {
+    title: "Payer les frais SEVIS I-901",
+    description: "Frais obligatoires pour tous les étudiants F-1 avant l'entretien visa.",
+  },
+  avits: {
+    title: "Créer un compte AVITS",
+    description: "Compte utilisé pour planifier votre rendez-vous visa à l'ambassade américaine.",
+  },
+  "ds-160": {
+    title: "Compléter le formulaire DS-160",
+    description: "Demande de visa non-immigrant en ligne requise pour le visa étudiant F-1.",
+  },
+  "visa-fee": {
+    title: "Payer les frais de demande de visa (MRV)",
+    description: "Paiement requis avant de planifier l'entretien à l'ambassade ou au consulat.",
+  },
+  "visa-schedule": {
+    title: "Planifier l'entretien visa",
+    description: "Réservez le premier créneau disponible : l'attente peut durer plusieurs semaines.",
+    warning: "Les délais d'entretien visa peuvent varier fortement selon le pays.",
+  },
+  "visa-docs": {
+    title: "Préparer les documents pour l'entretien visa",
+    description: "Rassemblez tout ce qu'il faudra apporter au rendez-vous à l'ambassade.",
+    docs: {
+      passport: "Passeport valide au moins 6 mois",
+      i20: "Formulaire I-20 signé",
+      ds160: "Page de confirmation DS-160",
+      "sevis-receipt": "Reçu de paiement SEVIS",
+      photo: "Photo visa au format américain",
+      financial: "Preuve de ressources financières",
+      admission: "Lettre d'admission de l'université",
+    },
+  },
+  "housing-search": {
+    title: "Commencer la recherche de logement",
+    description: "Logement universitaire, sous-location ou location privée. Explorez tôt les options.",
+    warning: "Le logement près du campus est compétitif. Commencez les recherches tôt.",
+  },
+  "housing-secure": {
+    title: "Sécuriser un logement",
+    description: "Signez le bail ou confirmez votre attribution de logement universitaire.",
+    warning: "N'envoyez jamais de dépôt avant d'avoir vérifié l'annonce : les arnaques existent.",
+  },
+  insurance: {
+    title: "Vérifier l'assurance santé",
+    description:
+      "Les soins aux États-Unis coûtent cher. Vérifiez si l'assurance universitaire est obligatoire ou si une dispense est possible.",
+    warning: "Les règles d'assurance varient selon l'université. Vérifiez les critères officiels.",
+  },
+  flights: {
+    title: "Réserver les vols",
+    description: "Essayez d'arriver quelques jours avant l'orientation pour vous installer.",
+  },
+  bank: {
+    title: "Vérifier les paiements bancaires et cartes internationales",
+    description:
+      "Vérifiez les frais à l'étranger, augmentez les plafonds et prévenez votre banque du voyage.",
+  },
+  phone: {
+    title: "Préparer une eSIM ou un forfait téléphone pour les États-Unis",
+    description: "Commandez une eSIM ou activez une option internationale avant le départ.",
+  },
+  "student-card": {
+    title: "Obtenir votre carte étudiante",
+    description: "Votre carte officielle pour accéder aux services du campus.",
+  },
+  "register-classes": {
+    title: "S'inscrire aux cours",
+    description: "Utilisez le portail étudiant et surveillez les créneaux d'inscription.",
+  },
+  "open-bank": {
+    title: "Ouvrir un compte bancaire américain si nécessaire",
+    description: "Comparez les banques proches du campus et les alternatives comme Wise.",
+  },
+  "activate-sim": {
+    title: "Activer le forfait téléphone ou l'eSIM",
+    description: "Vérifiez que les données, appels et SMS fonctionnent pour les codes de sécurité.",
+  },
+  transport: {
+    title: "Comprendre les transports locaux",
+    description:
+      "Repérez les options utiles autour du campus : bus, train, navettes et cartes de transport.",
+  },
+  emergency: {
+    title: "Enregistrer les contacts d'urgence",
+    description: "Sauvegardez police campus, ambassade, assurance, urgence médicale et contact local.",
+  },
+  "arrival-reqs": {
+    title: "Vérifier les exigences d'arrivée de l'université",
+    description: "Check-in obligatoire, vaccination, orientation et démarches campus.",
+  },
+  "scholarships-research": {
+    title: "Chercher les bourses et options de financement",
+    description:
+      "Identifiez les aides de votre école, de l'université d'accueil, du gouvernement ou d'organismes privés.",
+    warning:
+      "Les deadlines de bourse sont souvent plus tôt que celles du visa ou du logement. Vérifiez-les dès que possible.",
+  },
+  "scholarships-prepare": {
+    title: "Préparer les documents de candidature aux bourses",
+    description:
+      "Rassemblez relevés de notes, lettre de motivation, budget, recommandations et formulaires spécifiques.",
+  },
+  "scholarships-submit": {
+    title: "Envoyer les candidatures de bourse avant les deadlines",
+    description: "Soumettez chaque dossier en avance : beaucoup ferment 4 à 9 mois avant le départ.",
+    warning:
+      "Les deadlines de bourse sont souvent plus tôt que celles du visa ou du logement. Vérifiez-les dès que possible.",
+  },
+};
+
+type DisplayTaskText = Task & { docs?: Record<string, string> };
+
+function getTaskText(task: Task, language: Language): DisplayTaskText {
+  if (language !== "fr") return task;
+  return {
+    ...task,
+    ...FRENCH_TASK_TEXT[task.id],
+  };
+}
+
+function getCategoryLabel(category: Task["category"], language: Language) {
+  if (language !== "fr") return CATEGORY_META[category].label;
+  return (
+    {
+      visa: "Visa",
+      housing: "Logement",
+      insurance: "Assurance",
+      banking: "Banque",
+      phone: "Téléphone",
+      travel: "Voyage",
+      university: "Université",
+      scholarship: "Bourse",
+    } satisfies Record<Task["category"], string>
+  )[category];
+}
+
+function getPriorityLabel(priority: Task["priority"], language: Language) {
+  if (language !== "fr") return PRIORITY_META[priority].label;
+  return (
+    {
+      high: "Priorité élevée",
+      medium: "Priorité moyenne",
+      low: "Priorité basse",
+    } satisfies Record<Task["priority"], string>
+  )[priority];
 }
 
 function isLikelyUsNational(nationality: string) {

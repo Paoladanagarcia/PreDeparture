@@ -3,6 +3,7 @@ import { ExternalLink, Info, ShieldCheck, University } from "lucide-react";
 
 import { PublicHeader } from "@/components/PublicHeader";
 import { Card } from "@/components/ui/card";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -56,6 +57,7 @@ const sourceGroups = [
 ];
 
 function AboutPage() {
+  const { t } = useI18n();
   return (
     <div className="min-h-screen bg-muted/30">
       <PublicHeader active="sources" />
@@ -64,48 +66,42 @@ function AboutPage() {
         <section className="max-w-3xl">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full border bg-primary-soft px-3 py-1 text-xs font-medium text-primary">
             <ShieldCheck className="h-3.5 w-3.5" />
-            Source-aware guidance
+            {t("about.badge")}
           </div>
           <h1 className="text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
-            About and sources
+            {t("about.title")}
           </h1>
           <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-            PreDeparture helps students organize exchange preparation in one place. The checklist,
-            timeline and resources are based on official university pages, embassy or government
-            websites, and practical student preparation patterns.
+            {t("about.intro")}
           </p>
         </section>
 
         <div className="mt-6 grid gap-4 sm:mt-8 md:grid-cols-3">
           <Card className="p-4 sm:p-5">
             <University className="h-5 w-5 text-primary" />
-            <h2 className="mt-3 text-sm font-semibold">Official-first resources</h2>
+            <h2 className="mt-3 text-sm font-semibold">{t("about.cardOfficialTitle")}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              The app links back to official sources whenever a requirement, document or campus
-              process matters.
+              {t("about.cardOfficialDesc")}
             </p>
           </Card>
           <Card className="p-4 sm:p-5">
             <Info className="h-5 w-5 text-primary" />
-            <h2 className="mt-3 text-sm font-semibold">Indicative deadlines</h2>
+            <h2 className="mt-3 text-sm font-semibold">{t("about.cardDeadlinesTitle")}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Dates are planning estimates calculated from your arrival date. Real deadlines can
-              vary by program, embassy, nationality and university office.
+              {t("about.cardDeadlinesDesc")}
             </p>
           </Card>
           <Card className="p-4 sm:p-5">
             <ShieldCheck className="h-5 w-5 text-primary" />
-            <h2 className="mt-3 text-sm font-semibold">Verify before acting</h2>
+            <h2 className="mt-3 text-sm font-semibold">{t("about.cardVerifyTitle")}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Before paying fees, booking appointments, signing housing or submitting forms, verify
-              details directly with your host university, your home university or the relevant
-              embassy.
+              {t("about.cardVerifyDesc")}
             </p>
           </Card>
         </div>
 
         <section className="mt-8">
-          <h2 className="text-xl font-semibold">Main source categories</h2>
+          <h2 className="text-xl font-semibold">{t("about.sourcesTitle")}</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             {sourceGroups.map((group) => (
               <Card key={group.title} className="p-5">
@@ -131,11 +127,9 @@ function AboutPage() {
         </section>
 
         <Card className="mt-5 border-primary/20 bg-primary-soft/40 p-4 sm:mt-6 sm:p-5">
-          <h2 className="text-sm font-semibold">Important note</h2>
+          <h2 className="text-sm font-semibold">{t("about.noteTitle")}</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            PreDeparture is a preparation tool, not an official university, immigration, legal,
-            medical or financial authority. It is designed to help you stay organized, ask better
-            questions and find the right official pages faster.
+            {t("about.noteBody")}
           </p>
         </Card>
       </main>

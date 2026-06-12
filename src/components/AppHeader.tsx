@@ -8,8 +8,10 @@ import {
 } from "lucide-react";
 
 import { Logo } from "@/components/Logo";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { MobileNav } from "@/components/MobileNav";
 import { PlanningLink } from "@/components/PlanningLink";
+import { useI18n } from "@/lib/i18n";
 import { useProfile } from "@/lib/storage";
 
 type ActiveNav =
@@ -33,6 +35,7 @@ const inactiveClass =
 
 export function AppHeader({ active }: AppHeaderProps) {
   const { profile } = useProfile();
+  const { t } = useI18n();
 
   return (
     <header className="sticky top-0 z-50 border-b bg-card/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -40,28 +43,31 @@ export function AppHeader({ active }: AppHeaderProps) {
         <Logo />
         <nav className="hidden min-w-0 items-center gap-1 md:flex">
           <HeaderLink active={active === "home"} to="/">
-            Home
+            {t("nav.home")}
           </HeaderLink>
           <HeaderPlanningLink active={active === "dashboard"} />
           <HeaderLink active={active === "assistant"} to="/assistant">
-            <Sparkles className="mr-1 h-3.5 w-3.5" /> <span>AI Assistant</span>
+            <Sparkles className="mr-1 h-3.5 w-3.5" /> <span>{t("nav.aiAssistant")}</span>
           </HeaderLink>
           <HeaderLink active={active === "community"} to="/community">
-            <MessageCircle className="mr-1 h-3.5 w-3.5" /> <span>Community</span>
+            <MessageCircle className="mr-1 h-3.5 w-3.5" /> <span>{t("nav.community")}</span>
           </HeaderLink>
           <HeaderLink active={active === "resources"} to="/resources">
-            <Library className="mr-1 h-3.5 w-3.5" /> <span>Resources</span>
+            <Library className="mr-1 h-3.5 w-3.5" /> <span>{t("nav.resources")}</span>
           </HeaderLink>
           <HeaderLink active={active === "profile"} to={profile ? "/profile" : "/auth"}>
-            <User className="mr-1 h-3.5 w-3.5" /> <span>Profile</span>
+            <User className="mr-1 h-3.5 w-3.5" /> <span>{t("nav.profile")}</span>
           </HeaderLink>
           <a href="/#story" className={inactiveClass}>
-            Our story
+            {t("nav.ourStory")}
           </a>
           <HeaderLink active={active === "sources"} to="/about">
-            Sources
+            {t("nav.sources")}
           </HeaderLink>
         </nav>
+        <div className="hidden md:block">
+          <LanguageSwitcher />
+        </div>
         <MobileNav />
       </div>
     </header>
@@ -69,10 +75,11 @@ export function AppHeader({ active }: AppHeaderProps) {
 }
 
 function HeaderPlanningLink({ active }: { active?: boolean }) {
+  const { t } = useI18n();
   return (
     <PlanningLink
-      startLabel="Dashboard"
-      dashboardLabel="Dashboard"
+      startLabel={t("nav.dashboard")}
+      dashboardLabel={t("nav.dashboard")}
       className={active ? activeClass : inactiveClass}
     />
   );

@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { reportClientError } from "../lib/client-error-reporting";
 import { Toaster } from "../components/ui/sonner";
 import { AuthProvider } from "../lib/auth";
+import { I18nProvider } from "../lib/i18n";
 
 function NotFoundComponent() {
   return (
@@ -111,11 +112,13 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-        <Toaster richColors position="top-right" />
-      </AuthProvider>
+      <I18nProvider>
+        <AuthProvider>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+          <Toaster richColors position="top-right" />
+        </AuthProvider>
+      </I18nProvider>
     </QueryClientProvider>
   );
 }

@@ -21,6 +21,7 @@ type RequestBody = {
   messages?: AssistantMessage[];
   context?: {
     university?: unknown;
+    language?: unknown;
   };
 };
 
@@ -107,7 +108,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const university =
       typeof body.context?.university === "string" ? body.context.university : "the host university";
-    const prompt = buildPrompt(university, question);
+    const language = body.context?.language === "fr" ? "French" : "English";
+    const prompt = buildPrompt(university, question, language);
 
     let { response, data, model } = await generateWithAvailableModel(apiKey, prompt);
 
@@ -145,7 +147,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         answerPreview: answer.slice(0, 120),
       });
 
-      const retryResult = await generateWithAvailableModel(apiKey, buildRetryPrompt(university, question));
+      const retryResult = await generateWithAvailableModel(
+        apiKey,
+        buildRetryPrompt(university, question, language),
+      );
       response = retryResult.response;
       data = retryResult.data;
       model = retryResult.model;
@@ -233,11 +238,12 @@ async function generateWithAvailableModel(apiKey: string, prompt: string) {
   };
 }
 
-function buildPrompt(university: string, question: string) {
+function buildPrompt(university: string, question: string, language: string) {
   return [
     `Host university context: ${university}`,
+    `Interface language: ${language}`,
     `Student question: ${question}`,
-    "Answer in the same language as the student's question.",
+    "Answer in the interface language unless the student's question clearly uses another language.",
     "Keep the answer under 180 words unless the user explicitly asks for more detail.",
     "If the answer lists documents, costs, steps or options, use short hyphen bullets.",
     "Leave a blank line after the opening sentence and between logical groups.",
@@ -245,11 +251,12 @@ function buildPrompt(university: string, question: string) {
   ].join("\n\n");
 }
 
-function buildRetryPrompt(university: string, question: string) {
+function buildRetryPrompt(university: string, question: string, language: string) {
   return [
     `Host university context: ${university}`,
+    `Interface language: ${language}`,
     `Student question: ${question}`,
-    "Your previous answer was cut off. Answer again in the same language as the question.",
+    "Your previous answer was cut off. Answer again in the interface language unless the question clearly uses another language.",
     "Use 3 to 5 short plain-text bullet points with simple hyphens.",
     "Keep it under 140 words.",
     "Finish every sentence.",
