@@ -105,9 +105,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const university =
       typeof body.context?.university === "string" ? body.context.university : "the host university";
-    const prompt = `Host university context: ${university}\n\nStudent question: ${question}`;
+    const prompt = buildPrompt(university, question);
 
-    const { response, data, model } = await generateWithAvailableModel(apiKey, prompt);
+    let { response, data, model } = await generateWithAvailableModel(apiKey, prompt);
 
     if (!response.ok) {
       console.error("Gemini API error", {
@@ -128,15 +128,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const answer = data.candidates?.[0]?.content?.parts
-      ?.map((part) => part.text || "")
-      .join("")
-      .trim();
+    let answer = extractAnswer(data);
 
     if (!answer) {
       return res.status(502).json({
         error: "The AI assistant could not generate an answer. Please try again.",
       });
+    }
+
+    if (isIncompleteAnswer(answer, data)) {
+      console.warn("Gemini returned an incomplete answer, retrying concise response", {
+        model,
+        finishReason: data.candidates?.[0]?.finishReason,
+        answerPreview: answer.slice(0, 120),
+      });
+
+      const retryResult = await generateWithAvailableModel(apiKey, buildRetryPrompt(university, question));
+      response = retryResult.response;
+      data = retryResult.data;
+      model = retryResult.model;
+
+      if (!response.ok) {
+        console.error("Gemini retry failed", {
+          model,
+          httpStatus: response.status,
+          geminiCode: data.error?.code,
+          geminiStatus: data.error?.status,
+          geminiMessage: data.error?.message,
+        });
+      } else {
+        answer = extractAnswer(data) || answer;
+      }
     }
 
     return res.status(200).json({
@@ -175,7 +197,7 @@ async function generateWithAvailableModel(apiKey: string, prompt: string) {
             },
           ],
           generationConfig: {
-            maxOutputTokens: 700,
+            maxOutputTokens: 900,
             temperature: 0.25,
           },
         }),
@@ -207,6 +229,50 @@ async function generateWithAvailableModel(apiKey: string, prompt: string) {
     data: lastData,
     model: lastModel,
   };
+}
+
+function buildPrompt(university: string, question: string) {
+  return [
+    `Host university context: ${university}`,
+    `Student question: ${question}`,
+    "Answer in the same language as the student's question.",
+    "Keep the answer under 180 words unless the user explicitly asks for more detail.",
+  ].join("\n\n");
+}
+
+function buildRetryPrompt(university: string, question: string) {
+  return [
+    `Host university context: ${university}`,
+    `Student question: ${question}`,
+    "Your previous answer was cut off. Answer again in the same language as the question.",
+    "Use 3 to 5 short bullet points.",
+    "Keep it under 140 words.",
+    "Finish every sentence.",
+  ].join("\n\n");
+}
+
+function extractAnswer(data: GeminiResponse) {
+  return data.candidates?.[0]?.content?.parts
+    ?.map((part) => part.text || "")
+    .join("")
+    .trim();
+}
+
+function isIncompleteAnswer(answer: string, data: GeminiResponse) {
+  const trimmed = answer.trim();
+  const words = trimmed.split(/\s+/).filter(Boolean).length;
+
+  return (
+    data.candidates?.[0]?.finishReason === "MAX_TOKENS" ||
+    hasUnclosedMarkdownBold(trimmed) ||
+    /(\d+\.\s*|\*\s*|-\s*|:\s*)$/.test(trimmed) ||
+    (words < 25 && !/[.!?)]$/.test(trimmed))
+  );
+}
+
+function hasUnclosedMarkdownBold(value: string) {
+  const matches = value.match(/\*\*/g);
+  return Boolean(matches && matches.length % 2 !== 0);
 }
 
 function isModelUnavailable(response: Response, data: GeminiResponse) {
