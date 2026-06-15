@@ -541,25 +541,27 @@ function InfoLine({ label, value }: { label: string; value: string }) {
 }
 
 function SuggestTipButton({ label }: { label: string }) {
-  const subject = encodeURIComponent("PreDeparture student tip suggestion");
-  const body = encodeURIComponent(
-    [
-      "Hi,",
-      "",
-      "I would like to suggest a student tip for PreDeparture.",
-      "",
-      "University:",
-      "Category: groceries / housing / going out / trips / arrival / other",
-      "Tip:",
-      "Source or personal context:",
-      "",
-      "Thanks!",
-    ].join("\n"),
-  );
+  const to = "pao.dana.garcia@gmail.com";
+  const subject = "PreDeparture student tip suggestion";
+  const body = [
+    "Hi,",
+    "",
+    "I would like to suggest a student tip for PreDeparture.",
+    "",
+    "University:",
+    "Category: groceries / housing / going out / trips / arrival / other",
+    "Tip:",
+    "Source or personal context:",
+    "",
+    "Thanks!",
+  ].join("\n");
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+    to,
+  )}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
   return (
     <Button asChild>
-      <a href={`mailto:pao.dana.garcia@gmail.com?subject=${subject}&body=${body}`}>
+      <a href={gmailUrl} target="_blank" rel="noreferrer">
         <Mail className="h-4 w-4" /> {label} <ExternalLink className="h-3.5 w-3.5" />
       </a>
     </Button>
