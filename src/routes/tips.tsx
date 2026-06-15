@@ -25,7 +25,7 @@ export const Route = createFileRoute("/tips")({
       {
         name: "description",
         content:
-          "Student-sourced practical tips for groceries, first-week essentials, nights out and trips.",
+          "Student-sourced practical tips for groceries, nights out and trips.",
       },
     ],
   }),
@@ -40,7 +40,6 @@ type PlaceTip = {
   usefulFor: LocalizedText;
   distance: LocalizedText;
   price: "$" | "$$" | "$$$" | "$-$$";
-  transport: LocalizedText;
   note: LocalizedText;
   items?: LocalizedList;
 };
@@ -61,7 +60,6 @@ type TipsData = {
   intro: LocalizedText;
   disclaimer: LocalizedText;
   groceries: PlaceTip[];
-  essentials: PlaceTip[];
   outings: OutingGroup[];
   trips: TripGroup[];
 };
@@ -86,14 +84,13 @@ const UNIVERSITY_TIPS = {
         usefulFor: { en: "weekly groceries, quick meals", fr: "courses de la semaine, repas rapides" },
         distance: { en: "Close to campus by bus or bike", fr: "Proche du campus en bus ou vélo" },
         price: "$-$$",
-        transport: { en: "walk / bike / bus", fr: "à pied / vélo / bus" },
         note: {
           en: "Good for affordable basics, snacks and simple student meals.",
           fr: "Pratique pour les basiques, snacks et repas étudiants simples.",
         },
         items: {
-          en: ["Bread", "cheese", "chicken", "tomato sauce", "pasta", "low-cost vodka"],
-          fr: ["Pain", "fromage", "poulet", "sauce tomate", "pâtes", "vodka pas chère"],
+          en: ["Bread", "cheese", "chicken", "tomato sauce", "pasta", "alcohol"],
+          fr: ["Pain", "fromage", "poulet", "sauce tomate", "pâtes", "alcool"],
         },
       },
       {
@@ -101,7 +98,6 @@ const UNIVERSITY_TIPS = {
         usefulFor: { en: "fresh food, international products", fr: "produits frais, produits internationaux" },
         distance: { en: "Bike, bus or short ride from campus", fr: "Vélo, bus ou petit trajet depuis le campus" },
         price: "$$",
-        transport: { en: "bike / bus / car", fr: "vélo / bus / voiture" },
         note: {
           en: "Often useful when you want better produce or more variety than a small supermarket.",
           fr: "Souvent utile pour de meilleurs produits frais ou plus de choix qu'un petit supermarché.",
@@ -116,8 +112,7 @@ const UNIVERSITY_TIPS = {
             "milk",
             "yogurt",
             "noodles",
-            "teriyaki sauce",
-            "fajita sauce",
+            "sauces",
             "international products",
           ],
           fr: [
@@ -129,8 +124,7 @@ const UNIVERSITY_TIPS = {
             "lait",
             "yaourts",
             "nouilles",
-            "sauce teriyaki",
-            "sauce fajitas",
+            "sauces",
             "produits internationaux",
           ],
         },
@@ -140,60 +134,13 @@ const UNIVERSITY_TIPS = {
         usefulFor: { en: "household products, toiletries, basics", fr: "maison, hygiène, basiques" },
         distance: { en: "Usually reachable by bus, bike or short ride", fr: "Souvent accessible en bus, vélo ou petit trajet" },
         price: "$$",
-        transport: { en: "bike / bus / car", fr: "vélo / bus / voiture" },
         note: {
-          en: "Useful for first-week household products and toiletries.",
-          fr: "Pratique pour les produits maison et hygiène de la première semaine.",
+          en: "Useful for household products and toiletries.",
+          fr: "Pratique pour les produits maison et hygiène.",
         },
         items: {
           en: ["Toilet paper", "beer", "paper towels", "dish soap", "Nutella", "shampoo", "shower gel"],
           fr: ["Papier toilette", "bières", "sopalin", "produit vaisselle", "Nutella", "shampoing", "gel douche"],
-        },
-      },
-    ],
-    essentials: [
-      {
-        name: "Target / larger stores nearby",
-        usefulFor: { en: "bedding, towels, adapters, storage", fr: "draps, serviettes, adaptateurs, rangement" },
-        distance: { en: "Usually easier with a car or transit plan", fr: "Plus simple avec voiture ou trajet préparé" },
-        price: "$$",
-        transport: { en: "car / public transit", fr: "voiture / transports" },
-        note: {
-          en: "Better for move-in essentials than normal groceries.",
-          fr: "Plus pratique pour l'installation que pour les courses normales.",
-        },
-      },
-      {
-        name: "Safeway",
-        usefulFor: { en: "shampoo, laundry basics, toilet paper", fr: "shampoing, lessive, papier toilette" },
-        distance: { en: "Reachable from campus neighborhoods", fr: "Accessible depuis les quartiers étudiants" },
-        price: "$$",
-        transport: { en: "bike / bus / car", fr: "vélo / bus / voiture" },
-        note: {
-          en: "A practical first stop if you need toiletries and household basics immediately.",
-          fr: "Un bon premier arrêt pour l'hygiène et les produits maison urgents.",
-        },
-      },
-      {
-        name: "Trader Joe's or Berkeley Bowl",
-        usefulFor: { en: "first groceries", fr: "premières courses" },
-        distance: { en: "Depends on housing location", fr: "Dépend de votre logement" },
-        price: "$-$$",
-        transport: { en: "walk / bike / bus", fr: "à pied / vélo / bus" },
-        note: {
-          en: "Good for filling the fridge during the first days.",
-          fr: "Pratique pour remplir le frigo les premiers jours.",
-        },
-      },
-      {
-        name: "Phone stores or eSIM online",
-        usefulFor: { en: "SIM, eSIM, first US phone setup", fr: "SIM, eSIM, premier forfait US" },
-        distance: { en: "Online or nearby retail areas", fr: "En ligne ou zones commerçantes proches" },
-        price: "$-$$",
-        transport: { en: "online / walk / transit", fr: "en ligne / à pied / transports" },
-        note: {
-          en: "An eSIM can be enough for the first days while you compare plans.",
-          fr: "Une eSIM peut suffire les premiers jours le temps de comparer les forfaits.",
         },
       },
     ],
@@ -280,7 +227,6 @@ const UNIVERSITY_TIPS = {
         usefulFor: { en: "affordable groceries, snacks, frozen meals, quick meals", fr: "courses abordables, snacks, surgelés, repas rapides" },
         distance: { en: "Off campus, closer with bike, bus or car", fr: "Hors campus, plus simple en vélo, bus ou voiture" },
         price: "$-$$",
-        transport: { en: "bike / bus / car", fr: "vélo / bus / voiture" },
         note: {
           en: "Good for weekly groceries, but not enough for everything.",
           fr: "Bien pour les courses de la semaine, mais pas suffisant pour tout.",
@@ -291,10 +237,9 @@ const UNIVERSITY_TIPS = {
         usefulFor: { en: "basic groceries, pharmacy basics, toiletries", fr: "courses basiques, pharmacie simple, hygiène" },
         distance: { en: "Off campus, depends on housing location", fr: "Hors campus, dépend du logement" },
         price: "$$",
-        transport: { en: "bike / car", fr: "vélo / voiture" },
         note: {
-          en: "Useful for first-week essentials.",
-          fr: "Pratique pour les indispensables de la première semaine.",
+          en: "Useful for groceries, toiletries and basic pharmacy items.",
+          fr: "Pratique pour les courses, l'hygiène et la petite pharmacie.",
         },
       },
       {
@@ -302,7 +247,6 @@ const UNIVERSITY_TIPS = {
         usefulFor: { en: "bedding, towels, storage, cleaning products, adapters", fr: "draps, serviettes, rangement, ménage, adaptateurs" },
         distance: { en: "Further from campus", fr: "Plus loin du campus" },
         price: "$$",
-        transport: { en: "car / Caltrain + local transit", fr: "voiture / Caltrain + transports locaux" },
         note: {
           en: "Better for move-in essentials than normal groceries.",
           fr: "Mieux pour l'installation que pour les courses classiques.",
@@ -313,56 +257,9 @@ const UNIVERSITY_TIPS = {
         usefulFor: { en: "reaching shopping areas without a car", fr: "rejoindre des zones commerciales sans voiture" },
         distance: { en: "Campus to shopping areas", fr: "Campus vers zones commerciales" },
         price: "$",
-        transport: { en: "Stanford shuttle", fr: "navette Stanford" },
         note: {
           en: "Check the current Stanford Transportation schedule before planning around it.",
           fr: "Vérifiez l'horaire Stanford Transportation actuel avant de vous organiser avec.",
-        },
-      },
-    ],
-    essentials: [
-      {
-        name: "Target Mountain View / Redwood City",
-        usefulFor: { en: "bedding, towels, adapters, storage", fr: "draps, serviettes, adaptateurs, rangement" },
-        distance: { en: "Further from campus", fr: "Plus loin du campus" },
-        price: "$$",
-        transport: { en: "car / Caltrain + local transit", fr: "voiture / Caltrain + transports locaux" },
-        note: {
-          en: "Best first-week option for room setup and household basics.",
-          fr: "Meilleure option de première semaine pour la chambre et les basiques maison.",
-        },
-      },
-      {
-        name: "Safeway Palo Alto / Menlo Park",
-        usefulFor: { en: "toiletries, simple pharmacy items, cleaning basics", fr: "hygiène, petite pharmacie, produits ménage" },
-        distance: { en: "Off campus", fr: "Hors campus" },
-        price: "$$",
-        transport: { en: "bike / car", fr: "vélo / voiture" },
-        note: {
-          en: "Useful if you need shampoo, laundry products or basics quickly.",
-          fr: "Utile pour shampoing, lessive ou basiques rapidement.",
-        },
-      },
-      {
-        name: "Trader Joe's Palo Alto",
-        usefulFor: { en: "first groceries and snacks", fr: "premières courses et snacks" },
-        distance: { en: "Off campus", fr: "Hors campus" },
-        price: "$-$$",
-        transport: { en: "bike / bus / car", fr: "vélo / bus / voiture" },
-        note: {
-          en: "Good for easy meals while you settle in.",
-          fr: "Pratique pour des repas simples pendant l'installation.",
-        },
-      },
-      {
-        name: "eSIM online / phone retailers",
-        usefulFor: { en: "SIM, eSIM, first US phone setup", fr: "SIM, eSIM, premier forfait US" },
-        distance: { en: "Online or nearby retail areas", fr: "En ligne ou zones commerçantes proches" },
-        price: "$-$$",
-        transport: { en: "online / local transit", fr: "en ligne / transports locaux" },
-        note: {
-          en: "An eSIM can cover the first days before choosing a longer plan.",
-          fr: "Une eSIM peut couvrir les premiers jours avant de choisir un forfait long.",
         },
       },
     ],
@@ -424,12 +321,9 @@ const COPY = {
     usefulFor: "Useful for",
     distance: "Distance",
     price: "Price",
-    transport: "Transport",
     studentTip: "Student tip",
     groceries: "Groceries",
     groceriesDesc: "Where students tend to buy everyday items.",
-    firstWeek: "First week essentials",
-    firstWeekDesc: "The practical things students usually need immediately after arrival.",
     outings: "Going out",
     outingsDesc: "Student notes for evenings and low-effort plans. US alcohol venues are generally 21+.",
     trips: "Trips",
@@ -446,12 +340,9 @@ const COPY = {
     usefulFor: "Utile pour",
     distance: "Distance",
     price: "Prix",
-    transport: "Transport",
     studentTip: "Tip étudiant",
     groceries: "Courses",
     groceriesDesc: "Où les étudiants ont tendance à acheter les produits du quotidien.",
-    firstWeek: "Indispensables première semaine",
-    firstWeekDesc: "Les choses très concrètes dont on a souvent besoin dès l'arrivée.",
     outings: "Sorties",
     outingsDesc: "Notes étudiantes pour les soirées et plans simples. Les lieux avec alcool aux États-Unis sont généralement 21+.",
     trips: "Voyages",
@@ -482,7 +373,9 @@ function TipsPage() {
             {copy.eyebrow}
           </p>
           <h1 className="mt-1 text-2xl font-bold md:text-2xl">{tips.title[language]}</h1>
-          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{tips.intro[language]}</p>
+          <p className="mt-2 text-sm text-muted-foreground xl:whitespace-nowrap">
+            {tips.intro[language]}
+          </p>
           {!profile?.university && (
             <p className="mt-2 max-w-3xl text-xs text-muted-foreground">{copy.campusFallback}</p>
           )}
@@ -503,18 +396,6 @@ function TipsPage() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {tips.groceries.map((place) => (
             <PlaceCard key={place.name} place={place} language={language} copy={copy} />
-          ))}
-        </div>
-
-        <SectionHeader
-          icon={Sparkles}
-          title={copy.firstWeek}
-          description={copy.firstWeekDesc}
-          className="mt-8"
-        />
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {tips.essentials.map((place) => (
-            <PlaceCard key={place.name} place={place} language={language} copy={copy} compact />
           ))}
         </div>
 
@@ -612,12 +493,10 @@ function PlaceCard({
   place,
   language,
   copy,
-  compact,
 }: {
   place: PlaceTip;
   language: Language;
   copy: Record<string, string>;
-  compact?: boolean;
 }) {
   return (
     <Card className="p-4">
@@ -629,7 +508,6 @@ function PlaceCard({
       <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
         <InfoLine label={copy.usefulFor} value={place.usefulFor[language]} />
         <InfoLine label={copy.distance} value={place.distance[language]} />
-        <InfoLine label={copy.transport} value={place.transport[language]} />
       </div>
 
       <p className="mt-3 text-sm text-muted-foreground">
@@ -637,7 +515,7 @@ function PlaceCard({
         {place.note[language]}
       </p>
 
-      {place.items && !compact && (
+      {place.items && (
         <ul className="mt-3 flex flex-wrap gap-1.5">
           {place.items[language].map((item) => (
             <li
@@ -671,7 +549,7 @@ function SuggestTipButton({ label }: { label: string }) {
       "I would like to suggest a student tip for PreDeparture.",
       "",
       "University:",
-      "Category: groceries / first week / housing / going out / trips / arrival / other",
+      "Category: groceries / housing / going out / trips / arrival / other",
       "Tip:",
       "Source or personal context:",
       "",
