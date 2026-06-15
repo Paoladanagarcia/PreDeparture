@@ -106,9 +106,18 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  html[lang="fr"] {
+    font-size: 14px;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+
+  html[lang="fr"] h1,
+  html[lang="fr"] h2 {
+    line-height: 1.08;
   }
 }
 
@@ -132,6 +141,50 @@
   filter: blur(42px);
   opacity: 0.75;
   animation: dashboard-glow 8s ease-in-out infinite alternate;
+}
+
+.dashboard-preview__mesh {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--primary) 9%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--primary) 9%, transparent) 1px, transparent 1px);
+  background-size: 2.25rem 2.25rem;
+  mask-image: radial-gradient(70% 70% at 50% 35%, black 0%, transparent 78%);
+  opacity: 0.55;
+  animation: dashboard-mesh 18s linear infinite;
+}
+
+.dashboard-preview__side-card {
+  position: absolute;
+  z-index: 3;
+  min-width: 8.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklab, var(--card) 88%, transparent);
+  box-shadow: 0 16px 38px -28px rgba(16, 24, 40, 0.36);
+  backdrop-filter: blur(10px);
+  padding: 0.75rem;
+}
+
+.dashboard-preview__side-card--left {
+  left: -1.4rem;
+  top: 42%;
+  animation: dashboard-float-left 7s ease-in-out infinite;
+}
+
+.dashboard-preview__side-card--right {
+  right: -1.1rem;
+  top: 1.25rem;
+  animation: dashboard-float-right 6.5s ease-in-out infinite;
+}
+
+.dashboard-preview__live-dot {
+  animation: dashboard-live-dot 1.4s ease-in-out infinite;
+}
+
+.dashboard-preview__sync {
+  animation: dashboard-sync 3.5s ease-in-out infinite;
 }
 
 .dashboard-preview__progress {
@@ -186,12 +239,71 @@
   animation: dashboard-row-bar 6s ease-in-out infinite;
 }
 
+.dashboard-preview__assistant {
+  animation: dashboard-assistant 8s ease-in-out infinite;
+}
+
+.dashboard-preview__assistant-bar {
+  width: 72%;
+  transform-origin: left;
+  animation: dashboard-assistant-bar 3.6s ease-in-out infinite;
+}
+
 @keyframes dashboard-glow {
   from {
     transform: translate3d(0, 0, 0) scale(1);
   }
   to {
     transform: translate3d(-2rem, 1.25rem, 0) scale(1.12);
+  }
+}
+
+@keyframes dashboard-mesh {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 4.5rem 2.25rem;
+  }
+}
+
+@keyframes dashboard-float-left {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-1deg);
+  }
+  50% {
+    transform: translate3d(0.3rem, -0.5rem, 0) rotate(1deg);
+  }
+}
+
+@keyframes dashboard-float-right {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(1deg);
+  }
+  50% {
+    transform: translate3d(-0.25rem, 0.45rem, 0) rotate(-1deg);
+  }
+}
+
+@keyframes dashboard-live-dot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--success) 35%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in oklab, var(--success) 0%, transparent);
+  }
+}
+
+@keyframes dashboard-sync {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
   }
 }
 
@@ -257,15 +369,41 @@
   }
 }
 
+@keyframes dashboard-assistant {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes dashboard-assistant-bar {
+  0%,
+  100% {
+    transform: scaleX(0.3);
+  }
+  50% {
+    transform: scaleX(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .dashboard-preview__mesh,
   .dashboard-preview__glow,
+  .dashboard-preview__side-card,
+  .dashboard-preview__live-dot,
+  .dashboard-preview__sync,
   .dashboard-preview__progress,
   .dashboard-preview__percent,
   .dashboard-preview__task,
   .dashboard-preview__mini,
   .dashboard-preview__floating,
   .dashboard-preview__row,
-  .dashboard-preview__row-bar {
+  .dashboard-preview__row-bar,
+  .dashboard-preview__assistant,
+  .dashboard-preview__assistant-bar {
     animation: none;
   }
 }

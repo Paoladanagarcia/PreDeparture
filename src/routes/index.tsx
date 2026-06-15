@@ -225,9 +225,39 @@ function AnimatedDashboardPreview() {
 
   return (
     <Card className="dashboard-preview relative overflow-hidden border-border/60 bg-card p-0 text-left shadow-soft">
+      <div className="dashboard-preview__mesh" />
       <div className="dashboard-preview__glow" />
+      <div className="dashboard-preview__side-card dashboard-preview__side-card--left hidden sm:block">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          Roadmap
+        </p>
+        <p className="mt-1 text-sm font-semibold">22 {t("landing.previewSteps")}</p>
+        <div className="mt-2 flex gap-1">
+          <span className="h-1.5 w-7 rounded-full bg-primary" />
+          <span className="h-1.5 w-5 rounded-full bg-success" />
+          <span className="h-1.5 w-8 rounded-full bg-accent" />
+        </div>
+      </div>
+      <div className="dashboard-preview__side-card dashboard-preview__side-card--right hidden sm:block">
+        <div className="flex items-center gap-2">
+          <span className="dashboard-preview__live-dot h-2 w-2 rounded-full bg-success" />
+          <p className="text-xs font-semibold">Live checklist</p>
+        </div>
+        <p className="mt-1 text-[10px] text-muted-foreground">Updates as dates change</p>
+      </div>
       <div className="relative grid grid-cols-1 gap-0 md:grid-cols-[1.15fr_0.85fr]">
         <div className="border-b p-4 sm:p-6 md:border-b-0 md:border-r">
+          <div className="mb-4 flex items-center justify-between rounded-lg border bg-muted/25 px-3 py-2">
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                UC Berkeley
+              </p>
+              <p className="text-xs font-semibold">Fall 2026 exchange</p>
+            </div>
+            <span className="dashboard-preview__sync rounded-full bg-primary-soft px-2 py-1 text-[10px] font-semibold text-primary">
+              {t("landing.previewSyncing")}
+            </span>
+          </div>
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm font-medium">{t("landing.readiness")}</p>
             <span className="dashboard-preview__percent text-sm font-semibold text-primary">
@@ -304,6 +334,16 @@ function AnimatedDashboardPreview() {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="dashboard-preview__assistant mt-5 rounded-lg border bg-background/80 p-3 text-xs shadow-soft">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <p className="font-semibold">{t("nav.aiAssistant")}</p>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+              <div className="dashboard-preview__assistant-bar h-full rounded-full bg-accent" />
+            </div>
           </div>
         </div>
       </div>
