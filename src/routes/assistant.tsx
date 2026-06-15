@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { AppHeader } from "@/components/AppHeader";
-import { askAssistant, type AssistantReply } from "@/lib/assistant";
+import { askAssistantStream, type AssistantReply } from "@/lib/assistant";
 import { useI18n } from "@/lib/i18n";
 import { useProfile } from "@/lib/storage";
 import { Send, ShieldCheck, ExternalLink, AlertTriangle, Loader2, Sparkles } from "lucide-react";
@@ -46,19 +46,28 @@ function AssistantPage() {
     if (!trimmed || loading) return;
     setError(null);
     const next: ChatMessage[] = [...messages, { role: "user", content: trimmed }];
-    setMessages(next);
+    setMessages([...next, { role: "assistant", content: "" }]);
     setInput("");
     setLoading(true);
     try {
-      const reply: AssistantReply = await askAssistant(
+      const reply: AssistantReply = await askAssistantStream(
         next.map((m) => ({ role: m.role, content: m.content })),
         { university: profile?.university, language },
+        {
+          onUpdate: (answer) => {
+            setMessages((current) => updateStreamingAssistantMessage(current, answer));
+          },
+        },
       );
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: reply.answer, sources: reply.sources },
-      ]);
+      setMessages((current) => updateStreamingAssistantMessage(current, reply.answer, reply.sources));
     } catch (e) {
+      setMessages((current) => {
+        const last = current.at(-1);
+        if (last?.role === "assistant" && !last.content.trim()) {
+          return current.slice(0, -1);
+        }
+        return current;
+      });
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
       setLoading(false);
@@ -174,6 +183,30 @@ function AssistantPage() {
   );
 }
 
+function updateStreamingAssistantMessage(
+  messages: ChatMessage[],
+  content: string,
+  sources?: { title: string; url: string }[],
+): ChatMessage[] {
+  const lastIndex = messages.length - 1;
+  const last = messages[lastIndex];
+
+  if (last?.role !== "assistant") {
+    const assistantMessage: ChatMessage = { role: "assistant", content, sources };
+    return [...messages, assistantMessage];
+  }
+
+  return messages.map((message, index): ChatMessage => {
+    if (index !== lastIndex || message.role !== "assistant") return message;
+
+    return {
+      role: "assistant",
+      content,
+      sources: sources ?? message.sources,
+    };
+  });
+}
+
 function MessageBubble({ m }: { m: ChatMessage }) {
   const { t } = useI18n();
   if (m.role === "user") {
@@ -192,7 +225,7 @@ function MessageBubble({ m }: { m: ChatMessage }) {
       </span>
       <div className="max-w-[92%] space-y-3 sm:max-w-[85%]">
         <div className="rounded-2xl rounded-tl-sm border bg-card px-3 py-3 text-sm sm:px-4">
-          <p className="whitespace-pre-wrap leading-7">{m.content}</p>
+          <p className="whitespace-pre-wrap leading-7">{m.content || "..."}</p>
         </div>
         {m.sources && m.sources.length > 0 && (
           <div className="rounded-lg border bg-muted/30 p-3">

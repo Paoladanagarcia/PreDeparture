@@ -122,7 +122,7 @@ const translations = {
     "assistant.suggestionSevis": "How does the SEVIS fee work?",
     "assistant.suggestionInsurance": "Is university health insurance mandatory?",
     "assistant.suggestionHousing": "How should I compare housing near campus?",
-    "assistant.loading": "Looking it up in official sources...",
+    "assistant.loading": "Preparing a short answer...",
     "assistant.placeholder": "Ask about visa, housing, insurance, banking, arrival...",
     "assistant.disclaimer":
       "This assistant provides guidance only. Always verify visa requirements, deadlines and fees on official government and university websites before making important decisions.",
@@ -450,7 +450,7 @@ const translations = {
     "assistant.suggestionSevis": "Comment fonctionnent les frais SEVIS ?",
     "assistant.suggestionInsurance": "L'assurance santé universitaire est-elle obligatoire ?",
     "assistant.suggestionHousing": "Comment comparer les logements près du campus ?",
-    "assistant.loading": "Recherche...",
+    "assistant.loading": "Préparation d'une réponse courte...",
     "assistant.placeholder": "Visa, logement, assurance, banque, arrivée...",
     "assistant.disclaimer":
       "Cet assistant donne des indications seulement. Vérifiez toujours les exigences, délais et frais sur les sites officiels.",

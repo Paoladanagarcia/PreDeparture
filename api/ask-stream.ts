@@ -9,6 +9,8 @@ type VercelResponse = {
   status: (code: number) => VercelResponse;
   json: (body: unknown) => void;
   setHeader: (name: string, value: string) => void;
+  write: (chunk: string) => void;
+  end: () => void;
 };
 
 type AssistantMessage = {
@@ -59,8 +61,6 @@ Tell users to verify changeable facts on official university, embassy or governm
 `.trim();
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader("Content-Type", "application/json");
-
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Use POST to ask the assistant." });
   }
@@ -91,21 +91,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       typeof body.context?.university === "string" ? body.context.university : "the host university";
     const language = body.context?.language === "fr" ? "French" : "English";
     const prompt = buildPrompt(university, question, language);
+    const { response, data, model } = await streamWithAvailableModel(apiKey, prompt);
 
-    let { response, data, model } = await generateWithAvailableModel(apiKey, prompt);
-
-    if (!response.ok) {
-      console.error("Gemini API error", {
+    if (!response.ok || !response.body) {
+      console.error("Gemini streaming API error", {
         model,
         httpStatus: response.status,
         geminiCode: data.error?.code,
         geminiStatus: data.error?.status,
         geminiMessage: data.error?.message,
       });
+
       if (response.status === 429 || data.error?.code === 429 || data.error?.status === "RESOURCE_EXHAUSTED") {
-        return res.status(429).json({
-          error: QUOTA_ERROR_MESSAGE,
-        });
+        return res.status(429).json({ error: QUOTA_ERROR_MESSAGE });
       }
 
       return res.status(502).json({
@@ -113,62 +111,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    let answer = extractAnswer(data);
+    res.status(200);
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("X-Accel-Buffering", "no");
 
-    if (!answer) {
-      return res.status(502).json({
-        error: "The AI assistant could not generate an answer. Please try again.",
-      });
-    }
-
-    if (isIncompleteAnswer(answer, data)) {
-      console.warn("Gemini returned an incomplete answer, retrying concise response", {
-        model,
-        finishReason: data.candidates?.[0]?.finishReason,
-        answerPreview: answer.slice(0, 120),
-      });
-
-      const retryResult = await generateWithAvailableModel(
-        apiKey,
-        buildRetryPrompt(university, question, language),
-      );
-      response = retryResult.response;
-      data = retryResult.data;
-      model = retryResult.model;
-
-      if (!response.ok) {
-        console.error("Gemini retry failed", {
-          model,
-          httpStatus: response.status,
-          geminiCode: data.error?.code,
-          geminiStatus: data.error?.status,
-          geminiMessage: data.error?.message,
-        });
-      } else {
-        answer = extractAnswer(data) || answer;
-      }
-    }
-
-    return res.status(200).json({
-      answer,
-      sources: [],
-    });
+    await writeGeminiStream(response, res);
+    return res.end();
   } catch (error) {
-    console.error("Assistant route error", error);
+    console.error("Assistant stream route error", error);
     return res.status(502).json({
       error: "The AI assistant is temporarily unavailable. Please try again in a moment.",
     });
   }
 }
 
-async function generateWithAvailableModel(apiKey: string, prompt: string) {
+async function streamWithAvailableModel(apiKey: string, prompt: string) {
   let lastResponse: Response | null = null;
   let lastData: GeminiResponse = {};
   let lastModel = MODELS[0];
 
   for (const model of MODELS) {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`,
       {
         method: "POST",
         headers: {
@@ -192,24 +157,24 @@ async function generateWithAvailableModel(apiKey: string, prompt: string) {
       },
     );
 
-    const data = (await response.json().catch(() => ({}))) as GeminiResponse;
     lastResponse = response;
-    lastData = data;
     lastModel = model;
 
-    if (response.ok || !isModelUnavailable(response, data)) {
-      if (data.candidates?.[0]?.finishReason === "MAX_TOKENS") {
-        console.warn("Gemini response reached max tokens", { model });
+    if (!response.ok) {
+      lastData = (await response.clone().json().catch(() => ({}))) as GeminiResponse;
+
+      if (isModelUnavailable(response, lastData)) {
+        console.warn("Gemini streaming model unavailable, trying fallback", {
+          model,
+          httpStatus: response.status,
+          geminiStatus: lastData.error?.status,
+          geminiMessage: lastData.error?.message,
+        });
+        continue;
       }
-      break;
     }
 
-    console.warn("Gemini model unavailable, trying fallback", {
-      model,
-      httpStatus: response.status,
-      geminiStatus: data.error?.status,
-      geminiMessage: data.error?.message,
-    });
+    break;
   }
 
   return {
@@ -217,6 +182,51 @@ async function generateWithAvailableModel(apiKey: string, prompt: string) {
     data: lastData,
     model: lastModel,
   };
+}
+
+async function writeGeminiStream(response: Response, res: VercelResponse) {
+  const reader = response.body?.getReader();
+  if (!reader) return;
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      const text = extractTextFromSseLine(line);
+      if (text) res.write(text);
+    }
+  }
+
+  buffer += decoder.decode();
+  for (const line of buffer.split("\n")) {
+    const text = extractTextFromSseLine(line);
+    if (text) res.write(text);
+  }
+}
+
+function extractTextFromSseLine(line: string) {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith("data:")) return "";
+
+  const payload = trimmed.slice("data:".length).trim();
+  if (!payload || payload === "[DONE]") return "";
+
+  try {
+    const data = JSON.parse(payload) as GeminiResponse;
+    return data.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text || "")
+      .join("") || "";
+  } catch {
+    return "";
+  }
 }
 
 function buildPrompt(university: string, question: string, language: string) {
@@ -230,62 +240,6 @@ function buildPrompt(university: string, question: string, language: string) {
     "Use blank lines between groups.",
     "Finish the answer cleanly.",
   ].join("\n\n");
-}
-
-function buildRetryPrompt(university: string, question: string, language: string) {
-  return [
-    `Host university context: ${university}`,
-    `Interface language: ${language}`,
-    `Student question: ${question}`,
-    "Your previous answer was cut off. Answer again in the interface language unless the question clearly uses another language.",
-    "Use 3 to 5 short plain-text bullet points with simple hyphens.",
-    "Keep it under 140 words.",
-    "Finish every sentence.",
-    "Do not use Markdown bold, headings or tables.",
-  ].join("\n\n");
-}
-
-function extractAnswer(data: GeminiResponse) {
-  return data.candidates?.[0]?.content?.parts
-    ?.map((part) => part.text || "")
-    .join("")
-    .trim();
-}
-
-function isIncompleteAnswer(answer: string, data: GeminiResponse) {
-  const trimmed = answer.trim();
-  const words = trimmed.split(/\s+/).filter(Boolean).length;
-
-  return (
-    data.candidates?.[0]?.finishReason === "MAX_TOKENS" ||
-    hasUnclosedMarkdownBold(trimmed) ||
-    endsWithDanglingListMarker(trimmed) ||
-    endsWithOnlyMarkdownTitle(trimmed) ||
-    !/[.!?)]$/.test(stripMarkdown(trimmed)) ||
-    (words < 25 && !/[.!?)]$/.test(stripMarkdown(trimmed)))
-  );
-}
-
-function hasUnclosedMarkdownBold(value: string) {
-  const matches = value.match(/\*\*/g);
-  return Boolean(matches && matches.length % 2 !== 0);
-}
-
-function endsWithDanglingListMarker(value: string) {
-  return /(\d+\.\s*|\*\s*|-\s*|:\s*)$/.test(value);
-}
-
-function endsWithOnlyMarkdownTitle(value: string) {
-  const lastLine = value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .at(-1) || "";
-  return /^[-*]?\s*\*\*[^*]+\*\*:?\s*$/.test(lastLine);
-}
-
-function stripMarkdown(value: string) {
-  return value.replace(/\*\*/g, "").trim();
 }
 
 function isModelUnavailable(response: Response, data: GeminiResponse) {
