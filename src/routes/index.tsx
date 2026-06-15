@@ -173,29 +173,6 @@ function Landing() {
         </div>
       </section>
 
-      <section id="story" className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-20">
-        <Card className="p-5 sm:p-6 md:p-8">
-          <p className="text-xs font-medium uppercase tracking-wide text-primary">
-            {t("landing.storyEyebrow")}
-          </p>
-          <h2 className="mt-2 text-2xl font-bold md:text-3xl">
-            {t("landing.storyTitle")}
-          </h2>
-          <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-            {t("landing.storyBody")}
-          </p>
-          <p className="mt-4 text-sm text-muted-foreground">
-            {t("landing.storyContact")}{" "}
-            <a
-              href="mailto:pao.dana.garcia@gmail.com"
-              className="font-medium text-primary hover:underline"
-            >
-              pao.dana.garcia@gmail.com
-            </a>
-          </p>
-        </Card>
-      </section>
-
       <footer className="border-t">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 text-sm text-muted-foreground sm:px-6 sm:py-8 md:flex-row">
           <p>© {new Date().getFullYear()} PreDeparture</p>
