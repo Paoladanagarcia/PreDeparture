@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { ComponentProps } from "react";
 import {
   Library,
+  Lightbulb,
   MessageCircle,
   Sparkles,
   User,
@@ -20,6 +21,7 @@ type ActiveNav =
   | "assistant"
   | "community"
   | "resources"
+  | "tips"
   | "profile"
   | "sources";
 
@@ -52,6 +54,9 @@ export function AppHeader({ active }: AppHeaderProps) {
           </HeaderLink>
           <HeaderLink active={active === "community"} to="/community">
             <MessageCircle className="mr-1 h-3.5 w-3.5" /> <span>{t("nav.community")}</span>
+          </HeaderLink>
+          <HeaderLink active={active === "tips"} to="/tips">
+            <Lightbulb className="mr-1 h-3.5 w-3.5" /> <span>{t("nav.tips")}</span>
           </HeaderLink>
           <HeaderLink active={active === "sources"} to="/about">
             {t("nav.sources")}

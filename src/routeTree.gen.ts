@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TipsRouteImport } from './routes/tips'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
@@ -21,6 +22,11 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResourcesTopicRouteImport } from './routes/resources.$topic'
 
+const TipsRoute = TipsRouteImport.update({
+  id: '/tips',
+  path: '/tips',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResourcesRoute = ResourcesRouteImport.update({
   id: '/resources',
   path: '/resources',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/resources': typeof ResourcesRouteWithChildren
+  '/tips': typeof TipsRoute
   '/resources/$topic': typeof ResourcesTopicRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/resources': typeof ResourcesRouteWithChildren
+  '/tips': typeof TipsRoute
   '/resources/$topic': typeof ResourcesTopicRoute
 }
 export interface FileRoutesById {
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/profile': typeof ProfileRoute
   '/resources': typeof ResourcesRouteWithChildren
+  '/tips': typeof TipsRoute
   '/resources/$topic': typeof ResourcesTopicRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/resources'
+    | '/tips'
     | '/resources/$topic'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/resources'
+    | '/tips'
     | '/resources/$topic'
   id:
     | '__root__'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/profile'
     | '/resources'
+    | '/tips'
     | '/resources/$topic'
   fileRoutesById: FileRoutesById
 }
@@ -170,10 +182,18 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   ProfileRoute: typeof ProfileRoute
   ResourcesRoute: typeof ResourcesRouteWithChildren
+  TipsRoute: typeof TipsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tips': {
+      id: '/tips'
+      path: '/tips'
+      fullPath: '/tips'
+      preLoaderRoute: typeof TipsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/resources': {
       id: '/resources'
       path: '/resources'
@@ -277,6 +297,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   ProfileRoute: ProfileRoute,
   ResourcesRoute: ResourcesRouteWithChildren,
+  TipsRoute: TipsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

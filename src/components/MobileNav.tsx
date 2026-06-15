@@ -19,6 +19,7 @@ import {
 const navItems = [
   { labelKey: "nav.aiAssistant", to: "/assistant" },
   { labelKey: "nav.community", to: "/community" },
+  { labelKey: "nav.tips", to: "/tips" },
 ] as const;
 
 const resourceItems = [
@@ -42,6 +43,7 @@ export function MobileNav() {
     dashboardItem,
     { label: t(navItems[0].labelKey), to: navItems[0].to },
     { label: t(navItems[1].labelKey), to: navItems[1].to },
+    { label: t(navItems[2].labelKey), to: navItems[2].to },
     profileItem,
   ];
   const hasUniversityProfile = Boolean(profile?.university);
