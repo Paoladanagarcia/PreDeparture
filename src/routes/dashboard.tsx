@@ -25,6 +25,8 @@ import {
   PRIORITY_META,
   dateMinusDays,
   formatDate,
+  parseCalendarDate,
+  toCalendarDate,
   type ProfileQuestionnaire,
   type Priority,
   type Task,
@@ -109,7 +111,7 @@ function Dashboard() {
   }
 
   const arrival = useMemo(
-    () => (effectiveProfile.startDate ? new Date(effectiveProfile.startDate) : new Date()),
+    () => (effectiveProfile.startDate ? parseCalendarDate(effectiveProfile.startDate) : new Date()),
     [effectiveProfile.startDate],
   );
 
@@ -151,7 +153,7 @@ function Dashboard() {
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {effectiveProfile.nationality} {t("dashboard.student")} · {t("dashboard.arriving")}{" "}
-              {arrival.toLocaleDateString(undefined, { dateStyle: "long" })} ·{" "}
+              {arrival.toLocaleDateString(language === "fr" ? "fr-FR" : "en-US", { dateStyle: "long" })} ·{" "}
               {translateDuration(effectiveProfile.duration, t)}
             </p>
 
@@ -626,10 +628,10 @@ function TaskCard({
             <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
               <CategoryLabel category={t.category} />
               <span>
-                {translate("common.recommended")}: {formatDate(recommended)}
+                {translate("common.recommended")}: {formatDate(recommended, language)}
               </span>
               <span>
-                {translate("common.latestSafe")}: {formatDate(latest)}
+                {translate("common.latestSafe")}: {formatDate(latest, language)}
               </span>
               {guideTopic && (
                 <Link
@@ -690,13 +692,13 @@ function TaskCard({
               <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 {translate("common.recommended")}
               </p>
-              <p className="text-xs font-semibold">{formatDate(recommended)}</p>
+              <p className="text-xs font-semibold">{formatDate(recommended, language)}</p>
             </div>
             <div>
               <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 {translate("common.latestSafe")}
               </p>
-              <p className="text-xs font-semibold">{formatDate(latest)}</p>
+              <p className="text-xs font-semibold">{formatDate(latest, language)}</p>
             </div>
           </div>
 
@@ -836,7 +838,7 @@ function Timeline({
   done: Record<string, boolean>;
   arrival: Date;
 }) {
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const groups = getTimelineGroups(tasks);
   const completed = tasks.filter((task) => done[task.id]).length;
   const total = tasks.length;
@@ -920,7 +922,7 @@ function Timeline({
                                 {task.title}
                               </p>
                               <span className="shrink-0 text-xs font-medium text-primary">
-                                {formatDate(recommended)}
+                                {formatDate(recommended, language)}
                               </span>
                             </div>
                             <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
@@ -1039,7 +1041,7 @@ function getDefaultDashboardProfile(): ProfileQuestionnaire {
     country: "United States",
     university: "UC Berkeley",
     nationality: "International",
-    startDate: arrival.toISOString().slice(0, 10),
+    startDate: toCalendarDate(arrival),
     duration: "one-semester",
   };
 }
