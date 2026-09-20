@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PublicHeader } from "@/components/PublicHeader";
@@ -192,35 +192,28 @@ function Landing() {
 }
 
 function AnimatedDashboardPreview() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+  const [completed, setCompleted] = useState([true, true, false, false]);
+  const progress = Math.round(completed.filter(Boolean).length / completed.length * 100);
   const previewTasks = [
-    { label: t("task.sevis"), state: "done", delay: "0s" },
-    { label: t("task.ds160"), state: "done", delay: "0.6s" },
-    { label: t("task.interview"), state: "active", delay: "1.2s" },
-    { label: t("task.housing"), state: "todo", delay: "1.8s" },
+    { label: t("task.sevis") },
+    { label: t("task.ds160") },
+    { label: t("task.interview") },
+    { label: t("task.housing") },
   ];
 
   return (
     <Card className="dashboard-preview relative overflow-hidden border-border/60 bg-card p-0 text-left shadow-soft">
       <div className="dashboard-preview__mesh" />
       <div className="dashboard-preview__glow" />
-      <div className="dashboard-preview__side-card dashboard-preview__side-card--left hidden sm:block">
-        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-          Roadmap
+      <div className="relative flex flex-wrap items-center justify-between gap-3 border-b bg-card/90 px-4 py-3 sm:px-6">
+        <p className="text-xs text-muted-foreground">
+          {language === "fr" ? "Essayez : cochez une étape" : "Try it: check off a step"}
         </p>
-        <p className="mt-1 text-sm font-semibold">22 {t("landing.previewSteps")}</p>
-        <div className="mt-2 flex gap-1">
-          <span className="h-1.5 w-7 rounded-full bg-primary" />
-          <span className="h-1.5 w-5 rounded-full bg-success" />
-          <span className="h-1.5 w-8 rounded-full bg-accent" />
+        <div className="dashboard-preview__live inline-flex items-center gap-2 rounded-full border border-success/20 bg-success/5 px-3 py-2">
+          <span className="dashboard-preview__live-dot h-2 w-2 shrink-0 rounded-full bg-success" />
+          <span className="text-xs font-semibold">Live checklist</span>
         </div>
-      </div>
-      <div className="dashboard-preview__side-card dashboard-preview__side-card--right hidden sm:block">
-        <div className="flex items-center gap-2">
-          <span className="dashboard-preview__live-dot h-2 w-2 rounded-full bg-success" />
-          <p className="text-xs font-semibold">Live checklist</p>
-        </div>
-        <p className="mt-1 text-[10px] text-muted-foreground">Updates as dates change</p>
       </div>
       <div className="relative grid grid-cols-1 gap-0 md:grid-cols-[1.15fr_0.85fr]">
         <div className="border-b p-4 sm:p-6 md:border-b-0 md:border-r">
@@ -232,32 +225,35 @@ function AnimatedDashboardPreview() {
               <p className="text-xs font-semibold">Fall 2026 exchange</p>
             </div>
             <span className="dashboard-preview__sync rounded-full bg-primary-soft px-2 py-1 text-[10px] font-semibold text-primary">
-              {t("landing.previewSyncing")}
+              {language === "fr" ? "Démo interactive" : "Interactive demo"}
             </span>
           </div>
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm font-medium">{t("landing.readiness")}</p>
             <span className="dashboard-preview__percent text-sm font-semibold text-primary">
-              45%
+              {progress}%
             </span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-            <div className="dashboard-preview__progress h-2 rounded-full bg-primary" />
+          <div role="progressbar" aria-label={t("landing.readiness")} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div className="dashboard-preview__progress h-2 rounded-full bg-primary" style={{ width: `${progress}%` }} />
           </div>
 
           <ul className="mt-6 space-y-3 text-sm">
-            {previewTasks.map((item) => (
-              <li
-                key={item.label}
-                className={`dashboard-preview__task dashboard-preview__task--${item.state} flex items-center gap-3 rounded-md px-2 py-1.5`}
-                style={{ animationDelay: item.delay }}
-              >
-                <span className="dashboard-preview__check grid h-5 w-5 shrink-0 place-items-center rounded-full border">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                </span>
-                <span className={item.state === "done" ? "text-muted-foreground line-through" : ""}>
-                  {item.label}
-                </span>
+            {previewTasks.map((item, index) => (
+              <li key={item.label}>
+                <button
+                  type="button"
+                  aria-pressed={completed[index]}
+                  onClick={() => setCompleted((current) => current.map((value, i) => i === index ? !value : value))}
+                  className={`dashboard-preview__task dashboard-preview__task--${completed[index] ? "done" : "todo"} flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`}
+                >
+                  <span className="dashboard-preview__check grid h-5 w-5 shrink-0 place-items-center rounded-full border">
+                    {completed[index] && <CheckCircle2 className="h-3.5 w-3.5" />}
+                  </span>
+                  <span className={completed[index] ? "text-muted-foreground line-through" : ""}>
+                    {item.label}
+                  </span>
+                </button>
               </li>
             ))}
           </ul>
