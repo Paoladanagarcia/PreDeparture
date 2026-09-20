@@ -1,3 +1,4 @@
+import { parseCalendarDate } from "./tasks";
 import {
   restRequest,
   SUPABASE_ANON_KEY,
@@ -65,7 +66,7 @@ export const COMMUNITY_GROUPS: CommunityGroup[] = [
 ];
 
 export function getCohort(profile: Pick<ProfileQuestionnaire, "university" | "startDate">) {
-  const date = new Date(profile.startDate);
+  const date = parseCalendarDate(profile.startDate);
   const month = date.getMonth() + 1;
   const term = month >= 5 && month <= 11 ? "Fall" : "Spring";
   const year = Number.isNaN(date.getFullYear()) ? new Date().getFullYear() : date.getFullYear();

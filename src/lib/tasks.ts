@@ -372,6 +372,15 @@ export function dateMinusDays(arrival: Date, days: number): Date {
   return d;
 }
 
-export function formatDate(d: Date): string {
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+export function formatDate(d: Date, language: "en" | "fr" = "en"): string {
+  return d.toLocaleDateString(language === "fr" ? "fr-FR" : "en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+/** Date inputs represent local calendar days, not UTC timestamps. */
+export function parseCalendarDate(value: string): Date {
+  return new Date(`${value}T00:00:00`);
+}
+
+export function toCalendarDate(value: Date): string {
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
 }

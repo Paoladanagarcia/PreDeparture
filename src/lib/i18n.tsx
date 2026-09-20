@@ -111,10 +111,10 @@ const translations = {
     "task.ds160": "Complete DS-160",
     "task.interview": "Schedule visa interview",
     "task.housing": "Find housing near campus",
-    "assistant.badge": "Source-grounded assistant",
+    "assistant.badge": "Exchange preparation assistant",
     "assistant.title": "Ask anything about your exchange",
     "assistant.description":
-      "Answers are based on verified official sources — university websites, embassy pages and government documentation. Always verify critical information on the official websites.",
+      "AI-generated guidance may be incomplete or outdated. The assistant does not check official websites in real time. Verify requirements, fees and deadlines with your university and government websites.",
     "assistant.greeting": "Hi, I'm your PreDeparture assistant.",
     "assistant.help":
       "I can help with F-1 visa, SEVIS, DS-160, campus housing, health insurance, US banking, phone plans, scholarships and your arrival.",
@@ -440,10 +440,10 @@ const translations = {
     "task.ds160": "Compléter le DS-160",
     "task.interview": "Planifier l'entretien visa",
     "task.housing": "Trouver un logement près du campus",
-    "assistant.badge": "Assistant sourcé",
+    "assistant.badge": "Assistant de préparation",
     "assistant.title": "Posez vos questions sur votre échange",
     "assistant.description":
-      "Réponses basées sur des sources officielles : universités, ambassades et sites gouvernementaux. Vérifiez toujours les informations importantes.",
+      "Les réponses générées par IA peuvent être incomplètes ou dépassées. L'assistant ne consulte pas les sites officiels en temps réel. Vérifiez les exigences, frais et échéances auprès de votre université et des autorités.",
     "assistant.greeting": "Bonjour, je suis votre assistant PreDeparture.",
     "assistant.help":
       "Je peux aider avec le visa F-1, SEVIS, DS-160, le logement, l'assurance santé, la banque, le téléphone, les bourses et l'arrivée.",
