@@ -106,19 +106,11 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  html[lang="fr"] {
-    font-size: 14px;
-  }
-
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
 
-  html[lang="fr"] h1,
-  html[lang="fr"] h2 {
-    line-height: 1.08;
-  }
 }
 
 @utility bg-hero-gradient {
