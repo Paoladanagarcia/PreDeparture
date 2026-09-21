@@ -222,7 +222,7 @@ function AnimatedDashboardPreview() {
               <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 UC Berkeley
               </p>
-              <p className="text-xs font-semibold">Fall 2026 exchange</p>
+              <p className="text-xs font-semibold">{language === "fr" ? "Échange · Automne 2026" : "Fall 2026 exchange"}</p>
             </div>
             <span className="dashboard-preview__sync rounded-full bg-primary-soft px-2 py-1 text-[10px] font-semibold text-primary">
               {language === "fr" ? "Démo interactive" : "Interactive demo"}
@@ -261,7 +261,7 @@ function AnimatedDashboardPreview() {
           <div className="mt-5 grid grid-cols-3 gap-2 text-xs">
             {[
               { icon: FileText, label: "DS-160" },
-              { icon: Plane, label: "Arrival" },
+              { icon: Plane, label: language === "fr" ? "Arrivée" : "Arrival" },
               { icon: Library, label: t("nav.resources") },
             ].map((item, index) => (
               <div
@@ -291,13 +291,13 @@ function AnimatedDashboardPreview() {
           <div className="mt-5 space-y-2">
             {[
               { label: "Visa", width: "78%" },
-              { label: "Housing", width: "42%" },
-              { label: "Arrival", width: "64%" },
+              { label: language === "fr" ? "Logement" : "Housing", width: "42%" },
+              { label: language === "fr" ? "Arrivée" : "Arrival", width: "64%" },
             ].map((item, index) => (
               <div key={item.label} className="dashboard-preview__row" style={{ animationDelay: `${index * 0.4}s` }}>
                 <div className="mb-1 flex items-center justify-between text-[10px] text-muted-foreground">
                   <span>{item.label}</span>
-                  <span>{index + 2} steps</span>
+                  <span>{index + 2} {language === "fr" ? "étapes" : "steps"}</span>
                 </div>
                 <div className="h-1.5 overflow-hidden rounded-full bg-background">
                   <div

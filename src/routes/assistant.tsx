@@ -7,7 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { AppHeader } from "@/components/AppHeader";
 import { askAssistantStream, type AssistantReply } from "@/lib/assistant";
 import { useI18n } from "@/lib/i18n";
-import { useProfile } from "@/lib/storage";
+import { parseCalendarDate } from "@/lib/tasks";
+import { getPersonalizedTasks, customTaskToTask } from "@/lib/personalized-tasks";
+import { planNextActions } from "@/lib/next-actions";
+import { useProgress, useProfile } from "@/lib/storage";
 import { Send, ShieldCheck, ExternalLink, AlertTriangle, Loader2, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/assistant")({
@@ -17,7 +20,7 @@ export const Route = createFileRoute("/assistant")({
       {
         name: "description",
         content:
-          "Ask questions about visa, housing, insurance, banking and arrival. Answers grounded in official sources.",
+          "Ask questions about visa, housing, insurance, banking and arrival. Guidance tailored to your saved preparation plan. Verify requirements with official sources.",
       },
     ],
   }),
@@ -30,6 +33,7 @@ type ChatMessage =
 
 function AssistantPage() {
   const { profile } = useProfile();
+  const { done, docs, hiddenTaskIds, customTasks } = useProgress();
   const { language, t } = useI18n();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -52,14 +56,43 @@ function AssistantPage() {
     try {
       const reply: AssistantReply = await askAssistantStream(
         next.map((m) => ({ role: m.role, content: m.content })),
-        { university: profile?.university, language },
+        {
+          university: profile?.university,
+          language,
+          plan: profile
+            ? {
+                arrivalDate: profile.startDate,
+                duration: profile.duration,
+                tasks: planNextActions(
+                  [
+                    ...getPersonalizedTasks(profile).filter(
+                      (task) => !hiddenTaskIds.includes(task.id),
+                    ),
+                    ...customTasks.map((task) =>
+                      customTaskToTask(task, parseCalendarDate(profile.startDate)),
+                    ),
+                  ],
+                  parseCalendarDate(profile.startDate),
+                  done,
+                  docs,
+                ).decisions.map((item) => ({
+                  title: item.task.title,
+                  status: item.status,
+                  recommendedDate: localDate(item.recommended),
+                  latestDate: localDate(item.latest),
+                })),
+              }
+            : undefined,
+        },
         {
           onUpdate: (answer) => {
             setMessages((current) => updateStreamingAssistantMessage(current, answer));
           },
         },
       );
-      setMessages((current) => updateStreamingAssistantMessage(current, reply.answer, reply.sources));
+      setMessages((current) =>
+        updateStreamingAssistantMessage(current, reply.answer, reply.sources),
+      );
     } catch (e) {
       setMessages((current) => {
         const last = current.at(-1);
@@ -83,11 +116,16 @@ function AssistantPage() {
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border bg-primary-soft px-3 py-1 text-xs font-medium text-primary">
             <ShieldCheck className="h-3.5 w-3.5" /> {t("assistant.badge")}
           </div>
-          <h1 className="text-xl font-bold sm:text-2xl">
-            {t("assistant.title")}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("assistant.description")}
+          <h1 className="text-xl font-bold sm:text-2xl">{t("assistant.title")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("assistant.description")}</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {profile
+              ? language === "fr"
+                ? "Contexte utilisé : votre université, votre arrivée, vos étapes enregistrées et cet échange."
+                : "Uses your university, arrival date, saved steps and this conversation."
+              : language === "fr"
+                ? "L’assistant suit cet échange. Enregistrez votre profil pour des conseils adaptés à votre planning."
+                : "The assistant follows this conversation. Save your profile for advice tailored to your plan."}
           </p>
         </div>
 
@@ -101,9 +139,7 @@ function AssistantPage() {
                   </span>
                   <div className="text-sm">
                     <p className="font-medium">{t("assistant.greeting")}</p>
-                    <p className="mt-1 text-muted-foreground">
-                      {t("assistant.help")}
-                    </p>
+                    <p className="mt-1 text-muted-foreground">{t("assistant.help")}</p>
                   </div>
                 </div>
                 <div>
@@ -157,6 +193,7 @@ function AssistantPage() {
             }}
           >
             <Textarea
+              aria-label={language === "fr" ? "Votre question" : "Your question"}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={t("assistant.placeholder")}
@@ -169,15 +206,13 @@ function AssistantPage() {
                 }
               }}
             />
-            <Button type="submit" disabled={loading || !input.trim()} size="icon">
+            <Button aria-label={language === "fr" ? "Envoyer la question" : "Send question"} type="submit" disabled={loading || !input.trim()} size="icon">
               <Send className="h-4 w-4" />
             </Button>
           </form>
         </Card>
 
-        <p className="mt-3 text-xs text-muted-foreground">
-          ⚠️ {t("assistant.disclaimer")}
-        </p>
+        <p className="mt-3 text-xs text-muted-foreground">⚠️ {t("assistant.disclaimer")}</p>
       </main>
     </div>
   );
@@ -251,4 +286,8 @@ function MessageBubble({ m }: { m: ChatMessage }) {
       </div>
     </div>
   );
+}
+
+function localDate(value: Date) {
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
 }

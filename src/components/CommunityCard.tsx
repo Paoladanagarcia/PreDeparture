@@ -37,7 +37,7 @@ export function CommunityCard({
   profile?: Pick<ProfileQuestionnaire, "university" | "startDate"> | null;
 }) {
   const { configured, session } = useAuth();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const cohort = useMemo(
     () =>
       profile
@@ -48,6 +48,8 @@ export function CommunityCard({
   const [activeGroup, setActiveGroup] = useState<CommunityGroupKey>("general");
   const [joinedGroups, setJoinedGroups] = useState<CommunityGroupKey[]>([]);
   const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
+  const membershipKey = session && profile && configured ? `${session.user.id}:${cohort.key}` : "";
+  const [countState, setCountState] = useState({ key: "", status: "loading" as Status });
   const [messages, setMessages] = useState<CommunityMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [displayName, setDisplayName] = useState(() => displayNameFromSession(session));
@@ -78,6 +80,7 @@ export function CommunityCard({
       }
 
       setStatus("loading");
+      setCountState({ key: membershipKey, status: "loading" });
       try {
         const [groups, counts] = await Promise.all([
           getJoinedGroups(session, cohort.key),
@@ -87,9 +90,11 @@ export function CommunityCard({
 
         setJoinedGroups(groups);
         setMemberCounts(counts);
+        setCountState({ key: membershipKey, status: "ready" });
         setStatus("ready");
       } catch {
         if (cancelled) return;
+        setCountState({ key: membershipKey, status: "unavailable" });
         setStatus("unavailable");
       }
     }
@@ -98,7 +103,7 @@ export function CommunityCard({
     return () => {
       cancelled = true;
     };
-  }, [cohort.key, configured, profile, session]);
+  }, [cohort.key, configured, profile, session, membershipKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -153,13 +158,15 @@ export function CommunityCard({
 
     try {
       await joinCommunityGroup(session, cohort.key, groupKey, displayName || "Student");
-      setJoinedGroups((current) =>
-        current.includes(groupKey) ? current : [...current, groupKey],
-      );
-      setMemberCounts((current) => ({
-        ...current,
-        [groupKey]: (current[groupKey] ?? 0) + 1,
-      }));
+      setJoinedGroups((current) => (current.includes(groupKey) ? current : [...current, groupKey]));
+      setCountState({ key: membershipKey, status: "loading" });
+      try {
+        const counts = await getMemberCounts(session, cohort.key);
+        setMemberCounts(counts);
+        setCountState({ key: membershipKey, status: "ready" });
+      } catch {
+        setCountState({ key: membershipKey, status: "unavailable" });
+      }
       toast.success(`${t("community.joined")} ${getCommunityGroupLabel(groupKey, t)}`);
     } catch {
       setStatus("unavailable");
@@ -209,11 +216,8 @@ export function CommunityCard({
                 </Badge>
               </div>
               <p className="mt-3 text-base font-semibold">{cohort.label}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t("community.cardDesc")}
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">{t("community.cardDesc")}</p>
             </div>
-
           </div>
 
           {(!session || !profile) && (
@@ -224,9 +228,7 @@ export function CommunityCard({
                     {!session ? t("community.signInToJoin") : t("community.createProfile")}
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {!session
-                      ? t("community.previewOnly")
-                      : t("community.profileRequired")}
+                    {!session ? t("community.previewOnly") : t("community.profileRequired")}
                   </p>
                 </div>
                 <Button asChild className="shrink-0">
@@ -241,9 +243,7 @@ export function CommunityCard({
           {status === "unavailable" && (
             <div className="mt-5 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm">
               <p className="font-medium">{t("community.databaseTitle")}</p>
-              <p className="mt-1 text-muted-foreground">
-                {t("community.databaseDesc")}
-              </p>
+              <p className="mt-1 text-muted-foreground">{t("community.databaseDesc")}</p>
             </div>
           )}
 
@@ -274,10 +274,19 @@ export function CommunityCard({
                       {getCommunityGroupDescription(group.key, t)}
                     </p>
                     <p className="mt-2 text-xs text-muted-foreground">
-                      {memberCounts[group.key] ?? 0}{" "}
-                      {(memberCounts[group.key] ?? 0) === 1
-                        ? t("community.member")
-                        : t("community.members")}
+                      {!membershipKey
+                        ? language === "fr"
+                          ? "Découvrez ce groupe"
+                          : "Explore this group"
+                        : countState.key !== membershipKey || countState.status === "loading"
+                          ? language === "fr"
+                            ? "Chargement des membres…"
+                            : "Loading members…"
+                          : countState.status === "unavailable"
+                            ? language === "fr"
+                              ? "Nombre de membres indisponible"
+                              : "Member count unavailable"
+                            : `${memberCounts[group.key] ?? 0} ${(memberCounts[group.key] ?? 0) === 1 ? t("community.member") : t("community.members")}`}
                     </p>
                   </button>
                 );
@@ -288,9 +297,7 @@ export function CommunityCard({
               <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="font-semibold">{activeGroupLabel}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {activeGroupDescription}
-                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">{activeGroupDescription}</p>
                 </div>
                 {session && profile && !joined && (
                   <Button size="sm" onClick={() => handleJoin()}>
@@ -379,10 +386,7 @@ export function CommunityCard({
   );
 }
 
-function getCommunityGroupLabel(
-  groupKey: CommunityGroupKey,
-  t: (key: TranslationKey) => string,
-) {
+function getCommunityGroupLabel(groupKey: CommunityGroupKey, t: (key: TranslationKey) => string) {
   return t(`community.${groupKey}` as TranslationKey);
 }
 
@@ -416,7 +420,12 @@ function ChatMessage({ message, mine }: { message: CommunityMessage; mine: boole
       >
         <div className="mb-1 flex items-center gap-2">
           <span className="text-xs font-semibold">{message.display_name}</span>
-          <span className={cn("text-[10px]", mine ? "text-primary-foreground/70" : "text-muted-foreground")}>
+          <span
+            className={cn(
+              "text-[10px]",
+              mine ? "text-primary-foreground/70" : "text-muted-foreground",
+            )}
+          >
             {new Date(message.created_at).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
