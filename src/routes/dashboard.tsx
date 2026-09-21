@@ -1,3 +1,4 @@
+import { getPersonalizedTasks, customTaskToTask } from "@/lib/personalized-tasks";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,6 @@ import { useProfile, useProgress, type CustomChecklistTask } from "@/lib/storage
 import type { ResourceGuideTopic } from "@/lib/resource-guides";
 import { useAuth } from "@/lib/auth";
 import {
-  TASKS,
   CATEGORY_META,
   PRIORITY_META,
   dateMinusDays,
@@ -163,10 +163,10 @@ function Dashboard() {
               {t("dashboard.headingTo")}
             </p>
             <h1 className="mt-1 text-xl font-bold sm:text-2xl md:text-2xl">
-              {effectiveProfile.university}, {effectiveProfile.country}
+              {effectiveProfile.university}, {language === "fr" && effectiveProfile.country === "United States" ? "États-Unis" : effectiveProfile.country}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {effectiveProfile.nationality} {t("dashboard.student")} · {t("dashboard.arriving")}{" "}
+              {language === "fr" ? (effectiveProfile.nationality === "International" ? "Étudiant international" : `Étudiant · ${effectiveProfile.nationality}`) : `${effectiveProfile.nationality} ${t("dashboard.student")}`} · {t("dashboard.arriving")}{" "}
               {arrival.toLocaleDateString(language === "fr" ? "fr-FR" : "en-US", { dateStyle: "long" })} ·{" "}
               {translateDuration(effectiveProfile.duration, t)}
             </p>
@@ -738,7 +738,7 @@ function TaskCard({
             <CategoryBadge category={t.category} />
             {t.effort && (
               <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                <Clock className="h-3 w-3" /> {t.effort}
+                <Clock className="h-3 w-3" /> {formatEffort(t.effort, language)}
               </span>
             )}
             {t.source && (
@@ -962,7 +962,7 @@ function Timeline({
                             </div>
                             <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
                               <CategoryLabel category={task.category} />
-                              <span>{task.effort}</span>
+                              <span>{formatEffort(task.effort, language)}</span>
                               {task.priority === "high" && (
                                 <span className="font-semibold text-destructive">
                                   {t("common.highPriority")}
@@ -1057,16 +1057,6 @@ function getTimelineGroups(tasks: Task[]) {
   ].filter((group) => group.tasks.length > 0);
 }
 
-function getPersonalizedTasks(profile: ProfileQuestionnaire) {
-  const university = getUniversityConfig(profile.university);
-  const tasks = TASKS.map((task) => personalizeTaskForUniversity(task, university));
-
-  if (isLikelyUsNational(profile.nationality)) {
-    return tasks.filter((task) => task.category !== "visa");
-  }
-
-  return tasks;
-}
 
 function getDefaultDashboardProfile(): ProfileQuestionnaire {
   const arrival = new Date();
@@ -1081,19 +1071,6 @@ function getDefaultDashboardProfile(): ProfileQuestionnaire {
   };
 }
 
-function customTaskToTask(task: CustomChecklistTask, arrival: Date): Task {
-  return {
-    id: task.id,
-    title: task.title,
-    description: task.description,
-    category: task.category,
-    phase: task.phase,
-    recommendedDaysBefore: daysBefore(arrival, task.recommendedDate),
-    latestDaysBefore: daysBefore(arrival, task.latestDate || task.recommendedDate),
-    priority: task.priority,
-    effort: "Custom",
-  };
-}
 
 function getTaskGuideTopic(task: Task): ResourceGuideTopic | null {
   if (task.category === "visa") return "visa";
@@ -1112,96 +1089,7 @@ function getGuideSearch(university: string): { university?: SupportedUniversity 
     : {};
 }
 
-function daysBefore(arrival: Date, isoDate: string) {
-  const target = new Date(`${isoDate}T00:00:00`);
-  if (Number.isNaN(target.getTime())) return 0;
-  const msPerDay = 24 * 60 * 60 * 1000;
-  return Math.round((arrival.getTime() - target.getTime()) / msPerDay);
-}
 
-function personalizeTaskForUniversity(
-  task: Task,
-  university: ReturnType<typeof getUniversityConfig>,
-): Task {
-  if (university.name !== "Stanford University") return task;
-
-  if (task.id === "housing-search") {
-    return {
-      ...task,
-      source: "Stanford R&DE Student Housing",
-      warning: "Stanford housing eligibility and deadlines vary by program. Start early.",
-      link: { label: "Stanford Housing", url: "https://rde.stanford.edu/studenthousing" },
-    };
-  }
-
-  if (task.id === "housing-secure") {
-    return {
-      ...task,
-      source: "Stanford R&DE Student Housing",
-      warning: "For off-campus housing near Stanford, verify listings carefully before paying.",
-    };
-  }
-
-  if (task.id === "insurance") {
-    return {
-      ...task,
-      title: "Check Cardinal Care health insurance",
-      description:
-        "US healthcare is expensive. Check whether Stanford Cardinal Care applies or whether you can waive.",
-      source: "Stanford Vaden Health Services",
-      link: {
-        label: "Cardinal Care",
-        url: "https://vaden.stanford.edu/insurance-referral-office/cardinal-care-overview",
-      },
-    };
-  }
-
-  if (task.id === "student-card") {
-    return {
-      ...task,
-      title: "Obtain your Stanford ID Card",
-      description: "Your official Stanford ID for campus access and university services.",
-      source: "Stanford University IT",
-    };
-  }
-
-  if (task.id === "register-classes") {
-    return {
-      ...task,
-      description: "Use Axess to manage enrollment and student records.",
-      source: "Stanford Axess",
-    };
-  }
-
-  if (task.id === "transport") {
-    return {
-      ...task,
-      description: "Understand Marguerite shuttle, Caltrain and local transport options.",
-    };
-  }
-
-  if (task.id === "emergency") {
-    return {
-      ...task,
-      description: "Save Stanford public safety, embassy, insurance hotline and a local contact.",
-    };
-  }
-
-  if (task.id === "arrival-reqs") {
-    return {
-      ...task,
-      description:
-        "Check Bechtel International Center guidance, immigration check-in, orientation and health requirements.",
-      source: "Bechtel International Center",
-      link: {
-        label: "Bechtel International Center",
-        url: "https://bechtel.stanford.edu/",
-      },
-    };
-  }
-
-  return task;
-}
 
 const FRENCH_TASK_TEXT: Record<
   string,
@@ -1361,12 +1249,6 @@ function getPriorityLabel(priority: Task["priority"], language: Language) {
   )[priority];
 }
 
-function isLikelyUsNational(nationality: string) {
-  const value = nationality.toLowerCase();
-  return ["american", "united states", "usa", "u.s.", "us citizen"].some((term) =>
-    value.includes(term),
-  );
-}
 
 function isLikelyFrenchOrEu(nationality: string) {
   const value = nationality.toLowerCase();
@@ -1383,4 +1265,9 @@ function isLikelyFrenchOrEu(nationality: string) {
     "europe",
     "eu",
   ].some((term) => value.includes(term));
+}
+
+function formatEffort(value: string | undefined, language: string) {
+  if (!value || language !== "fr") return value;
+  return value.replace(/\bhours\b/g, "heures").replace(/\bhour\b/g, "heure").replace(/\bdays\b/g, "jours").replace(/\bday\b/g, "jour").replace(/^Custom$/, "Personnalisé");
 }

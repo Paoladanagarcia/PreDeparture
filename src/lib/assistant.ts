@@ -1,6 +1,7 @@
 export type AssistantSource = { title: string; url: string };
 export type AssistantReply = { answer: string; sources: AssistantSource[] };
-export type AssistantContext = { university?: string; language?: "en" | "fr" };
+import type { AssistantContext } from "./assistant-request";
+export type { AssistantContext } from "./assistant-request";
 
 type AssistantMessage = {
   role: "user" | "assistant";
@@ -24,34 +25,26 @@ const MAX_CACHE_ENTRIES = 20;
 const quickReplies = [
   {
     patterns: ["sevis", "i-901", "i901"],
-    en:
-      "The SEVIS I-901 fee is paid before the F-1 visa interview.\n\n- Pay it on the official FMJfee website.\n\n- Keep the payment receipt for your visa appointment.\n\n- Make sure your I-20 information matches before paying.\n\nAlways verify fees and requirements on the official SEVP website.",
-    fr:
-      "Les frais SEVIS I-901 se paient avant l'entretien visa F-1.\n\n- Payez-les sur le site officiel FMJfee.\n\n- Gardez le reçu pour votre rendez-vous visa.\n\n- Vérifiez que les infos du I-20 sont correctes avant de payer.\n\nVérifiez toujours les frais et exigences sur le site officiel SEVP.",
+    en: "The SEVIS I-901 fee is paid before the F-1 visa interview.\n\n- Pay it on the official FMJfee website.\n\n- Keep the payment receipt for your visa appointment.\n\n- Make sure your I-20 information matches before paying.\n\nAlways verify fees and requirements on the official SEVP website.",
+    fr: "Les frais SEVIS I-901 se paient avant l'entretien visa F-1.\n\n- Payez-les sur le site officiel FMJfee.\n\n- Gardez le reçu pour votre rendez-vous visa.\n\n- Vérifiez que les infos du I-20 sont correctes avant de payer.\n\nVérifiez toujours les frais et exigences sur le site officiel SEVP.",
     sources: [{ title: "SEVIS I-901 fee", url: "https://www.fmjfee.com/" }],
   },
   {
     patterns: ["ds-160", "ds160"],
-    en:
-      "The DS-160 is the online nonimmigrant visa application for the F-1 visa.\n\n- Complete it before scheduling or attending your interview.\n\n- Save the confirmation page.\n\n- Use the same passport and identity details as your visa documents.\n\nVerify the process on the official CEAC website.",
-    fr:
-      "Le DS-160 est le formulaire en ligne pour le visa F-1.\n\n- Remplissez-le avant l'entretien visa.\n\n- Gardez la page de confirmation.\n\n- Utilisez les mêmes infos que sur votre passeport et vos documents visa.\n\nVérifiez la procédure sur le site officiel CEAC.",
+    en: "The DS-160 is the online nonimmigrant visa application for the F-1 visa.\n\n- Complete it before scheduling or attending your interview.\n\n- Save the confirmation page.\n\n- Use the same passport and identity details as your visa documents.\n\nVerify the process on the official CEAC website.",
+    fr: "Le DS-160 est le formulaire en ligne pour le visa F-1.\n\n- Remplissez-le avant l'entretien visa.\n\n- Gardez la page de confirmation.\n\n- Utilisez les mêmes infos que sur votre passeport et vos documents visa.\n\nVérifiez la procédure sur le site officiel CEAC.",
     sources: [{ title: "DS-160 CEAC", url: "https://ceac.state.gov/genniv/" }],
   },
   {
     patterns: ["housing", "logement", "rent", "lease", "sublet"],
-    en:
-      "For housing, start early and compare official university options first.\n\n- Check campus housing and off-campus resources.\n\n- Avoid paying deposits before verifying the listing.\n\n- For a one-semester exchange, be careful with 12-month leases.\n\nUse official university housing pages as your starting point.",
-    fr:
-      "Pour le logement, commencez tôt et comparez d'abord les options officielles.\n\n- Regardez le logement campus et les ressources off-campus.\n\n- Ne payez pas de dépôt avant d'avoir vérifié l'annonce.\n\n- Pour un semestre, attention aux baux de 12 mois.\n\nCommencez par les pages logement officielles de l'université.",
+    en: "For housing, start early and compare official university options first.\n\n- Check campus housing and off-campus resources.\n\n- Avoid paying deposits before verifying the listing.\n\n- For a one-semester exchange, be careful with 12-month leases.\n\nUse official university housing pages as your starting point.",
+    fr: "Pour le logement, commencez tôt et comparez d'abord les options officielles.\n\n- Regardez le logement campus et les ressources off-campus.\n\n- Ne payez pas de dépôt avant d'avoir vérifié l'annonce.\n\n- Pour un semestre, attention aux baux de 12 mois.\n\nCommencez par les pages logement officielles de l'université.",
     sources: [],
   },
   {
     patterns: ["insurance", "assurance", "health"],
-    en:
-      "For health insurance, check your host university rules first.\n\n- Some universities require their student health plan.\n\n- Some allow a waiver if your insurance meets strict criteria.\n\n- Do not assume French or EU coverage is enough in the US.\n\nVerify directly with the university health insurance office.",
-    fr:
-      "Pour l'assurance santé, vérifiez d'abord les règles de l'université.\n\n- Certaines universités imposent leur assurance étudiante.\n\n- Certaines acceptent une exemption si votre assurance respecte leurs critères.\n\n- Ne supposez pas qu'une couverture française ou européenne suffit aux États-Unis.\n\nVérifiez auprès du service assurance santé de l'université.",
+    en: "For health insurance, check your host university rules first.\n\n- Some universities require their student health plan.\n\n- Some allow a waiver if your insurance meets strict criteria.\n\n- Do not assume French or EU coverage is enough in the US.\n\nVerify directly with the university health insurance office.",
+    fr: "Pour l'assurance santé, vérifiez d'abord les règles de l'université.\n\n- Certaines universités imposent leur assurance étudiante.\n\n- Certaines acceptent une exemption si votre assurance respecte leurs critères.\n\n- Ne supposez pas qu'une couverture française ou européenne suffit aux États-Unis.\n\nVérifiez auprès du service assurance santé de l'université.",
     sources: [],
   },
 ] satisfies Array<{
@@ -73,11 +66,12 @@ export async function askAssistant(
   context: AssistantContext = {},
 ): Promise<AssistantReply> {
   const question = messages.at(-1)?.content ?? "";
-  const quickReply = findQuickReply(question, context);
+  const contextual = messages.length > 1 || !!context.plan;
+  const quickReply = contextual ? null : findQuickReply(question, context);
   if (quickReply) return quickReply;
 
   const cacheKey = createCacheKey(question, context);
-  const cached = readCachedReply(cacheKey);
+  const cached = contextual ? null : readCachedReply(cacheKey);
   if (cached) return cached;
 
   const response = await fetch("/api/ask", {
@@ -98,7 +92,7 @@ export async function askAssistant(
     answer: data.answer || "The AI assistant could not generate an answer. Please try again.",
     sources: data.sources || [],
   };
-  writeCachedReply(cacheKey, reply);
+  if (!contextual) writeCachedReply(cacheKey, reply);
   return reply;
 }
 
@@ -108,14 +102,15 @@ export async function askAssistantStream(
   options: AskAssistantStreamOptions,
 ): Promise<AssistantReply> {
   const question = messages.at(-1)?.content ?? "";
-  const quickReply = findQuickReply(question, context);
+  const contextual = messages.length > 1 || !!context.plan;
+  const quickReply = contextual ? null : findQuickReply(question, context);
   if (quickReply) {
     options.onUpdate(quickReply.answer);
     return quickReply;
   }
 
   const cacheKey = createCacheKey(question, context);
-  const cached = readCachedReply(cacheKey);
+  const cached = contextual ? null : readCachedReply(cacheKey);
   if (cached) {
     options.onUpdate(cached.answer);
     return cached;
@@ -156,7 +151,7 @@ export async function askAssistantStream(
   };
 
   options.onUpdate(reply.answer);
-  writeCachedReply(cacheKey, reply);
+  if (!contextual) writeCachedReply(cacheKey, reply);
   return reply;
 }
 
