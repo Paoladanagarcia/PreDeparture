@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -54,6 +54,9 @@ import {
   Trash2,
   Undo2,
 } from "lucide-react";
+
+import { NextActions, TaskStatusControl } from "@/components/NextActions";
+import { planNextActions, actionStatusLabel, STARTED_NAMESPACE, type ActionDecision, type ActionStatus } from "@/lib/next-actions";
 
 const TASK_CATEGORIES: TaskCategory[] = [
   "visa",
@@ -133,10 +136,21 @@ function Dashboard() {
 
   const completed = personalizedTasks.filter((t) => done[t.id]).length;
   const total = personalizedTasks.length;
-  const pct = Math.round((completed / total) * 100);
+  const pct = total ? Math.round((completed / total) * 100) : 0;
+  const [today, setToday] = useState(() => new Date());
+  const [statusFilter, setStatusFilter] = useState<ActionStatus | "all">("all");
+  useEffect(() => {
+    const timer = window.setInterval(() => setToday(new Date()), 60000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const plan = planNextActions(personalizedTasks, arrival, done, docs, today);
+  const decisions = new Map(plan.decisions.map(d => [d.task.id, d]));
+  const filteredTasks = personalizedTasks.filter(task => statusFilter === "all" || decisions.get(task.id)?.status === statusFilter);
+  const toggleStarted = (id: string) => toggleDoc(STARTED_NAMESPACE, id);
+  const taskTitle = (task: Task) => getTaskText(task, language).title;
 
-  const before = sortTasksByRecommendedDate(personalizedTasks.filter((t) => t.phase === "before"));
-  const after = sortTasksByRecommendedDate(personalizedTasks.filter((t) => t.phase === "after"));
+  const before = sortTasksByRecommendedDate(filteredTasks.filter((t) => t.phase === "before"));
+  const after = sortTasksByRecommendedDate(filteredTasks.filter((t) => t.phase === "after"));
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -178,6 +192,9 @@ function Dashboard() {
 
         {authConfigured && !session && <CloudSyncPrompt />}
 
+        <NextActions actions={plan.next} urgentCount={plan.urgentCount} remaining={total - completed}
+          onToggleStarted={toggleStarted} onDone={toggle} title={taskTitle} />
+
         <Tabs defaultValue="checklist" className="mt-5 sm:mt-6">
           <TabsList>
             <TabsTrigger value="checklist">{t("dashboard.checklist")}</TabsTrigger>
@@ -197,6 +214,16 @@ function Dashboard() {
               </Button>
             </div>
 
+            <div className="mb-4 flex flex-wrap gap-2" aria-label={language === "fr" ? "Filtrer les étapes" : "Filter steps"}>
+              {(["all", "todo", "in-progress", "blocked", "done"] as const).map(status => (
+                <Button key={status} type="button" size="sm" variant={statusFilter === status ? "default" : "outline"}
+                  aria-pressed={statusFilter === status} onClick={() => setStatusFilter(status)}>
+                  {status === "all" ? (language === "fr" ? "Toutes" : "All") : actionStatusLabel(status, language === "fr")}
+                  {" · "}{status === "all" ? total : plan.decisions.filter(d => d.status === status).length}
+                </Button>
+              ))}
+            </div>
+            {filteredTasks.length === 0 && <p className="mb-4 text-sm text-muted-foreground">{language === "fr" ? "Aucune étape dans ce statut." : "No steps with this status."}</p>}
             <ChecklistCustomization
               canSync={Boolean(session)}
               onAdd={addCustomTask}
@@ -208,6 +235,7 @@ function Dashboard() {
               <ChecklistColumn
                 title={t("dashboard.beforeDeparture")}
                 tasks={before}
+                decisions={decisions}
                 done={done}
                 docs={docs}
                 toggle={toggle}
@@ -221,6 +249,7 @@ function Dashboard() {
               <ChecklistColumn
                 title={t("dashboard.afterArrival")}
                 tasks={after}
+                decisions={decisions}
                 done={done}
                 docs={docs}
                 toggle={toggle}
@@ -555,6 +584,7 @@ function ChecklistCustomization({
 function TaskCard({
   t,
   isDone,
+  decision,
   toggle,
   docs,
   toggleDoc,
@@ -566,6 +596,7 @@ function TaskCard({
 }: {
   t: Task;
   isDone: boolean;
+  decision?: ActionDecision;
   toggle: (id: string) => void;
   docs: Record<string, boolean>;
   toggleDoc: (taskId: string, docId: string) => void;
@@ -685,6 +716,7 @@ function TaskCard({
               )}
             </div>
           </div>
+          {decision && <TaskStatusControl decision={decision} onToggleStarted={id => toggleDoc(STARTED_NAMESPACE, id)} title={task => getTaskText(task, language).title} />}
           <p className="mt-1 text-xs text-muted-foreground">{taskText.description}</p>
 
           <div className="mt-3 grid gap-2 rounded-md border bg-muted/30 p-2 sm:grid-cols-2">
@@ -777,6 +809,7 @@ function TaskCard({
 function ChecklistColumn({
   title,
   tasks,
+  decisions,
   done,
   docs,
   toggle,
@@ -789,6 +822,7 @@ function ChecklistColumn({
 }: {
   title: string;
   tasks: Task[];
+  decisions: Map<string, ActionDecision>;
   done: Record<string, boolean>;
   docs: Record<string, boolean>;
   toggle: (id: string) => void;
@@ -814,6 +848,7 @@ function ChecklistColumn({
             key={t.id}
             t={t}
             isDone={!!done[t.id]}
+            decision={decisions.get(t.id)}
             toggle={toggle}
             docs={docs}
             toggleDoc={toggleDoc}
