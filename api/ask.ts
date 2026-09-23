@@ -1,3 +1,4 @@
+import { requestLifetime } from "../src/lib/assistant-lifetime.js";
 /// <reference types="node" />
 import {
   normalizeBody,
@@ -14,6 +15,8 @@ type VercelResponse = {
   status: (code: number) => VercelResponse;
   json: (body: unknown) => void;
   setHeader: (name: string, value: string) => void;
+  on?: (event: "close", listener: () => void) => void;
+  off?: (event: "close", listener: () => void) => void;
 };
 
 type GeminiPart = {
@@ -78,10 +81,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
+  const lifetime = requestLifetime(undefined, 45000);
+  res.on?.("close", lifetime.abort);
   try {
     const prompt = buildAssistantPrompt(body);
 
-    let { response, data, model } = await generateWithAvailableModel(apiKey, prompt);
+    let { response, data, model } = await generateWithAvailableModel(
+      apiKey,
+      prompt,
+      lifetime.signal,
+    );
 
     if (!response.ok) {
       console.error("Gemini API error", {
@@ -123,6 +132,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const retryResult = await generateWithAvailableModel(
         apiKey,
         `${prompt}\n\nYour previous answer was cut off. Answer again in 3 short complete bullets.`,
+        lifetime.signal,
       );
       response = retryResult.response;
       data = retryResult.data;
@@ -136,24 +146,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           geminiStatus: data.error?.status,
           geminiMessage: data.error?.message,
         });
+        return res.status(502).json({ error: "incomplete" });
       } else {
-        answer = extractAnswer(data) || answer;
+        answer = extractAnswer(data) || "";
       }
     }
 
+    if (!answer || isIncompleteAnswer(answer, data))
+      return res.status(502).json({ error: "incomplete" });
     return res.status(200).json({
       answer,
       sources: [],
     });
   } catch (error) {
-    console.error("Assistant route error", error);
+    console.error("Assistant route error", {
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
+    if (lifetime.signal.aborted) return res.status(504).json({ error: "timeout" });
     return res.status(502).json({
       error: "The AI assistant is temporarily unavailable. Please try again in a moment.",
     });
+  } finally {
+    lifetime.dispose();
+    res.off?.("close", lifetime.abort);
   }
 }
 
-async function generateWithAvailableModel(apiKey: string, prompt: string) {
+async function generateWithAvailableModel(apiKey: string, prompt: string, signal: AbortSignal) {
   let lastResponse: Response | null = null;
   let lastData: GeminiResponse = {};
   let lastModel = MODELS[0];
@@ -163,6 +182,7 @@ async function generateWithAvailableModel(apiKey: string, prompt: string) {
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
         method: "POST",
+        signal,
         headers: {
           "Content-Type": "application/json",
           "x-goog-api-key": apiKey,

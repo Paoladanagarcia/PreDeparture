@@ -7,6 +7,7 @@ const compile = (path) =>
     compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
   }).outputText;
 const url = (code) => `data:text/javascript;base64,${Buffer.from(code).toString("base64")}`;
+const lifetimeURL = url(compile("../src/lib/assistant-lifetime.ts"));
 const requestURL = url(compile("../src/lib/assistant-request.ts"));
 const { normalizeBody, buildAssistantPrompt } = await import(requestURL);
 const input = {
@@ -71,7 +72,11 @@ const handlers = {};
 for (const route of ["ask", "ask-stream"]) {
   handlers[route] = (
     await import(
-      url(compile(`../api/${route}.ts`).replace("../src/lib/assistant-request.js", requestURL))
+      url(
+        compile(`../api/${route}.ts`)
+          .replace("../src/lib/assistant-request.js", requestURL)
+          .replace("../src/lib/assistant-lifetime.js", lifetimeURL),
+      )
     )
   ).default;
 }
@@ -168,7 +173,9 @@ test("retry keeps the conversation and plan when a response is cut off", async (
     else process.env.GEMINI_API_KEY = oldKey;
   }
 });
-const client = await import(url(compile("../src/lib/assistant.ts")));
+const client = await import(
+  url(compile("../src/lib/assistant.ts").replace("./assistant-lifetime", lifetimeURL))
+);
 test("contextual requests bypass canned answers and do not persist private plans in cache", async () => {
   const originalFetch = globalThis.fetch;
   const originalWindow = globalThis.window;
