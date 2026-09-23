@@ -1,3 +1,4 @@
+import { requestLifetime } from "./assistant-lifetime";
 export type AssistantSource = { title: string; url: string };
 export type AssistantReply = { answer: string; sources: AssistantSource[] };
 import type { AssistantContext } from "./assistant-request";
@@ -16,9 +17,10 @@ type AssistantApiResponse = {
 
 type AskAssistantStreamOptions = {
   onUpdate: (answer: string) => void;
+  signal?: AbortSignal;
 };
 
-const CACHE_KEY = "predeparture.assistant.cache.v1";
+const CACHE_KEY = "predeparture.assistant.cache.v2";
 const CACHE_TTL_MS = 1000 * 60 * 60 * 12;
 const MAX_CACHE_ENTRIES = 20;
 
@@ -74,26 +76,42 @@ export async function askAssistant(
   const cached = contextual ? null : readCachedReply(cacheKey);
   if (cached) return cached;
 
-  const response = await fetch("/api/ask", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ messages, context }),
-  });
+  const lifetime = requestLifetime();
+  try {
+    const response = await fetch("/api/ask", {
+      signal: lifetime.signal,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ messages, context }),
+    });
 
-  const data = (await response.json().catch(() => ({}))) as AssistantApiResponse;
+    const data = (await response.json().catch(() => ({}))) as AssistantApiResponse;
 
-  if (!response.ok) {
-    throw new Error(data.error || "The AI assistant is temporarily unavailable. Please try again.");
+    if (!response.ok) {
+      throw new Error(
+        response.status === 429
+          ? "quota"
+          : response.status === 504
+            ? "timeout"
+            : data.error === "incomplete"
+              ? "incomplete"
+              : "unavailable",
+      );
+    }
+
+    const reply = {
+      answer: data.answer || "The AI assistant could not generate an answer. Please try again.",
+      sources: data.sources || [],
+    };
+    if (!contextual) writeCachedReply(cacheKey, reply);
+    return reply;
+  } catch (error) {
+    throw lifetime.signal.aborted ? lifetime.signal.reason : error;
+  } finally {
+    lifetime.dispose();
   }
-
-  const reply = {
-    answer: data.answer || "The AI assistant could not generate an answer. Please try again.",
-    sources: data.sources || [],
-  };
-  if (!contextual) writeCachedReply(cacheKey, reply);
-  return reply;
 }
 
 export async function askAssistantStream(
@@ -116,43 +134,72 @@ export async function askAssistantStream(
     return cached;
   }
 
-  const response = await fetch("/api/ask-stream", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ messages, context }),
-  });
-
-  if (!response.ok) {
-    const data = (await response.json().catch(() => ({}))) as AssistantApiResponse;
-    throw new Error(data.error || "The AI assistant is temporarily unavailable. Please try again.");
+  const lifetime = requestLifetime(options.signal);
+  try {
+    lifetime.signal.throwIfAborted();
+    const response = await fetch("/api/ask-stream", {
+      method: "POST",
+      signal: lifetime.signal,
+      headers: { "Content-Type": "application/json", Accept: "application/x-ndjson" },
+      body: JSON.stringify({ messages, context }),
+    });
+    if (!response.ok)
+      throw new Error(
+        response.status === 429 ? "quota" : response.status === 504 ? "timeout" : "unavailable",
+      );
+    if (!response.body) throw new Error("incomplete");
+    const framed = response.headers.get("Content-Type")?.includes("application/x-ndjson");
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let answer = "";
+    let buffer = "";
+    let finished = false;
+    const consume = (line: string) => {
+      if (!line.trim()) return;
+      const event = JSON.parse(line);
+      if (event.type === "delta" && typeof event.text === "string" && !finished) {
+        answer += event.text;
+        options.onUpdate(answer);
+      } else if (event.type === "done") finished = true;
+      else if (event.type === "error")
+        throw new Error(event.code === "timeout" ? "timeout" : "incomplete");
+      else throw new Error("incomplete");
+    };
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        lifetime.signal.throwIfAborted();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        if (framed) {
+          buffer += chunk;
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+          lines.forEach(consume);
+        } else {
+          answer += chunk;
+          options.onUpdate(answer);
+        }
+      }
+      const tail = decoder.decode();
+      if (framed) {
+        consume(buffer + tail);
+        if (!finished) throw new Error("incomplete");
+      } else answer += tail;
+      if (!answer.trim()) throw new Error("incomplete");
+      const reply = { answer: answer.trim(), sources: [] };
+      options.onUpdate(reply.answer);
+      if (!contextual) writeCachedReply(cacheKey, reply);
+      return reply;
+    } finally {
+      await reader.cancel().catch(() => undefined);
+      reader.releaseLock();
+    }
+  } catch (error) {
+    throw lifetime.signal.aborted ? lifetime.signal.reason : error;
+  } finally {
+    lifetime.dispose();
   }
-
-  if (!response.body) {
-    throw new Error("The AI assistant is temporarily unavailable. Please try again.");
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let answer = "";
-
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    answer += decoder.decode(value, { stream: true });
-    options.onUpdate(answer);
-  }
-
-  answer += decoder.decode();
-  const reply = {
-    answer: answer.trim() || "The AI assistant could not generate an answer. Please try again.",
-    sources: [],
-  };
-
-  options.onUpdate(reply.answer);
-  if (!contextual) writeCachedReply(cacheKey, reply);
-  return reply;
 }
 
 function findQuickReply(question: string, context: AssistantContext): AssistantReply | null {

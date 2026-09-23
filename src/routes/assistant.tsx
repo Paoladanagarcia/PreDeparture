@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { AppHeader } from "@/components/AppHeader";
+import { assistantErrorMessage } from "@/lib/assistant-lifetime";
 import { askAssistantStream, type AssistantReply } from "@/lib/assistant";
 import { useI18n } from "@/lib/i18n";
 import { parseCalendarDate } from "@/lib/tasks";
@@ -29,7 +30,12 @@ export const Route = createFileRoute("/assistant")({
 
 type ChatMessage =
   | { role: "user"; content: string }
-  | { role: "assistant"; content: string; sources?: { title: string; url: string }[] };
+  | {
+      role: "assistant";
+      content: string;
+      sources?: { title: string; url: string }[];
+      incomplete?: boolean;
+    };
 
 function AssistantPage() {
   const { profile } = useProfile();
@@ -40,16 +46,35 @@ function AssistantPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const requestRef = useRef<AbortController | null>(null);
+  const [retryMessages, setRetryMessages] = useState<ChatMessage[] | null>(null);
+  useEffect(
+    () => () => {
+      requestRef.current?.abort();
+      requestRef.current = null;
+    },
+    [],
+  );
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
-  async function send(text: string) {
+  async function send(text: string, history = messages) {
     const trimmed = text.trim();
-    if (!trimmed || loading) return;
+    if (!trimmed || requestRef.current) return;
+    if (trimmed.length > 1000) {
+      setError(assistantErrorMessage(new Error("question-too-long"), language));
+      return;
+    }
+    const controller = new AbortController();
+    requestRef.current = controller;
+    setRetryMessages(null);
     setError(null);
-    const next: ChatMessage[] = [...messages, { role: "user", content: trimmed }];
+    const next: ChatMessage[] = [
+      ...history.filter((m) => m.role === "user" || !m.incomplete),
+      { role: "user", content: trimmed },
+    ];
     setMessages([...next, { role: "assistant", content: "" }]);
     setInput("");
     setLoading(true);
@@ -85,25 +110,32 @@ function AssistantPage() {
             : undefined,
         },
         {
+          signal: controller.signal,
           onUpdate: (answer) => {
+            if (requestRef.current !== controller) return;
             setMessages((current) => updateStreamingAssistantMessage(current, answer));
           },
         },
       );
+      if (requestRef.current !== controller) return;
       setMessages((current) =>
         updateStreamingAssistantMessage(current, reply.answer, reply.sources),
       );
     } catch (e) {
+      if (requestRef.current !== controller) return;
       setMessages((current) => {
         const last = current.at(-1);
-        if (last?.role === "assistant" && !last.content.trim()) {
-          return current.slice(0, -1);
-        }
-        return current;
+        if (last?.role !== "assistant") return current;
+        if (!last.content.trim()) return current.slice(0, -1);
+        return [...current.slice(0, -1), { ...last, incomplete: true }];
       });
-      setError(e instanceof Error ? e.message : "Something went wrong.");
+      setRetryMessages(next);
+      setError(assistantErrorMessage(e, language));
     } finally {
-      setLoading(false);
+      if (requestRef.current === controller) {
+        requestRef.current = null;
+        setLoading(false);
+      }
     }
   }
 
@@ -180,7 +212,22 @@ function AssistantPage() {
             {error && (
               <div className="flex gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <span>{error}</span>
+                <div role="alert">
+                  <span>{error}</span>
+                  {retryMessages && !loading && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 block"
+                      onClick={() =>
+                        send(retryMessages.at(-1)!.content, retryMessages.slice(0, -1))
+                      }
+                    >
+                      {language === "fr" ? "Réessayer" : "Retry"}
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -199,6 +246,7 @@ function AssistantPage() {
               placeholder={t("assistant.placeholder")}
               className="min-h-[44px] flex-1 resize-none"
               rows={1}
+              maxLength={1000}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -206,9 +254,20 @@ function AssistantPage() {
                 }
               }}
             />
-            <Button aria-label={language === "fr" ? "Envoyer la question" : "Send question"} type="submit" disabled={loading || !input.trim()} size="icon">
-              <Send className="h-4 w-4" />
-            </Button>
+            {loading ? (
+              <Button type="button" variant="outline" onClick={() => requestRef.current?.abort()}>
+                {language === "fr" ? "Arrêter" : "Stop"}
+              </Button>
+            ) : (
+              <Button
+                aria-label={language === "fr" ? "Envoyer la question" : "Send question"}
+                type="submit"
+                disabled={loading || !input.trim()}
+                size="icon"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            )}
           </form>
         </Card>
 
@@ -243,7 +302,7 @@ function updateStreamingAssistantMessage(
 }
 
 function MessageBubble({ m }: { m: ChatMessage }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   if (m.role === "user") {
     return (
       <div className="flex justify-end">
@@ -261,6 +320,13 @@ function MessageBubble({ m }: { m: ChatMessage }) {
       <div className="max-w-[92%] space-y-3 sm:max-w-[85%]">
         <div className="rounded-2xl rounded-tl-sm border bg-card px-3 py-3 text-sm sm:px-4">
           <p className="whitespace-pre-wrap leading-7">{m.content || "..."}</p>
+          {m.incomplete && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {language === "fr"
+                ? "Réponse interrompue — à compléter avant de vous y fier."
+                : "Interrupted response — incomplete."}
+            </p>
+          )}
         </div>
         {m.sources && m.sources.length > 0 && (
           <div className="rounded-lg border bg-muted/30 p-3">

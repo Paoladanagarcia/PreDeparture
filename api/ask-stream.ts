@@ -1,3 +1,4 @@
+import { requestLifetime } from "../src/lib/assistant-lifetime.js";
 /// <reference types="node" />
 import {
   normalizeBody,
@@ -8,12 +9,15 @@ import {
 type VercelRequest = {
   method?: string;
   body?: unknown;
+  headers?: { accept?: string };
 };
 
 type VercelResponse = {
   status: (code: number) => VercelResponse;
   json: (body: unknown) => void;
   setHeader: (name: string, value: string) => void;
+  on?: (event: "close", listener: () => void) => void;
+  off?: (event: "close", listener: () => void) => void;
   write: (chunk: string) => void;
   end: () => void;
 };
@@ -78,9 +82,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
+  const framed = req.headers?.accept?.includes("application/x-ndjson") ?? false;
+  let streaming = false;
+  const lifetime = requestLifetime(undefined, 45000);
+  res.on?.("close", lifetime.abort);
   try {
     const prompt = buildAssistantPrompt(body);
-    const { response, data, model } = await streamWithAvailableModel(apiKey, prompt);
+    const { response, data, model } = await streamWithAvailableModel(
+      apiKey,
+      prompt,
+      lifetime.signal,
+    );
 
     if (!response.ok || !response.body) {
       console.error("Gemini streaming API error", {
@@ -105,21 +117,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     res.status(200);
-    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader(
+      "Content-Type",
+      framed ? "application/x-ndjson; charset=utf-8" : "text/plain; charset=utf-8",
+    );
     res.setHeader("Cache-Control", "no-cache, no-transform");
     res.setHeader("X-Accel-Buffering", "no");
 
-    await writeGeminiStream(response, res);
+    streaming = true;
+    await writeGeminiStream(response, res, framed);
     return res.end();
   } catch (error) {
-    console.error("Assistant stream route error", error);
+    console.error("Assistant stream route error", {
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
+    if (streaming) {
+      if (framed && lifetime.signal.reason?.name !== "AbortError")
+        res.write(
+          JSON.stringify({
+            type: "error",
+            code: lifetime.signal.aborted ? "timeout" : "incomplete",
+          }) + "\n",
+        );
+      return res.end();
+    }
+    if (lifetime.signal.aborted) return res.status(504).json({ error: "timeout" });
     return res.status(502).json({
       error: "The AI assistant is temporarily unavailable. Please try again in a moment.",
     });
+  } finally {
+    lifetime.dispose();
+    res.off?.("close", lifetime.abort);
   }
 }
 
-async function streamWithAvailableModel(apiKey: string, prompt: string) {
+async function streamWithAvailableModel(apiKey: string, prompt: string, signal: AbortSignal) {
   let lastResponse: Response | null = null;
   let lastData: GeminiResponse = {};
   let lastModel = MODELS[0];
@@ -129,6 +161,7 @@ async function streamWithAvailableModel(apiKey: string, prompt: string) {
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`,
       {
         method: "POST",
+        signal,
         headers: {
           "Content-Type": "application/json",
           "x-goog-api-key": apiKey,
@@ -180,46 +213,45 @@ async function streamWithAvailableModel(apiKey: string, prompt: string) {
   };
 }
 
-async function writeGeminiStream(response: Response, res: VercelResponse) {
-  const reader = response.body?.getReader();
-  if (!reader) return;
-
+async function writeGeminiStream(response: Response, res: VercelResponse, framed: boolean) {
+  const reader = response.body!.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
-
-    for (const line of lines) {
-      const text = extractTextFromSseLine(line);
-      if (text) res.write(text);
-    }
-  }
-
-  buffer += decoder.decode();
-  for (const line of buffer.split("\n")) {
-    const text = extractTextFromSseLine(line);
-    if (text) res.write(text);
-  }
-}
-
-function extractTextFromSseLine(line: string) {
-  const trimmed = line.trim();
-  if (!trimmed.startsWith("data:")) return "";
-
-  const payload = trimmed.slice("data:".length).trim();
-  if (!payload || payload === "[DONE]") return "";
-
-  try {
+  let finished = false;
+  let hasText = false;
+  const consume = (line: string) => {
+    if (!line.trim().startsWith("data:")) return;
+    const payload = line.trim().slice(5).trim();
+    if (!payload || payload === "[DONE]") return;
     const data = JSON.parse(payload) as GeminiResponse;
-    return data.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("") || "";
-  } catch {
-    return "";
+    if (data.error) throw new Error("provider-error");
+    const candidate = data.candidates?.[0];
+    const text = candidate?.content?.parts?.map((part) => part.text || "").join("") || "";
+    if (text) {
+      hasText = true;
+      res.write(framed ? JSON.stringify({ type: "delta", text }) + "\n" : text);
+    }
+    if (candidate?.finishReason) {
+      if (candidate.finishReason !== "STOP") throw new Error("incomplete");
+      finished = true;
+    }
+  };
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+      for (const line of lines) consume(line);
+    }
+    buffer += decoder.decode();
+    for (const line of buffer.split("\n")) consume(line);
+    if (!finished || !hasText) throw new Error("incomplete");
+    if (framed) res.write(JSON.stringify({ type: "done" }) + "\n");
+  } finally {
+    await reader.cancel().catch(() => undefined);
+    reader.releaseLock();
   }
 }
 
