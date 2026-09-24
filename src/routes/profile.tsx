@@ -1,3 +1,4 @@
+import { MemberProfileEditor } from "@/components/MemberProfileEditor";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import type { ComponentType } from "react";
 import { useEffect, useMemo } from "react";
@@ -43,13 +44,25 @@ function ProfilePage() {
   useEffect(() => {
     if (!loaded) return;
     if (!session) navigate({ to: "/auth" });
-    else if (!profile) navigate({ to: "/onboarding", search: { mode: "edit" } });
   }, [loaded, profile, navigate, session]);
 
   const completed = useMemo(() => TASKS.filter((task) => done[task.id]).length, [done]);
   const pct = Math.round((completed / TASKS.length) * 100);
 
-  if (!profile) return null;
+  if (!session) return null;
+  if (!profile)
+    return (
+      <div className="min-h-screen bg-muted/30">
+        <AppHeader active="profile" />
+        <main className="mx-auto max-w-4xl px-4 py-6">
+          <h1 className="mb-5 text-2xl font-bold">{t("profile.title")}</h1>
+          <MemberProfileEditor />
+          <Button asChild>
+            <Link to="/onboarding">{t("common.startPlanning")}</Link>
+          </Button>
+        </main>
+      </div>
+    );
 
   const arrival = new Date(profile.startDate);
   const signedInEmail = session?.user.email;
@@ -70,9 +83,7 @@ function ProfilePage() {
             {t("profile.eyebrow")}
           </p>
           <h1 className="mt-1 text-xl font-bold sm:text-2xl md:text-2xl">{t("profile.title")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("profile.description")}
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{t("profile.description")}</p>
           {signedInEmail && (
             <p className="mt-2 text-xs text-muted-foreground">
               {t("profile.signedInAs")} {signedInEmail}
@@ -80,6 +91,7 @@ function ProfilePage() {
           )}
         </div>
 
+        <MemberProfileEditor />
         <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
           <Card className="p-4 sm:p-5">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -88,7 +100,11 @@ function ProfilePage() {
                 label={t("profile.destination")}
                 value={`${profile.university}, ${profile.country}`}
               />
-              <ProfileItem icon={User} label={t("profile.nationality")} value={profile.nationality} />
+              <ProfileItem
+                icon={User}
+                label={t("profile.nationality")}
+                value={profile.nationality}
+              />
               <ProfileItem
                 icon={CalendarClock}
                 label={t("profile.arrivalDate")}

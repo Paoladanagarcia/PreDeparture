@@ -1,10 +1,5 @@
 import { parseCalendarDate } from "./tasks";
-import {
-  restRequest,
-  SUPABASE_ANON_KEY,
-  SUPABASE_URL,
-  type AuthSession,
-} from "@/lib/auth";
+import { restRequest, SUPABASE_ANON_KEY, SUPABASE_URL, type AuthSession } from "@/lib/auth";
 import type { ProfileQuestionnaire } from "@/lib/tasks";
 
 export type CommunityGroupKey = "general" | "housing" | "visa" | "arrival" | "money";
@@ -177,9 +172,7 @@ export function subscribeToMessages(
 
   const socketUrl = SUPABASE_URL.replace(/^http/, "ws");
   const socket = new WebSocket(
-    `${socketUrl}/realtime/v1/websocket?apikey=${encodeURIComponent(
-      SUPABASE_ANON_KEY,
-    )}&vsn=1.0.0`,
+    `${socketUrl}/realtime/v1/websocket?apikey=${encodeURIComponent(SUPABASE_ANON_KEY)}&vsn=1.0.0`,
   );
   const topic = "realtime:public:predeparture_community_messages";
   let ref = 1;
@@ -235,15 +228,10 @@ export function displayNameFromSession(session: AuthSession | null) {
     .filter(Boolean)
     .join(" ");
 
-  if (fullName) return fullName.slice(0, 48);
-  if (builtName) return builtName.slice(0, 48);
+  if (fullName) return fullName.slice(0, 121);
+  if (builtName) return builtName.slice(0, 121);
 
-  const emailPrefix = session?.user.email?.split("@")[0]?.trim();
-  if (!emailPrefix) return "Student";
-  return emailPrefix
-    .replace(/[._-]+/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase())
-    .slice(0, 32);
+  return "Student";
 }
 
 function slugify(value: string) {

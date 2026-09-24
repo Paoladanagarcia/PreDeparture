@@ -7,7 +7,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { MemberProfileDialog } from "@/components/MemberProfileDialog";
+import { ensureMemberProfile, loadMemberProfiles, type MemberProfile } from "@/lib/member-profile";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
@@ -53,6 +54,8 @@ export function CommunityCard({
   const [messages, setMessages] = useState<CommunityMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [displayName, setDisplayName] = useState(() => displayNameFromSession(session));
+  const [memberProfiles, setMemberProfiles] = useState<Record<string, MemberProfile>>({});
+  const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>("loading");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -65,8 +68,46 @@ export function CommunityCard({
     : "";
 
   useEffect(() => {
+    let cancelled = false;
     setDisplayName(displayNameFromSession(session));
+    setMemberProfiles({});
+    setSelectedMember(null);
+    if (session)
+      ensureMemberProfile(session)
+        .then((member) => {
+          if (!cancelled && member) setDisplayName(member.full_name);
+        })
+        .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [session]);
+
+  useEffect(() => {
+    setSelectedMember(null);
+  }, [activeGroup, cohort.key, joined]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!session || !joined) {
+      setMemberProfiles({});
+      return;
+    }
+    loadMemberProfiles(
+      session,
+      messages.map((message) => message.user_id),
+    )
+      .then((rows) => {
+        if (!cancelled)
+          setMemberProfiles(Object.fromEntries(rows.map((row) => [row.user_id, row])));
+      })
+      .catch(() => {
+        if (!cancelled) setMemberProfiles({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [session, messages, joined, activeGroup, cohort.key]);
 
   useEffect(() => {
     let cancelled = false;
@@ -321,6 +362,10 @@ export function CommunityCard({
                             key={message.id}
                             message={message}
                             mine={message.user_id === session?.user.id}
+                            name={
+                              memberProfiles[message.user_id]?.full_name || message.display_name
+                            }
+                            onOpenProfile={() => setSelectedMember(message.user_id)}
                           />
                         ))}
                         <div ref={messagesEndRef} />
@@ -330,12 +375,12 @@ export function CommunityCard({
                   <Separator />
                   <form onSubmit={handleSend} className="space-y-3 p-4">
                     <div className="grid gap-2 sm:grid-cols-[180px_1fr]">
-                      <Input
-                        value={displayName}
-                        onChange={(event) => setDisplayName(event.target.value)}
-                        maxLength={32}
-                        placeholder={t("community.displayName")}
-                      />
+                      <div className="text-sm min-w-0">
+                        <p className="break-words font-medium">{displayName}</p>
+                        <Link to="/profile" className="text-xs text-primary underline">
+                          {language === "fr" ? "Modifier mon profil" : "Edit my profile"}
+                        </Link>
+                      </div>
                       <Textarea
                         value={draft}
                         onChange={(event) => setDraft(event.target.value)}
@@ -382,6 +427,14 @@ export function CommunityCard({
           </div>
         </div>
       </div>
+      {session && (
+        <MemberProfileDialog
+          session={session}
+          userId={selectedMember}
+          cohortLabel={cohort.label}
+          onClose={() => setSelectedMember(null)}
+        />
+      )}
     </Card>
   );
 }
@@ -397,8 +450,18 @@ function getCommunityGroupDescription(
   return t(`community.${groupKey}Desc` as TranslationKey);
 }
 
-function ChatMessage({ message, mine }: { message: CommunityMessage; mine: boolean }) {
-  const initials = message.display_name
+function ChatMessage({
+  message,
+  mine,
+  name,
+  onOpenProfile,
+}: {
+  message: CommunityMessage;
+  mine: boolean;
+  name: string;
+  onOpenProfile: () => void;
+}) {
+  const initials = name
     .split(" ")
     .map((part) => part[0])
     .join("")
@@ -408,9 +471,16 @@ function ChatMessage({ message, mine }: { message: CommunityMessage; mine: boole
   return (
     <div className={cn("flex gap-3", mine && "justify-end")}>
       {!mine && (
-        <Avatar className="h-8 w-8">
-          <AvatarFallback className="text-xs">{initials || "S"}</AvatarFallback>
-        </Avatar>
+        <button
+          type="button"
+          onClick={onOpenProfile}
+          aria-label={name}
+          className="shrink-0 rounded-full focus-visible:outline focus-visible:outline-2"
+        >
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="text-xs">{initials || "S"}</AvatarFallback>
+          </Avatar>
+        </button>
       )}
       <div
         className={cn(
@@ -419,7 +489,13 @@ function ChatMessage({ message, mine }: { message: CommunityMessage; mine: boole
         )}
       >
         <div className="mb-1 flex items-center gap-2">
-          <span className="text-xs font-semibold">{message.display_name}</span>
+          <button
+            type="button"
+            onClick={onOpenProfile}
+            className="text-left text-xs font-semibold break-words hover:underline focus-visible:underline"
+          >
+            {name}
+          </button>
           <span
             className={cn(
               "text-[10px]",
