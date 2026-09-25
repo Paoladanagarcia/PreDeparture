@@ -19,7 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/lib/auth";
 import { translateDuration, useI18n } from "@/lib/i18n";
 import { clearLocalRoadmap, useProfile, useProgress } from "@/lib/storage";
-import { TASKS } from "@/lib/tasks";
+import { TASKS, parseCalendarDate } from "@/lib/tasks";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -64,7 +64,7 @@ function ProfilePage() {
       </div>
     );
 
-  const arrival = new Date(profile.startDate);
+  const arrival = parseCalendarDate(profile.startDate);
   const signedInEmail = session?.user.email;
 
   async function logout() {

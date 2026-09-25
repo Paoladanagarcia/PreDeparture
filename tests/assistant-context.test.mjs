@@ -206,3 +206,82 @@ test("contextual requests bypass canned answers and do not persist private plans
     else globalThis.window = originalWindow;
   }
 });
+
+const { directAssistantAnswer } = await import(requestURL);
+test("simple greeting stays brief without unsolicited planning or external verification", () => {
+  const result = directAssistantAnswer(normalizeBody({ ...input, question: "hey!" }));
+  assert.equal(result, "Bonjour ! Comment puis-je vous aider pour votre échange ?");
+});
+test("saved profile is summarized exactly across timezones without official-source disclaimer", () => {
+  const previous = process.env.TZ;
+  try {
+    for (const timezone of ["America/Los_Angeles", "Europe/Paris", "Pacific/Auckland"]) {
+      process.env.TZ = timezone;
+      const result = directAssistantAnswer(
+        normalizeBody({
+          question: "résume mon profil",
+          context: {
+            language: "fr",
+            university: "UC Berkeley",
+            plan: { arrivalDate: "2026-09-18", duration: "one-semester", tasks: [] },
+          },
+        }),
+      );
+      assert.ok(result.includes("18 septembre 2026"));
+      assert.ok(result.includes("UC Berkeley"));
+      assert.ok(result.includes("Un semestre"));
+      assert.ok(!/officiel|vérifi/i.test(result));
+    }
+  } finally {
+    if (previous === undefined) delete process.env.TZ;
+    else process.env.TZ = previous;
+  }
+});
+test("English profile request is answered in English and missing data is not invented", () => {
+  const answer = directAssistantAnswer(normalizeBody({ ...input, question: "tell my profile" }));
+  assert.ok(answer.includes("saved exchange information"));
+  const missing = directAssistantAnswer(normalizeBody({ question: "tell my profile" }));
+  assert.ok(missing.includes("don’t have a saved"));
+  assert.ok(!missing.includes("Berkeley"));
+  assert.equal(
+    directAssistantAnswer(
+      normalizeBody({ question: "show my profile and explain the visa rules" }),
+    ),
+    null,
+  );
+});
+for (const route of ["ask", "ask-stream"]) {
+  test(`${route} completes greeting/profile responses without calling the model`, async () => {
+    const previousFetch = globalThis.fetch,
+      previousKey = process.env.GEMINI_API_KEY;
+    process.env.GEMINI_API_KEY = "test-only";
+    globalThis.fetch = async () => {
+      throw Error("These intents must not call Gemini");
+    };
+    try {
+      for (const question of ["hey!", "tell my profile"]) {
+        const res = response();
+        await handlers[route](
+          {
+            method: "POST",
+            headers: { accept: "application/x-ndjson" },
+            body: { ...input, question },
+          },
+          res,
+        );
+        assert.equal(res.code, 200);
+        if (route === "ask") assert.ok(res.data.answer);
+        else {
+          const frames = res.output.trim().split("\n").map(JSON.parse);
+          assert.equal(frames.at(-1).type, "done");
+          assert.equal(frames[0].type, "delta");
+          assert.ok(frames[0].text);
+        }
+      }
+    } finally {
+      globalThis.fetch = previousFetch;
+      if (previousKey === undefined) delete process.env.GEMINI_API_KEY;
+      else process.env.GEMINI_API_KEY = previousKey;
+    }
+  });
+}
