@@ -39,7 +39,8 @@ const translations = {
     "resources.profileDesc": "Browse all preparation guides for",
     "resources.generalDesc":
       "Browse general guides, plus housing guides for UC Berkeley and Stanford.",
-    "resources.verify": "Resources are starting points; verify important requirements directly with official sources.",
+    "resources.verify":
+      "Resources are starting points; verify important requirements directly with official sources.",
     "resources.openGuide": "Open guide",
     "common.startPlanning": "Start Planning",
     "common.startPlanningFree": "Start Planning — it's free",
@@ -238,9 +239,9 @@ const translations = {
       "You can preview every conversation, but joining and posting requires an account.",
     "community.profileRequired":
       "Your cohort groups unlock after your destination, university and arrival date are saved.",
-    "community.databaseTitle": "Community database is not ready yet",
+    "community.databaseTitle": "Community temporarily unavailable",
     "community.databaseDesc":
-      "Run the community SQL from the README in Supabase, then enable Realtime for the messages table.",
+      "Unable to load conversations. Check your connection and try again. If the problem persists, sign in again.",
     "community.supabaseRequired": "Supabase must be configured before community groups can open.",
     "community.profileBeforeJoin": "Create your exchange profile before joining a group.",
     "community.joined": "Joined",
@@ -298,8 +299,7 @@ const translations = {
     "onboarding.sub3": "We'll build your timeline backwards from this date.",
     "auth.badge": "Cloud sync",
     "auth.title": "Your account",
-    "auth.description":
-      "Sign in to save your roadmap across devices.",
+    "auth.description": "Sign in to save your roadmap across devices.",
     "auth.supabaseTitle": "Supabase is not configured yet",
     "auth.supabaseDesc":
       "Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment variables to enable sign in and cloud sync.",
@@ -324,7 +324,8 @@ const translations = {
     "auth.hidePassword": "Hide password",
     "auth.showPassword": "Show password",
     "auth.exchangeTitle": "Your exchange",
-    "auth.exchangeDesc": "These details create your dashboard immediately after your account is ready.",
+    "auth.exchangeDesc":
+      "These details create your dashboard immediately after your account is ready.",
     "auth.hostUniversity": "Host university",
     "auth.chooseCountry": "Choose country",
     "auth.chooseUniversity": "Choose university",
@@ -417,7 +418,8 @@ const translations = {
     "landing.featureTimelineTitle": "Timeline intelligente",
     "landing.featureTimelineDesc": "Des échéances calculées à partir de votre date d'arrivée.",
     "landing.featureLibraryTitle": "Ressources campus",
-    "landing.featureLibraryDesc": "Des guides sur le logement, la banque, le téléphone et l'arrivée.",
+    "landing.featureLibraryDesc":
+      "Des guides sur le logement, la banque, le téléphone et l'arrivée.",
     "landing.featureAssistantTitle": "Assistant IA",
     "landing.featureAssistantDesc": "Posez vos questions et obtenez des réponses pratiques.",
     "landing.howTitle": "Comment ça marche",
@@ -429,7 +431,8 @@ const translations = {
     "landing.step3Title": "Suivez votre timeline",
     "landing.step3Desc": "Voyez ce qui doit être fait tôt et ce qui peut attendre.",
     "landing.step4Title": "Utilisez l'aide",
-    "landing.step4Desc": "Ouvrez les ressources, demandez à l'assistant ou rejoignez votre cohorte.",
+    "landing.step4Desc":
+      "Ouvrez les ressources, demandez à l'assistant ou rejoignez votre cohorte.",
     "landing.storyEyebrow": "Notre histoire",
     "landing.storyTitle": "Créé à partir d'une vraie expérience étudiante",
     "landing.storyBody":
@@ -485,8 +488,7 @@ const translations = {
     "about.noteBody":
       "PreDeparture est un outil de préparation, pas une autorité universitaire, migratoire, juridique, médicale ou financière. Il aide à rester organisé, poser de meilleures questions et trouver plus vite les bonnes pages officielles.",
     "about.legalTitle": "Confidentialité",
-    "about.legalDesc":
-      "Un résumé des données, cookies et usages IA.",
+    "about.legalDesc": "Un résumé des données, cookies et usages IA.",
     "about.legalLink": "Voir confidentialité",
     "legal.badge": "Bases confidentialité",
     "legal.title": "Confidentialité",
@@ -502,10 +504,12 @@ const translations = {
     "legal.aiDesc":
       "Les questions envoyées à l'assistant IA passent par une route serveur sécurisée et peuvent être envoyées à l'API Gemini pour générer une réponse. N'envoyez pas d'informations personnelles sensibles dans les questions IA.",
     "legal.contactTitle": "Contact et demandes liées aux données",
-    "legal.contactDesc": "Pour une question confidentialité ou une demande de suppression de données, contactez :",
+    "legal.contactDesc":
+      "Pour une question confidentialité ou une demande de suppression de données, contactez :",
     "profile.eyebrow": "Votre profil",
     "profile.title": "Détails de l'échange",
-    "profile.description": "Gardez ces informations à jour pour que votre roadmap reste pertinente.",
+    "profile.description":
+      "Gardez ces informations à jour pour que votre roadmap reste pertinente.",
     "profile.signedInAs": "Connecté avec",
     "profile.destination": "Destination",
     "profile.nationality": "Nationalité",
@@ -528,8 +532,7 @@ const translations = {
     "dashboard.beforeDeparture": "Avant le départ",
     "dashboard.afterArrival": "Après l'arrivée",
     "dashboard.saveRoadmap": "Sauvegarder la roadmap",
-    "dashboard.saveRoadmapDesc":
-      "Créez un compte pour retrouver votre checklist partout.",
+    "dashboard.saveRoadmapDesc": "Créez un compte pour retrouver votre checklist partout.",
     "dashboard.createAccount": "Créer un compte",
     "dashboard.customTasksTitle": "Checklist personnalisée",
     "dashboard.customTasksDesc": "Ajoutez vos tâches ou masquez celles inutiles.",
@@ -549,27 +552,24 @@ const translations = {
     "dashboard.deleteTask": "Supprimer",
     "dashboard.hiddenTasks": "Tâches masquées",
     "dashboard.customTaskDefaultDesc": "Tâche personnelle.",
-    "timeline.description":
-      "Votre préparation, des premières démarches au premier mois sur place.",
+    "timeline.description": "Votre préparation, des premières démarches au premier mois sur place.",
     "timeline.note":
       "La timeline est indicative. Les exigences et délais varient selon université, pays et visa. Vérifiez les sources officielles.",
     "community.eyebrow": "Votre cohorte",
     "community.title": "Communauté",
-    "community.description":
-      "Voyez les groupes disponibles, puis connectez-vous pour échanger.",
+    "community.description": "Voyez les groupes disponibles, puis connectez-vous pour échanger.",
     "community.liveGroups": "Groupes en direct",
     "community.previewLabel": "Groupes disponibles",
     "community.cardDesc":
       "Rejoignez des groupes logement, visa, arrivée et budget avec votre cohorte.",
     "community.signInToJoin": "Connectez-vous pour rejoindre",
     "community.createProfile": "Créer votre profil",
-    "community.previewOnly":
-      "Vous pouvez voir les groupes. Un compte est requis pour écrire.",
+    "community.previewOnly": "Vous pouvez voir les groupes. Un compte est requis pour écrire.",
     "community.profileRequired":
       "Les groupes se débloquent après destination, université et date d'arrivée.",
-    "community.databaseTitle": "Communauté non prête",
+    "community.databaseTitle": "Communauté temporairement indisponible",
     "community.databaseDesc":
-      "Lancez le SQL du README dans Supabase, puis activez Realtime.",
+      "Impossible de charger les échanges. Vérifiez votre connexion et réessayez. Si le problème persiste, reconnectez-vous.",
     "community.supabaseRequired": "Supabase doit être configuré.",
     "community.profileBeforeJoin": "Créez votre profil avant de rejoindre.",
     "community.joined": "Groupe rejoint",
@@ -615,8 +615,7 @@ const translations = {
     "onboarding.startTitle": "Comment commencer ?",
     "onboarding.startDesc": "Créez un compte pour sauvegarder votre roadmap.",
     "onboarding.accountTitle": "Créer ou se connecter",
-    "onboarding.accountDesc":
-      "Sauvegardez votre profil et votre checklist en ligne.",
+    "onboarding.accountDesc": "Sauvegardez votre profil et votre checklist en ligne.",
     "onboarding.title0": "Où partez-vous ?",
     "onboarding.title1": "Quelle université ?",
     "onboarding.title2": "Votre profil",
@@ -627,8 +626,7 @@ const translations = {
     "onboarding.sub3": "La timeline part de cette date.",
     "auth.badge": "Cloud sync",
     "auth.title": "Compte",
-    "auth.description":
-      "Connectez-vous pour sauvegarder votre roadmap.",
+    "auth.description": "Connectez-vous pour sauvegarder votre roadmap.",
     "auth.supabaseTitle": "Supabase n'est pas encore configuré",
     "auth.supabaseDesc":
       "Ajoutez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY à vos variables d'environnement pour activer la connexion et la synchronisation.",
