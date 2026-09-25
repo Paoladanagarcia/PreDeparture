@@ -38,7 +38,10 @@ export function MemberProfileEditor() {
     return () => {
       cancelled = true;
     };
-  }, [session, reload]);
+    // Renewing the access token must not discard unsaved name or bio edits.
+    // Requests resolve the latest token through the shared session manager.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user.id, reload]);
   if (!session) return null;
   async function save(event: FormEvent) {
     event.preventDefault();

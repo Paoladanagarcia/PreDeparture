@@ -38,13 +38,13 @@ function ProfilePage() {
   const navigate = useNavigate();
   const { profile, loaded } = useProfile();
   const { done, reset } = useProgress();
-  const { session, signOut } = useAuth();
+  const { session, signOut, loading: authLoading } = useAuth();
   const { t } = useI18n();
 
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || authLoading) return;
     if (!session) navigate({ to: "/auth" });
-  }, [loaded, profile, navigate, session]);
+  }, [loaded, authLoading, profile, navigate, session]);
 
   const completed = useMemo(() => TASKS.filter((task) => done[task.id]).length, [done]);
   const pct = Math.round((completed / TASKS.length) * 100);

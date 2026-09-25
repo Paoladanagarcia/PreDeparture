@@ -1,3 +1,4 @@
+import { createSessionManager, SessionExpiredError } from "./session-manager";
 import {
   createContext,
   useCallback,
@@ -62,41 +63,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const configured = isSupabaseConfigured();
 
   const persistSession = useCallback((nextSession: AuthSession | null) => {
-    setSession(nextSession);
-    if (typeof window === "undefined") return;
-
-    if (nextSession) {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextSession));
-    } else {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-    }
+    writeSession(nextSession);
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    const sync = () => {
+      if (!cancelled) setSession(readSession());
+    };
+    const storageSync = (event: StorageEvent) => {
+      if (event.key === AUTH_STORAGE_KEY || event.key === null) sync();
+    };
+    window.addEventListener("predeparture-session", sync);
+    window.addEventListener("storage", storageSync);
     const authRedirect = readAuthRedirect();
-
-    if (!authRedirect) {
-      setSession(readSession());
-      setLoading(false);
-      return;
-    }
-
-    setRecoveryMode(authRedirect.type === "recovery");
-    getUser(authRedirect.session)
-      .then((user) => {
-        persistSession({ ...authRedirect.session, user });
-        if (typeof window !== "undefined") {
+    async function restore() {
+      try {
+        if (authRedirect) {
+          const user = await rawSupabaseRequest<SupabaseUser>(
+            "/auth/v1/user",
+            { method: "GET" },
+            authRedirect.session,
+          );
+          if (cancelled) return;
+          setRecoveryMode(authRedirect.type === "recovery");
+          persistSession({ ...authRedirect.session, user });
           window.history.replaceState(
             null,
             "",
             `${window.location.pathname}${window.location.search}`,
           );
+        } else {
+          const stored = readSession();
+          if (stored) await sessionManager.valid(stored);
+          sync();
         }
-      })
-      .catch(() => {
-        setSession(readSession());
-      })
-      .finally(() => setLoading(false));
+      } catch {
+        sync();
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void restore();
+    const renew = () => {
+      const stored = readSession();
+      if (stored) void sessionManager.valid(stored).catch(() => {});
+    };
+    const interval = window.setInterval(renew, 30_000);
+    window.addEventListener("focus", renew);
+    window.addEventListener("online", renew);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener("predeparture-session", sync);
+      window.removeEventListener("storage", storageSync);
+      window.removeEventListener("focus", renew);
+      window.removeEventListener("online", renew);
+    };
   }, [persistSession]);
 
   const signIn = useCallback(
@@ -124,21 +147,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         access_token?: string;
         refresh_token?: string;
         user?: SupabaseUser;
-      }>(
-        `/auth/v1/signup?redirect_to=${encodeURIComponent(getAuthRedirectUrl())}`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            email,
-            password,
-            data: {
-              first_name: firstName,
-              last_name: lastName,
-              full_name: fullName,
-            },
-          }),
-        },
-      );
+      }>(`/auth/v1/signup?redirect_to=${encodeURIComponent(getAuthRedirectUrl())}`, {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password,
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            full_name: fullName,
+          },
+        }),
+      });
 
       if (!response.access_token && response.user?.identities?.length === 0) {
         throw new Error("This email is already linked to an account. Try signing in instead.");
@@ -156,18 +176,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const requestPasswordReset = useCallback(async (email: string) => {
-    await authRequest(
-      `/auth/v1/recover?redirect_to=${encodeURIComponent(getAuthRedirectUrl())}`,
-      {
-        method: "POST",
-        body: JSON.stringify({ email }),
-      },
-    );
+    await authRequest(`/auth/v1/recover?redirect_to=${encodeURIComponent(getAuthRedirectUrl())}`, {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
   }, []);
 
   const updatePassword = useCallback(
     async (password: string) => {
-      if (!session) throw new Error("Password reset session is missing. Please request a new link.");
+      if (!session)
+        throw new Error("Password reset session is missing. Please request a new link.");
 
       await authRequest(
         "/auth/v1/user",
@@ -183,10 +201,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
-    if (session) {
-      await authRequest("/auth/v1/logout", { method: "POST" }, session).catch(() => null);
-    }
     persistSession(null);
+    if (session) {
+      await rawSupabaseRequest("/auth/v1/logout", { method: "POST" }, session).catch(() => null);
+    }
   }, [persistSession, session]);
 
   const value = useMemo<AuthContextValue>(
@@ -230,10 +248,6 @@ export function isSupabaseConfigured() {
 function getAuthRedirectUrl() {
   if (typeof window === "undefined") return "/auth";
   return `${window.location.origin}/auth`;
-}
-
-async function getUser(session: AuthSession) {
-  return authRequest<SupabaseUser>("/auth/v1/user", { method: "GET" }, session);
 }
 
 export async function getCloudProfile(session: AuthSession) {
@@ -336,7 +350,68 @@ export async function restRequest<T = unknown>(
   return supabaseRequest<T>(path, init, session);
 }
 
+const sessionManager = createSessionManager<AuthSession>({
+  read: readSession,
+  write: writeSession,
+  lock: async (operation) =>
+    typeof navigator !== "undefined" && navigator.locks
+      ? await navigator.locks.request("predeparture-session-refresh", operation)
+      : operation(),
+  refresh: async (session) => {
+    try {
+      return await rawSupabaseRequest<AuthSession>("/auth/v1/token?grant_type=refresh_token", {
+        method: "POST",
+        body: JSON.stringify({ refresh_token: session.refresh_token }),
+      });
+    } catch (error) {
+      if (error instanceof SupabaseHttpError && [400, 401, 403].includes(error.status))
+        throw new SessionExpiredError();
+      throw error;
+    }
+  },
+});
+
+function writeSession(nextSession: AuthSession | null) {
+  if (typeof window === "undefined") return;
+  if (nextSession) localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextSession));
+  else localStorage.removeItem(AUTH_STORAGE_KEY);
+  window.dispatchEvent(new Event("predeparture-session"));
+}
+
 async function supabaseRequest<T = unknown>(
+  path: string,
+  init: RequestInit,
+  session?: AuthSession,
+): Promise<T> {
+  if (!session) return rawSupabaseRequest<T>(path, init);
+  let current = await sessionManager.valid(session);
+  try {
+    return await rawSupabaseRequest<T>(path, init, current);
+  } catch (error) {
+    if (!(error instanceof SupabaseHttpError) || error.status !== 401) throw error;
+    current = await sessionManager.valid(current, current.access_token);
+    try {
+      return await rawSupabaseRequest<T>(path, init, current);
+    } catch (retryError) {
+      if (retryError instanceof SupabaseHttpError && retryError.status === 401) {
+        sessionManager.invalidate(current);
+        throw new SessionExpiredError();
+      }
+      throw retryError;
+    }
+  }
+}
+
+class SupabaseHttpError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+async function rawSupabaseRequest<T = unknown>(
   path: string,
   init: RequestInit,
   session?: AuthSession,
@@ -352,12 +427,16 @@ async function supabaseRequest<T = unknown>(
 
   const response = await fetch(`${SUPABASE_URL}${path}`, {
     ...init,
+    signal: init.signal ?? AbortSignal.timeout(20_000),
     headers,
   });
 
   if (!response.ok) {
     const message = await response.text().catch(() => "");
-    throw new Error(message || `Supabase request failed with ${response.status}`);
+    throw new SupabaseHttpError(
+      response.status,
+      message || `Supabase request failed with ${response.status}`,
+    );
   }
 
   if (response.status === 204) return undefined as T;

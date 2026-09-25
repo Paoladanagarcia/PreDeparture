@@ -58,6 +58,7 @@ export function CommunityCard({
   const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>("loading");
   const [sending, setSending] = useState(false);
+  const [retryLoad, setRetryLoad] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const joined = joinedGroups.includes(activeGroup);
@@ -144,7 +145,7 @@ export function CommunityCard({
     return () => {
       cancelled = true;
     };
-  }, [cohort.key, configured, profile, session, membershipKey]);
+  }, [cohort.key, configured, profile, session, membershipKey, retryLoad]);
 
   useEffect(() => {
     let cancelled = false;
@@ -170,7 +171,7 @@ export function CommunityCard({
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [activeGroup, cohort.key, joined, profile, session]);
+  }, [activeGroup, cohort.key, joined, profile, session, retryLoad]);
 
   useEffect(() => {
     if (!session || !profile || !joined) return;
@@ -180,7 +181,7 @@ export function CommunityCard({
         current.some((item) => item.id === message.id) ? current : [...current, message],
       );
     });
-  }, [activeGroup, cohort.key, joined, profile, session]);
+  }, [activeGroup, cohort.key, joined, profile, session, retryLoad]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -285,6 +286,14 @@ export function CommunityCard({
             <div className="mt-5 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm">
               <p className="font-medium">{t("community.databaseTitle")}</p>
               <p className="mt-1 text-muted-foreground">{t("community.databaseDesc")}</p>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3"
+                onClick={() => setRetryLoad((value) => value + 1)}
+              >
+                {language === "fr" ? "Réessayer" : "Retry"}
+              </Button>
             </div>
           )}
 

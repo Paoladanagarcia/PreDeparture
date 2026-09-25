@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppHeader } from "@/components/AppHeader";
 import { CommunityCard } from "@/components/CommunityCard";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
 import { useProfile } from "@/lib/storage";
 
 export const Route = createFileRoute("/community")({
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/community")({
 function CommunityPage() {
   const { profile, loaded } = useProfile();
   const { t } = useI18n();
+  const { session } = useAuth();
 
   if (!loaded) return null;
 
@@ -34,7 +36,7 @@ function CommunityPage() {
           </p>
           <h1 className="mt-1 text-2xl font-bold md:text-2xl">{t("community.title")}</h1>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            {t("community.description")}
+            {t(session ? "community.cardDesc" : "community.description")}
           </p>
         </div>
 
