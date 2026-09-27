@@ -3,7 +3,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { formatDate, type Task } from "@/lib/tasks";
-import { actionReason, actionStatusLabel, type ActionDecision } from "@/lib/next-actions";
+import {
+  actionReason,
+  actionStatusLabel,
+  type ActionDecision,
+  type AttentionFilter,
+} from "@/lib/next-actions";
 
 export function TaskStatusControl({
   decision,
@@ -59,6 +64,11 @@ export function TaskStatusControl({
 export function NextActions({
   actions,
   urgentCount,
+  actionableCount,
+  waitingCount,
+  onShowAttention,
+  showTiming = true,
+  example = false,
   remaining,
   onToggleStarted,
   onDone,
@@ -66,6 +76,11 @@ export function NextActions({
 }: {
   actions: ActionDecision[];
   urgentCount: number;
+  actionableCount: number;
+  waitingCount: number;
+  onShowAttention: (filter: AttentionFilter) => void;
+  showTiming?: boolean;
+  example?: boolean;
   remaining: number;
   onToggleStarted: (id: string) => void;
   onDone: (id: string) => void;
@@ -79,22 +94,70 @@ export function NextActions({
       className="mt-5 rounded-xl border border-primary/15 bg-primary/5 p-4 sm:p-5"
     >
       <h2 id="next-actions-title" className="text-lg font-semibold">
-        {fr ? "Vos trois prochaines actions" : "Your next three actions"}
+        {example
+          ? fr
+            ? "Trois prochaines actions · exemple"
+            : "Next three actions · example"
+          : fr
+            ? "Vos trois prochaines actions"
+            : "Your next three actions"}
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
         {fr
           ? "Jusqu’à trois étapes, classées selon vos dates, votre avancement et les étapes préalables."
           : "Up to three steps, ranked by your dates, progress and prerequisite steps."}
       </p>
-      <p role="status" className="mt-2 text-xs font-medium text-primary">
-        {urgentCount > 0
-          ? fr
-            ? `${urgentCount} étape(s) à vérifier en priorité : date cible dépassée ou dans les 7 jours, y compris celles en attente.`
-            : `${urgentCount} step(s) need attention: target passed or within 7 days, including waiting steps.`
-          : fr
-            ? "Aucune date cible proche ou dépassée dans votre planning."
+      {!showTiming ? (
+        <p className="mt-3 rounded-lg border bg-card p-3 text-sm">
+          {fr
+            ? "Choisissez votre date d’arrivée ci-dessus pour obtenir vos priorités. Les dates affichées sont celles d’un exemple."
+            : "Choose your arrival date above to see your priorities. The displayed dates belong to an example."}
+        </p>
+      ) : urgentCount > 0 ? (
+        <div className="mt-3 space-y-2">
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto whitespace-normal p-0 text-left text-sm"
+            onClick={() => onShowAttention("attention")}
+          >
+            {fr
+              ? `${urgentCount} étape(s) à vérifier — voir toutes les étapes concernées`
+              : `${urgentCount} step(s) need attention — see all affected steps`}
+          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!actionableCount}
+              onClick={() => onShowAttention("attention-now")}
+            >
+              {fr ? "À faire maintenant" : "Act now"} · {actionableCount}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={!waitingCount}
+              onClick={() => onShowAttention("attention-waiting")}
+            >
+              {fr ? "À surveiller" : "Keep an eye on"} · {waitingCount}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {fr
+              ? "Dates cibles dépassées ou dans les 7 jours. Les étapes à surveiller attendent une autre démarche."
+              : "Planning targets passed or within 7 days. Steps to watch are waiting on another task."}
+          </p>
+        </div>
+      ) : (
+        <p role="status" className="mt-2 text-xs text-muted-foreground">
+          {fr
+            ? "Aucune date cible proche ou dépassée dans ce planning."
             : "No planning targets are close or overdue."}
-      </p>
+        </p>
+      )}
       {actions.length ? (
         <ol className="mt-4 grid gap-3 lg:grid-cols-3">
           {actions.map((d, index) => (
@@ -104,7 +167,7 @@ export function NextActions({
                   <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
                     {index + 1}
                   </span>
-                  {d.urgent && (
+                  {showTiming && d.urgent && (
                     <Badge variant="outline" className="border-warning/40 bg-warning/10">
                       {fr ? "À vérifier" : "Needs attention"}
                     </Badge>
@@ -112,17 +175,21 @@ export function NextActions({
                 </div>
                 <h3 className="text-sm font-semibold">{title(d.task)}</h3>
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  {actionReason(d, fr, title)}
+                  {showTiming
+                    ? actionReason(d, fr, title)
+                    : fr
+                      ? "Étape proposée pour illustrer le fonctionnement du planning."
+                      : "A sample step illustrating how the plan works."}
                 </p>
                 <p className="text-xs">
-                  {d.urgent
+                  {showTiming && d.urgent
                     ? fr
                       ? "Date cible"
                       : "Planning target"
                     : fr
                       ? "Date conseillée"
                       : "Suggested date"}{" "}
-                  : {formatDate(d.urgent ? d.latest : d.recommended, language)}
+                  : {formatDate(showTiming && d.urgent ? d.latest : d.recommended, language)}
                 </p>
                 <TaskStatusControl decision={d} onToggleStarted={onToggleStarted} title={title} />
                 <Button

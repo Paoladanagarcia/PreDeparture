@@ -1,6 +1,8 @@
+import { isCalendarInput } from "@/lib/planning-demo";
+import { getTaskText } from "@/lib/task-text";
 import { getPersonalizedTasks, customTaskToTask } from "@/lib/personalized-tasks";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -56,7 +58,17 @@ import {
 } from "lucide-react";
 
 import { NextActions, TaskStatusControl } from "@/components/NextActions";
-import { planNextActions, actionStatusLabel, STARTED_NAMESPACE, type ActionDecision, type ActionStatus } from "@/lib/next-actions";
+import {
+  planNextActions,
+  actionStatusLabel,
+  STARTED_NAMESPACE,
+  type ActionDecision,
+  type ActionStatus,
+  planningAttention,
+  matchesPlanningFilter,
+  type PlanningFilter,
+  type AttentionFilter,
+} from "@/lib/next-actions";
 
 const TASK_CATEGORIES: TaskCategory[] = [
   "visa",
@@ -83,32 +95,61 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
-  const { profile, setProfile } = useProfile();
+  const { profile, setProfile, loaded: profileLoaded } = useProfile();
   const {
-    done,
-    docs,
-    customTasks,
-    hiddenTaskIds,
-    toggle,
-    toggleDoc,
+    done: savedDone,
+    docs: savedDocs,
+    customTasks: savedCustomTasks,
+    hiddenTaskIds: savedHiddenTaskIds,
+    toggle: toggleSaved,
+    toggleDoc: toggleSavedDoc,
     addCustomTask,
     deleteCustomTask,
     hideTask,
     restoreTask,
-    reset,
+    reset: resetSaved,
   } = useProgress();
-  const { configured: authConfigured, session } = useAuth();
+  const { configured: authConfigured, session, loading: authLoading } = useAuth();
   const { language, t } = useI18n();
   const [previewProfile, setPreviewProfile] = useState<ProfileQuestionnaire>(() =>
     getDefaultDashboardProfile(),
   );
   const savedProfile = session ? profile : null;
   const effectiveProfile = savedProfile ?? previewProfile;
+  const isExample = !savedProfile;
+  const [previewDateChosen, setPreviewDateChosen] = useState(false);
+  const [previewDone, setPreviewDone] = useState<Record<string, boolean>>({});
+  const [previewDocs, setPreviewDocs] = useState<Record<string, boolean>>({});
+  const done = isExample ? previewDone : savedDone;
+  const docs = isExample ? previewDocs : savedDocs;
+  const customTasks = isExample ? [] : savedCustomTasks;
+  const hiddenTaskIds = isExample ? [] : savedHiddenTaskIds;
+  const showTiming = !isExample || previewDateChosen;
+  const toggle = (id: string) =>
+    isExample ? setPreviewDone((current) => ({ ...current, [id]: !current[id] })) : toggleSaved(id);
+  const toggleDoc = (id: string, docId: string) =>
+    isExample
+      ? setPreviewDocs((current) => ({
+          ...current,
+          [`${id}.${docId}`]: !current[`${id}.${docId}`],
+        }))
+      : toggleSavedDoc(id, docId);
+  const reset = () => {
+    if (isExample) {
+      setPreviewDone({});
+      setPreviewDocs({});
+    } else resetSaved();
+  };
+  const [activeTab, setActiveTab] = useState("checklist");
+  const checklistRef = useRef<HTMLDivElement>(null);
+  const [focusChecklist, setFocusChecklist] = useState(false);
 
   function updateDashboardProfile(next: ProfileQuestionnaire) {
+    if (!isCalendarInput(next.startDate)) return;
     if (savedProfile) {
       setProfile(next);
     } else {
+      if (next.startDate !== previewProfile.startDate) setPreviewDateChosen(true);
       setPreviewProfile(next);
     }
   }
@@ -118,16 +159,13 @@ function Dashboard() {
     [effectiveProfile.startDate],
   );
 
-  const personalizedTasks = useMemo(
-    () => {
-      const hidden = new Set(hiddenTaskIds);
-      return [
-        ...getPersonalizedTasks(effectiveProfile).filter((task) => !hidden.has(task.id)),
-        ...customTasks.map((task) => customTaskToTask(task, arrival)),
-      ];
-    },
-    [arrival, customTasks, effectiveProfile, hiddenTaskIds],
-  );
+  const personalizedTasks = useMemo(() => {
+    const hidden = new Set(hiddenTaskIds);
+    return [
+      ...getPersonalizedTasks(effectiveProfile).filter((task) => !hidden.has(task.id)),
+      ...customTasks.map((task) => customTaskToTask(task, arrival)),
+    ];
+  }, [arrival, customTasks, effectiveProfile, hiddenTaskIds]);
 
   const hiddenStandardTasks = useMemo(() => {
     const hidden = new Set(hiddenTaskIds);
@@ -138,37 +176,97 @@ function Dashboard() {
   const total = personalizedTasks.length;
   const pct = total ? Math.round((completed / total) * 100) : 0;
   const [today, setToday] = useState(() => new Date());
-  const [statusFilter, setStatusFilter] = useState<ActionStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<PlanningFilter>("all");
   useEffect(() => {
     const timer = window.setInterval(() => setToday(new Date()), 60000);
     return () => window.clearInterval(timer);
   }, []);
   const plan = planNextActions(personalizedTasks, arrival, done, docs, today);
-  const decisions = new Map(plan.decisions.map(d => [d.task.id, d]));
-  const filteredTasks = personalizedTasks.filter(task => statusFilter === "all" || decisions.get(task.id)?.status === statusFilter);
+  const decisions = new Map(
+    plan.decisions.map((d) => [d.task.id, showTiming ? d : { ...d, urgent: false }]),
+  );
+  const attention = planningAttention(plan.decisions);
+  const filteredTasks = plan.decisions
+    .filter((decision) => matchesPlanningFilter(decision, statusFilter))
+    .map((decision) => decision.task);
+  const showAttention = (filter: AttentionFilter) => {
+    setStatusFilter(filter);
+    setActiveTab("checklist");
+    setFocusChecklist(true);
+  };
+  useEffect(() => {
+    if (!focusChecklist) return;
+    checklistRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    checklistRef.current?.focus({ preventScroll: true });
+    setFocusChecklist(false);
+  }, [focusChecklist, activeTab, statusFilter]);
   const toggleStarted = (id: string) => toggleDoc(STARTED_NAMESPACE, id);
   const taskTitle = (task: Task) => getTaskText(task, language).title;
 
   const before = sortTasksByRecommendedDate(filteredTasks.filter((t) => t.phase === "before"));
   const after = sortTasksByRecommendedDate(filteredTasks.filter((t) => t.phase === "after"));
 
+  if (authLoading || !profileLoaded)
+    return (
+      <div className="min-h-screen bg-muted/30">
+        <AppHeader active="dashboard" />
+        <p role="status" className="mx-auto max-w-6xl p-6">
+          {language === "fr" ? "Chargement du planning…" : "Loading your plan…"}
+        </p>
+      </div>
+    );
+
   return (
     <div className="min-h-screen bg-muted/30">
       <AppHeader active="dashboard" />
 
       <main className="mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-6">
+        {isExample && (
+          <section
+            className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-4"
+            aria-label={language === "fr" ? "Planning d’exemple" : "Example plan"}
+          >
+            <p className="font-semibold text-primary">
+              {language === "fr" ? "Planning d’exemple" : "Example plan"}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {language === "fr"
+                ? "Personnalisez votre date d’arrivée pour essayer les priorités. Cette simulation n’est pas enregistrée et ne modifie aucun planning personnel."
+                : "Choose your arrival date to try the priorities. This simulation is not saved and does not change a personal plan."}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => document.getElementById("dashboard-arrival")?.focus()}
+            >
+              {language === "fr" ? "Choisir ma date d’arrivée" : "Choose my arrival date"}
+            </Button>
+          </section>
+        )}
         <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
           <Card className="p-4 sm:p-5">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {t("dashboard.headingTo")}
             </p>
             <h1 className="mt-1 text-xl font-bold sm:text-2xl md:text-2xl">
-              {effectiveProfile.university}, {language === "fr" && effectiveProfile.country === "United States" ? "États-Unis" : effectiveProfile.country}
+              {effectiveProfile.university},{" "}
+              {language === "fr" && effectiveProfile.country === "United States"
+                ? "États-Unis"
+                : effectiveProfile.country}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {language === "fr" ? (effectiveProfile.nationality === "International" ? "Étudiant international" : `Étudiant · ${effectiveProfile.nationality}`) : `${effectiveProfile.nationality} ${t("dashboard.student")}`} · {t("dashboard.arriving")}{" "}
-              {arrival.toLocaleDateString(language === "fr" ? "fr-FR" : "en-US", { dateStyle: "long" })} ·{" "}
-              {translateDuration(effectiveProfile.duration, t)}
+              {language === "fr"
+                ? effectiveProfile.nationality === "International"
+                  ? "Étudiant international"
+                  : `Étudiant · ${effectiveProfile.nationality}`
+                : `${effectiveProfile.nationality} ${t("dashboard.student")}`}{" "}
+              · {t("dashboard.arriving")}{" "}
+              {arrival.toLocaleDateString(language === "fr" ? "fr-FR" : "en-US", {
+                dateStyle: "long",
+              })}{" "}
+              · {translateDuration(effectiveProfile.duration, t)}
             </p>
 
             <div className="mt-4 sm:mt-5">
@@ -184,89 +282,162 @@ function Dashboard() {
             </div>
           </Card>
 
-          <DashboardSettingsCard
-            profile={effectiveProfile}
-            onChange={updateDashboardProfile}
-          />
+          <DashboardSettingsCard profile={effectiveProfile} onChange={updateDashboardProfile} />
         </div>
 
+        <NextActions
+          actions={plan.next}
+          urgentCount={attention.all.length}
+          actionableCount={attention.now.length}
+          waitingCount={attention.waiting.length}
+          onShowAttention={showAttention}
+          showTiming={showTiming}
+          example={isExample}
+          remaining={total - completed}
+          onToggleStarted={toggleStarted}
+          onDone={toggle}
+          title={taskTitle}
+        />
+
         {authConfigured && !session && <CloudSyncPrompt />}
+        {session && isExample && (
+          <Card className="mt-4 p-4">
+            <p className="text-sm text-muted-foreground">
+              {language === "fr"
+                ? "Prêt à créer votre propre planning ?"
+                : "Ready to create your own plan?"}
+            </p>
+            <Button asChild className="mt-2" size="sm">
+              <Link to="/onboarding">{t("landing.createPlan")}</Link>
+            </Button>
+          </Card>
+        )}
 
-        <NextActions actions={plan.next} urgentCount={plan.urgentCount} remaining={total - completed}
-          onToggleStarted={toggleStarted} onDone={toggle} title={taskTitle} />
-
-        <Tabs defaultValue="checklist" className="mt-5 sm:mt-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-5 sm:mt-6">
           <TabsList>
             <TabsTrigger value="checklist">{t("dashboard.checklist")}</TabsTrigger>
             <TabsTrigger value="timeline">{t("dashboard.timeline")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="checklist" className="mt-5">
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-lg font-semibold">{t("dashboard.checklist")}</h2>
-                <p className="text-sm text-muted-foreground">
-                  {t("dashboard.trackDone")}
-                </p>
-              </div>
-              <Button variant="outline" size="sm" onClick={reset}>
-                <RotateCcw className="mr-1 h-3.5 w-3.5" /> {t("common.resetChecklist")}
-              </Button>
-            </div>
-
-            <div className="mb-4 flex flex-wrap gap-2" aria-label={language === "fr" ? "Filtrer les étapes" : "Filter steps"}>
-              {(["all", "todo", "in-progress", "blocked", "done"] as const).map(status => (
-                <Button key={status} type="button" size="sm" variant={statusFilter === status ? "default" : "outline"}
-                  aria-pressed={statusFilter === status} onClick={() => setStatusFilter(status)}>
-                  {status === "all" ? (language === "fr" ? "Toutes" : "All") : actionStatusLabel(status, language === "fr")}
-                  {" · "}{status === "all" ? total : plan.decisions.filter(d => d.status === status).length}
+            <div
+              ref={checklistRef}
+              tabIndex={-1}
+              className="scroll-mt-24 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">{t("dashboard.checklist")}</h2>
+                  <p className="text-sm text-muted-foreground">{t("dashboard.trackDone")}</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={reset}>
+                  <RotateCcw className="mr-1 h-3.5 w-3.5" /> {t("common.resetChecklist")}
                 </Button>
-              ))}
-            </div>
-            {filteredTasks.length === 0 && <p className="mb-4 text-sm text-muted-foreground">{language === "fr" ? "Aucune étape dans ce statut." : "No steps with this status."}</p>}
-            <ChecklistCustomization
-              canSync={Boolean(session)}
-              onAdd={addCustomTask}
-              hiddenTasks={hiddenStandardTasks}
-              onRestore={restoreTask}
-            />
+              </div>
 
-            <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
-              <ChecklistColumn
-                title={t("dashboard.beforeDeparture")}
-                tasks={before}
-                decisions={decisions}
-                done={done}
-                docs={docs}
-                toggle={toggle}
-                toggleDoc={toggleDoc}
-                hideTask={hideTask}
-                deleteCustomTask={deleteCustomTask}
-                canCustomize={Boolean(session)}
-                university={effectiveProfile.university}
-                arrival={arrival}
-              />
-              <ChecklistColumn
-                title={t("dashboard.afterArrival")}
-                tasks={after}
-                decisions={decisions}
-                done={done}
-                docs={docs}
-                toggle={toggle}
-                toggleDoc={toggleDoc}
-                hideTask={hideTask}
-                deleteCustomTask={deleteCustomTask}
-                canCustomize={Boolean(session)}
-                university={effectiveProfile.university}
-                arrival={arrival}
-              />
+              <div
+                className="mb-4 flex flex-wrap gap-2"
+                aria-label={language === "fr" ? "Filtrer les étapes" : "Filter steps"}
+              >
+                {(["all", "todo", "in-progress", "blocked", "done"] as const).map((status) => (
+                  <Button
+                    key={status}
+                    type="button"
+                    size="sm"
+                    variant={statusFilter === status ? "default" : "outline"}
+                    aria-pressed={statusFilter === status}
+                    onClick={() => setStatusFilter(status)}
+                  >
+                    {status === "all"
+                      ? language === "fr"
+                        ? "Toutes"
+                        : "All"
+                      : actionStatusLabel(status, language === "fr")}
+                    {" · "}
+                    {status === "all"
+                      ? total
+                      : plan.decisions.filter((d) => d.status === status).length}
+                  </Button>
+                ))}
+              </div>
+              {statusFilter.startsWith("attention") && (
+                <div
+                  role="status"
+                  className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm"
+                >
+                  <p>
+                    {language === "fr"
+                      ? "Étapes correspondant au compteur"
+                      : "Steps matching the count"}{" "}
+                    · {filteredTasks.length}
+                    {statusFilter === "attention-waiting"
+                      ? language === "fr"
+                        ? " — en attente d’une autre démarche"
+                        : " — waiting on another task"
+                      : ""}
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setStatusFilter("all")}
+                  >
+                    {language === "fr" ? "Voir toutes les étapes" : "Show all steps"}
+                  </Button>
+                </div>
+              )}
+              {filteredTasks.length === 0 && (
+                <p className="mb-4 text-sm text-muted-foreground">
+                  {language === "fr"
+                    ? "Aucune étape dans ce statut."
+                    : "No steps with this status."}
+                </p>
+              )}
+              {!isExample && (
+                <ChecklistCustomization
+                  canSync={Boolean(session)}
+                  onAdd={addCustomTask}
+                  hiddenTasks={hiddenStandardTasks}
+                  onRestore={restoreTask}
+                />
+              )}
+
+              <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
+                <ChecklistColumn
+                  title={t("dashboard.beforeDeparture")}
+                  tasks={before}
+                  decisions={decisions}
+                  done={done}
+                  docs={docs}
+                  toggle={toggle}
+                  toggleDoc={toggleDoc}
+                  hideTask={hideTask}
+                  deleteCustomTask={deleteCustomTask}
+                  canCustomize={!isExample}
+                  university={effectiveProfile.university}
+                  arrival={arrival}
+                />
+                <ChecklistColumn
+                  title={t("dashboard.afterArrival")}
+                  tasks={after}
+                  decisions={decisions}
+                  done={done}
+                  docs={docs}
+                  toggle={toggle}
+                  toggleDoc={toggleDoc}
+                  hideTask={hideTask}
+                  deleteCustomTask={deleteCustomTask}
+                  canCustomize={!isExample}
+                  university={effectiveProfile.university}
+                  arrival={arrival}
+                />
+              </div>
             </div>
           </TabsContent>
 
           <TabsContent value="timeline" className="mt-5">
             <Timeline tasks={personalizedTasks} done={done} arrival={arrival} />
           </TabsContent>
-
         </Tabs>
       </main>
     </div>
@@ -284,9 +455,7 @@ function CloudSyncPrompt() {
             <ShieldCheck className="h-3.5 w-3.5 text-primary" />
             <h2 className="text-xs font-semibold">{t("dashboard.saveRoadmap")}</h2>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t("dashboard.saveRoadmapDesc")}
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("dashboard.saveRoadmapDesc")}</p>
         </div>
         <Button asChild size="sm" className="h-8 shrink-0 px-3 text-xs">
           <Link to="/auth">{t("dashboard.createAccount")}</Link>
@@ -304,6 +473,8 @@ function DashboardSettingsCard({
   onChange: (profile: ProfileQuestionnaire) => void;
 }) {
   const { language, t } = useI18n();
+  const [dateInput, setDateInput] = useState(profile.startDate);
+  useEffect(() => setDateInput(profile.startDate), [profile.startDate]);
 
   return (
     <Card className="p-4 sm:p-5">
@@ -341,8 +512,13 @@ function DashboardSettingsCard({
           <Input
             id="dashboard-arrival"
             type="date"
-            value={profile.startDate}
-            onChange={(event) => onChange({ ...profile, startDate: event.target.value })}
+            value={dateInput}
+            aria-invalid={!isCalendarInput(dateInput)}
+            onChange={(event) => {
+              setDateInput(event.target.value);
+              if (isCalendarInput(event.target.value))
+                onChange({ ...profile, startDate: event.target.value });
+            }}
           />
         </div>
       </div>
@@ -450,7 +626,12 @@ function ChecklistCustomization({
           <h3 className="text-sm font-semibold">{t("dashboard.customTasksTitle")}</h3>
           <p className="text-xs text-muted-foreground">{t("dashboard.customTasksDesc")}</p>
         </div>
-        <Button type="button" size="sm" variant="outline" onClick={() => setOpen((value) => !value)}>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => setOpen((value) => !value)}
+        >
           <Plus className="mr-1 h-3.5 w-3.5" />
           {t("dashboard.addTask")}
         </Button>
@@ -495,7 +676,10 @@ function ChecklistCustomization({
           <div className="grid gap-3 md:grid-cols-4">
             <div className="space-y-1.5">
               <Label>{t("dashboard.phase")}</Label>
-              <Select value={phase} onValueChange={(value) => setPhase(value as "before" | "after")}>
+              <Select
+                value={phase}
+                onValueChange={(value) => setPhase(value as "before" | "after")}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -507,7 +691,10 @@ function ChecklistCustomization({
             </div>
             <div className="space-y-1.5">
               <Label>{t("dashboard.category")}</Label>
-              <Select value={category} onValueChange={(value) => setCategory(value as TaskCategory)}>
+              <Select
+                value={category}
+                onValueChange={(value) => setCategory(value as TaskCategory)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -611,7 +798,9 @@ function TaskCard({
   const recommended = dateMinusDays(arrival, t.recommendedDaysBefore);
   const latest = dateMinusDays(arrival, t.latestDaysBefore);
   const isCustom = t.id.startsWith("custom-");
-  const removeLabel = isCustom ? translate("dashboard.deleteTask") : translate("dashboard.hideTask");
+  const removeLabel = isCustom
+    ? translate("dashboard.deleteTask")
+    : translate("dashboard.hideTask");
   const RemoveIcon = isCustom ? Trash2 : EyeOff;
   const guideTopic = getTaskGuideTopic(t);
   const guideSearch = getGuideSearch(university);
@@ -716,7 +905,18 @@ function TaskCard({
               )}
             </div>
           </div>
-          {decision && <TaskStatusControl decision={decision} onToggleStarted={id => toggleDoc(STARTED_NAMESPACE, id)} title={task => getTaskText(task, language).title} />}
+          {decision && (
+            <TaskStatusControl
+              decision={decision}
+              onToggleStarted={(id) => toggleDoc(STARTED_NAMESPACE, id)}
+              title={(task) => getTaskText(task, language).title}
+            />
+          )}
+          {decision?.urgent && (
+            <Badge variant="outline" className="mt-2 border-warning/40 bg-warning/10">
+              {language === "fr" ? "Date cible à vérifier" : "Review planning target"}
+            </Badge>
+          )}
           <p className="mt-1 text-xs text-muted-foreground">{taskText.description}</p>
 
           <div className="mt-3 grid gap-2 rounded-md border bg-muted/30 p-2 sm:grid-cols-2">
@@ -883,9 +1083,7 @@ function Timeline({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">{t("dashboard.timeline")}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("timeline.description")}
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{t("timeline.description")}</p>
         </div>
         <Badge variant="outline" className="shrink-0">
           {completed} / {total} {t("common.done")}
@@ -1057,10 +1255,9 @@ function getTimelineGroups(tasks: Task[]) {
   ].filter((group) => group.tasks.length > 0);
 }
 
-
 function getDefaultDashboardProfile(): ProfileQuestionnaire {
   const arrival = new Date();
-  arrival.setMonth(arrival.getMonth() + 3);
+  arrival.setMonth(arrival.getMonth() + 6);
 
   return {
     country: "United States",
@@ -1070,7 +1267,6 @@ function getDefaultDashboardProfile(): ProfileQuestionnaire {
     duration: "one-semester",
   };
 }
-
 
 function getTaskGuideTopic(task: Task): ResourceGuideTopic | null {
   if (task.category === "visa") return "visa";
@@ -1087,139 +1283,6 @@ function getGuideSearch(university: string): { university?: SupportedUniversity 
   return UNIVERSITY_OPTIONS.includes(university as SupportedUniversity)
     ? { university: university as SupportedUniversity }
     : {};
-}
-
-
-
-const FRENCH_TASK_TEXT: Record<
-  string,
-  {
-    title: string;
-    description: string;
-    warning?: string;
-    docs?: Record<string, string>;
-  }
-> = {
-  sevis: {
-    title: "Payer les frais SEVIS I-901",
-    description: "Frais obligatoires pour tous les étudiants F-1 avant l'entretien visa.",
-  },
-  avits: {
-    title: "Créer un compte AVITS",
-    description: "Compte utilisé pour planifier votre rendez-vous visa à l'ambassade américaine.",
-  },
-  "ds-160": {
-    title: "Compléter le formulaire DS-160",
-    description: "Demande de visa non-immigrant en ligne requise pour le visa étudiant F-1.",
-  },
-  "visa-fee": {
-    title: "Payer les frais de demande de visa (MRV)",
-    description: "Paiement requis avant de planifier l'entretien à l'ambassade ou au consulat.",
-  },
-  "visa-schedule": {
-    title: "Planifier l'entretien visa",
-    description: "Réservez le premier créneau disponible : l'attente peut durer plusieurs semaines.",
-    warning: "Les délais d'entretien visa peuvent varier fortement selon le pays.",
-  },
-  "visa-docs": {
-    title: "Préparer les documents pour l'entretien visa",
-    description: "Rassemblez tout ce qu'il faudra apporter au rendez-vous à l'ambassade.",
-    docs: {
-      passport: "Passeport valide au moins 6 mois",
-      i20: "Formulaire I-20 signé",
-      ds160: "Page de confirmation DS-160",
-      "sevis-receipt": "Reçu de paiement SEVIS",
-      photo: "Photo visa au format américain",
-      financial: "Preuve de ressources financières",
-      admission: "Lettre d'admission de l'université",
-    },
-  },
-  "housing-search": {
-    title: "Commencer la recherche de logement",
-    description: "Logement universitaire, sous-location ou location privée. Explorez tôt les options.",
-    warning: "Le logement près du campus est compétitif. Commencez les recherches tôt.",
-  },
-  "housing-secure": {
-    title: "Sécuriser un logement",
-    description: "Signez le bail ou confirmez votre attribution de logement universitaire.",
-    warning: "N'envoyez jamais de dépôt avant d'avoir vérifié l'annonce : les arnaques existent.",
-  },
-  insurance: {
-    title: "Vérifier l'assurance santé",
-    description:
-      "Les soins aux États-Unis coûtent cher. Vérifiez si l'assurance universitaire est obligatoire ou si une dispense est possible.",
-    warning: "Les règles d'assurance varient selon l'université. Vérifiez les critères officiels.",
-  },
-  flights: {
-    title: "Réserver les vols",
-    description: "Essayez d'arriver quelques jours avant l'orientation pour vous installer.",
-  },
-  bank: {
-    title: "Vérifier les paiements bancaires et cartes internationales",
-    description:
-      "Vérifiez les frais à l'étranger, augmentez les plafonds et prévenez votre banque du voyage.",
-  },
-  phone: {
-    title: "Préparer une eSIM ou un forfait téléphone pour les États-Unis",
-    description: "Commandez une eSIM ou activez une option internationale avant le départ.",
-  },
-  "student-card": {
-    title: "Obtenir votre carte étudiante",
-    description: "Votre carte officielle pour accéder aux services du campus.",
-  },
-  "register-classes": {
-    title: "S'inscrire aux cours",
-    description: "Utilisez le portail étudiant et surveillez les créneaux d'inscription.",
-  },
-  "open-bank": {
-    title: "Ouvrir un compte bancaire américain si nécessaire",
-    description: "Comparez les banques proches du campus et les alternatives comme Wise.",
-  },
-  "activate-sim": {
-    title: "Activer le forfait téléphone ou l'eSIM",
-    description: "Vérifiez que les données, appels et SMS fonctionnent pour les codes de sécurité.",
-  },
-  transport: {
-    title: "Comprendre les transports locaux",
-    description:
-      "Repérez les options utiles autour du campus : bus, train, navettes et cartes de transport.",
-  },
-  emergency: {
-    title: "Enregistrer les contacts d'urgence",
-    description: "Sauvegardez police campus, ambassade, assurance, urgence médicale et contact local.",
-  },
-  "arrival-reqs": {
-    title: "Vérifier les exigences d'arrivée de l'université",
-    description: "Check-in obligatoire, vaccination, orientation et démarches campus.",
-  },
-  "scholarships-research": {
-    title: "Chercher les bourses et options de financement",
-    description:
-      "Identifiez les aides de votre école, de l'université d'accueil, du gouvernement ou d'organismes privés.",
-    warning:
-      "Les deadlines de bourse sont souvent plus tôt que celles du visa ou du logement. Vérifiez-les dès que possible.",
-  },
-  "scholarships-prepare": {
-    title: "Préparer les documents de candidature aux bourses",
-    description:
-      "Rassemblez relevés de notes, lettre de motivation, budget, recommandations et formulaires spécifiques.",
-  },
-  "scholarships-submit": {
-    title: "Envoyer les candidatures de bourse avant les deadlines",
-    description: "Soumettez chaque dossier en avance : beaucoup ferment 4 à 9 mois avant le départ.",
-    warning:
-      "Les deadlines de bourse sont souvent plus tôt que celles du visa ou du logement. Vérifiez-les dès que possible.",
-  },
-};
-
-type DisplayTaskText = Task & { docs?: Record<string, string> };
-
-function getTaskText(task: Task, language: Language): DisplayTaskText {
-  if (language !== "fr") return task;
-  return {
-    ...task,
-    ...FRENCH_TASK_TEXT[task.id],
-  };
 }
 
 function getCategoryLabel(category: Task["category"], language: Language) {
@@ -1249,7 +1312,6 @@ function getPriorityLabel(priority: Task["priority"], language: Language) {
   )[priority];
 }
 
-
 function isLikelyFrenchOrEu(nationality: string) {
   const value = nationality.toLowerCase();
   return [
@@ -1269,5 +1331,10 @@ function isLikelyFrenchOrEu(nationality: string) {
 
 function formatEffort(value: string | undefined, language: string) {
   if (!value || language !== "fr") return value;
-  return value.replace(/\bhours\b/g, "heures").replace(/\bhour\b/g, "heure").replace(/\bdays\b/g, "jours").replace(/\bday\b/g, "jour").replace(/^Custom$/, "Personnalisé");
+  return value
+    .replace(/\bhours\b/g, "heures")
+    .replace(/\bhour\b/g, "heure")
+    .replace(/\bdays\b/g, "jours")
+    .replace(/\bday\b/g, "jour")
+    .replace(/^Custom$/, "Personnalisé");
 }
