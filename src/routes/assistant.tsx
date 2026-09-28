@@ -1,3 +1,5 @@
+import { useAuth } from "@/lib/auth";
+import { readConversation, saveConversation, type ChatMessage } from "@/lib/assistant-memory";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -25,23 +27,27 @@ export const Route = createFileRoute("/assistant")({
       },
     ],
   }),
-  component: AssistantPage,
+  component: AssistantRoute,
 });
 
-type ChatMessage =
-  | { role: "user"; content: string }
-  | {
-      role: "assistant";
-      content: string;
-      sources?: { title: string; url: string }[];
-      incomplete?: boolean;
-    };
-
-function AssistantPage() {
+function AssistantRoute() {
+  const { session, loading } = useAuth();
+  if (loading) return null;
+  const owner = session?.user.id ?? "guest";
+  return <AssistantPage key={owner} owner={owner} />;
+}
+function AssistantPage({ owner }: { owner: string }) {
   const { profile } = useProfile();
   const { done, docs, hiddenTaskIds, customTasks } = useProgress();
   const { language, t } = useI18n();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessageState] = useState<ChatMessage[]>(readConversation);
+  const messagesRef = useRef(messages);
+  function setMessages(next: ChatMessage[] | ((current: ChatMessage[]) => ChatMessage[])) {
+    const value = typeof next === "function" ? next(messagesRef.current) : next;
+    messagesRef.current = value;
+    saveConversation(owner, value);
+    setMessageState(value);
+  }
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +56,17 @@ function AssistantPage() {
   const [retryMessages, setRetryMessages] = useState<ChatMessage[] | null>(null);
   useEffect(
     () => () => {
+      if (requestRef.current) {
+        const current = messagesRef.current;
+        const last = current.at(-1);
+        if (last?.role === "assistant")
+          saveConversation(
+            owner,
+            last.content.trim()
+              ? [...current.slice(0, -1), { ...last, incomplete: true }]
+              : current.slice(0, -1),
+          );
+      }
       requestRef.current?.abort();
       requestRef.current = null;
     },
@@ -161,6 +178,24 @@ function AssistantPage() {
           </p>
         </div>
 
+        <div className="mb-3 flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!messages.length && !input}
+            onClick={() => {
+              requestRef.current?.abort();
+              requestRef.current = null;
+              setMessages([]);
+              setInput("");
+              setError(null);
+              setRetryMessages(null);
+              setLoading(false);
+            }}
+          >
+            {language === "fr" ? "Nouvelle conversation" : "New conversation"}
+          </Button>
+        </div>
         <Card className="flex h-[62vh] flex-col overflow-hidden p-0 sm:h-[60vh]">
           <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
             {messages.length === 0 && (

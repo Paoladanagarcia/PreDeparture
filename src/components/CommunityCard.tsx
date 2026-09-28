@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { CheckCircle2, Lock, MessageCircle, Send, Users } from "lucide-react";
 import { toast } from "sonner";
 
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MemberProfileDialog } from "@/components/MemberProfileDialog";
 import { ensureMemberProfile, loadMemberProfiles, type MemberProfile } from "@/lib/member-profile";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { mergeMessages } from "@/lib/message-history";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth";
@@ -59,7 +59,14 @@ export function CommunityCard({
   const [status, setStatus] = useState<Status>("loading");
   const [sending, setSending] = useState(false);
   const [retryLoad, setRetryLoad] = useState(0);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const chatRef = useRef<HTMLDivElement | null>(null);
+  const nearBottom = useRef(true);
+  const prependAnchor = useRef<{ height: number; top: number } | null>(null);
+  const generation = useRef(0);
+  const [hasOlder, setHasOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const olderBusy = useRef(false);
+  const [historyError, setHistoryError] = useState(false);
 
   const joined = joinedGroups.includes(activeGroup);
   const activeGroupMeta = COMMUNITY_GROUPS.find((group) => group.key === activeGroup);
@@ -149,43 +156,87 @@ export function CommunityCard({
 
   useEffect(() => {
     let cancelled = false;
-
-    async function loadMessages() {
-      if (!session || !profile || !joined) {
-        setMessages([]);
-        return;
-      }
-
+    const run = ++generation.current;
+    let timer: number | undefined;
+    let newest: CommunityMessage | undefined;
+    setMessages([]);
+    setHasOlder(false);
+    setLoadingOlder(false);
+    setHistoryError(false);
+    olderBusy.current = false;
+    nearBottom.current = true;
+    prependAnchor.current = null;
+    if (!session || !profile || !joined) return;
+    async function refresh() {
       try {
-        const rows = await listMessages(session, cohort.key, activeGroup);
-        if (!cancelled) setMessages(rows);
+        const page = await listMessages(
+          session!,
+          cohort.key,
+          activeGroup,
+          newest,
+          newest ? "after" : "before",
+        );
+        if (cancelled || generation.current !== run) return;
+        if (!newest) setHasOlder(page.hasMore);
+        setMessages((current) => mergeMessages(current, page.messages));
+        newest = page.messages.at(-1) ?? newest;
+        setHistoryError(false);
+        // Drain any polling gap in consecutive pages, without losing older loaded history.
+        timer = window.setTimeout(refresh, page.hasMore && newest ? 100 : 7000);
       } catch {
-        if (!cancelled) setStatus("unavailable");
+        if (cancelled) return;
+        setHistoryError(true);
+        timer = window.setTimeout(refresh, 7000);
       }
     }
-
-    loadMessages();
-    const interval = window.setInterval(loadMessages, 7000);
-
+    void refresh();
+    const unsubscribe = subscribeToMessages(session, cohort.key, (message) => {
+      if (cancelled || message.group_key !== activeGroup || message.cohort_key !== cohort.key)
+        return;
+      setMessages((current) => mergeMessages(current, [message]));
+    });
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
+      generation.current++;
+      window.clearTimeout(timer);
+      unsubscribe();
     };
-  }, [activeGroup, cohort.key, joined, profile, session, retryLoad]);
+  }, [activeGroup, cohort.key, joined, session?.user.id, retryLoad]);
 
-  useEffect(() => {
-    if (!session || !profile || !joined) return;
-    return subscribeToMessages(session, cohort.key, (message) => {
-      if (message.group_key !== activeGroup) return;
-      setMessages((current) =>
-        current.some((item) => item.id === message.id) ? current : [...current, message],
-      );
-    });
-  }, [activeGroup, cohort.key, joined, profile, session, retryLoad]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  useLayoutEffect(() => {
+    const viewport = chatRef.current;
+    if (!viewport) return;
+    if (prependAnchor.current) {
+      viewport.scrollTop =
+        prependAnchor.current.top + viewport.scrollHeight - prependAnchor.current.height;
+      prependAnchor.current = null;
+    } else if (nearBottom.current) viewport.scrollTop = viewport.scrollHeight;
   }, [messages]);
+
+  async function loadOlder() {
+    if (!session || !messages.length || olderBusy.current) return;
+    const run = generation.current;
+    olderBusy.current = true;
+    setLoadingOlder(true);
+    try {
+      const page = await listMessages(session, cohort.key, activeGroup, messages[0]);
+      if (run !== generation.current) return;
+      const viewport = chatRef.current;
+      if (viewport)
+        prependAnchor.current = { height: viewport.scrollHeight, top: viewport.scrollTop };
+      nearBottom.current = false;
+      setMessages((current) => mergeMessages(current, page.messages));
+      setHasOlder(page.hasMore);
+      setHistoryError(false);
+    } catch {
+      if (run === generation.current) setHistoryError(true);
+    } finally {
+      if (run === generation.current) {
+        olderBusy.current = false;
+        setLoadingOlder(false);
+      }
+    }
+  }
 
   async function handleJoin(groupKey = activeGroup) {
     if (!configured) {
@@ -220,6 +271,7 @@ export function CommunityCard({
     event.preventDefault();
     if (!session || !joined || !draft.trim()) return;
 
+    const run = generation.current;
     setSending(true);
     try {
       const nextMessage = await sendMessage(
@@ -229,11 +281,11 @@ export function CommunityCard({
         displayName || "Student",
         draft.trim(),
       );
+      if (run !== generation.current) return;
+      nearBottom.current = true;
       setDraft("");
       if (nextMessage) {
-        setMessages((current) =>
-          current.some((item) => item.id === nextMessage.id) ? current : [...current, nextMessage],
-        );
+        setMessages((current) => mergeMessages(current, [nextMessage]));
       }
     } catch {
       toast.error(t("community.messageFailed"));
@@ -359,7 +411,39 @@ export function CommunityCard({
 
               {joined ? (
                 <div>
-                  <ScrollArea className="h-72 p-4 sm:h-80">
+                  <div
+                    ref={chatRef}
+                    className="h-72 overflow-y-auto p-4 sm:h-80"
+                    onScroll={(event) => {
+                      const el = event.currentTarget;
+                      nearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+                    }}
+                  >
+                    {hasOlder && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mb-4"
+                        disabled={loadingOlder}
+                        onClick={loadOlder}
+                      >
+                        {loadingOlder
+                          ? language === "fr"
+                            ? "Chargement…"
+                            : "Loading…"
+                          : language === "fr"
+                            ? "Charger les messages précédents"
+                            : "Load earlier messages"}
+                      </Button>
+                    )}
+                    {historyError && (
+                      <p role="alert" className="mb-3 text-sm text-destructive">
+                        {language === "fr"
+                          ? "Impossible d’actualiser les messages. Réessayez ou attendez quelques secondes."
+                          : "Could not refresh messages. Retry or wait a few seconds."}
+                      </p>
+                    )}
                     {messages.length === 0 ? (
                       <div className="flex h-56 items-center justify-center rounded-lg border border-dashed text-center text-sm text-muted-foreground">
                         {t("community.noMessages")}
@@ -377,10 +461,9 @@ export function CommunityCard({
                             onOpenProfile={() => setSelectedMember(message.user_id)}
                           />
                         ))}
-                        <div ref={messagesEndRef} />
                       </div>
                     )}
-                  </ScrollArea>
+                  </div>
                   <Separator />
                   <form onSubmit={handleSend} className="space-y-3 p-4">
                     <div className="grid gap-2 sm:grid-cols-[180px_1fr]">

@@ -1,3 +1,4 @@
+import { selectConversationOwner } from "./assistant-memory";
 import { createSessionManager, SessionExpiredError } from "./session-manager";
 import {
   createContext,
@@ -69,7 +70,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     const sync = () => {
-      if (!cancelled) setSession(readSession());
+      if (!cancelled) {
+        const next = readSession();
+        selectConversationOwner(next?.user.id ?? "guest");
+        setSession(next);
+      }
     };
     const storageSync = (event: StorageEvent) => {
       if (event.key === AUTH_STORAGE_KEY || event.key === null) sync();
