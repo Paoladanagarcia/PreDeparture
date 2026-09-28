@@ -108,7 +108,7 @@ export function actionReason(d: ActionDecision, fr: boolean, title: (task: Task)
   if (d.status === "done")
     return fr ? "Vous avez terminé cette étape." : "You completed this step.";
   if (d.status === "blocked")
-    return `${fr ? "Étape conseillée avant celle-ci" : "Suggested step to complete first"} : ${d.waitingFor.map(title).join(", ")}.`;
+    return `${fr ? "En attente de" : "Waiting for"} : ${d.waitingFor.map(title).join(", ")}.`;
   if (d.afterArrival)
     return fr ? "À prévoir après votre arrivée." : "Plan this after your arrival.";
   if (d.daysToLatest < 0)
@@ -134,4 +134,21 @@ export function actionReason(d: ActionDecision, fr: boolean, title: (task: Task)
   return fr
     ? "Prochaine étape à anticiper ; il n’est pas nécessaire de la faire aujourd’hui."
     : "An upcoming step to plan ahead; you do not need to do it today.";
+}
+
+export type AttentionFilter = "attention" | "attention-now" | "attention-waiting";
+export type PlanningFilter = ActionStatus | "all" | AttentionFilter;
+export function matchesPlanningFilter(decision: ActionDecision, filter: PlanningFilter) {
+  if (filter === "all") return true;
+  if (filter === "attention") return decision.urgent;
+  if (filter === "attention-now") return decision.urgent && decision.status !== "blocked";
+  if (filter === "attention-waiting") return decision.urgent && decision.status === "blocked";
+  return decision.status === filter;
+}
+export function planningAttention(decisions: ActionDecision[]) {
+  return {
+    all: decisions.filter((d) => matchesPlanningFilter(d, "attention")),
+    now: decisions.filter((d) => matchesPlanningFilter(d, "attention-now")),
+    waiting: decisions.filter((d) => matchesPlanningFilter(d, "attention-waiting")),
+  };
 }

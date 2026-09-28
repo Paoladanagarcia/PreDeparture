@@ -1,22 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type CSSProperties } from "react";
+import { PlanningDemo } from "@/components/PlanningDemo";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PlanningLink } from "@/components/PlanningLink";
 import { useI18n } from "@/lib/i18n";
-import {
-  CheckCircle2,
-  Clock,
-  FileText,
-  Library,
-  ListChecks,
-  ShieldCheck,
-  Users,
-  Sparkles,
-  Map,
-  Plane,
-} from "lucide-react";
+import { Clock, Library, ListChecks, ShieldCheck, Users, Sparkles, Map } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -93,7 +82,7 @@ function Landing() {
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 sm:mt-8">
             <Button asChild size="lg" className="h-10 px-5 text-sm sm:h-11 sm:px-6">
-              <PlanningLink />
+              <PlanningLink dashboardLabel={t("landing.createPlan")} />
             </Button>
           </div>
 
@@ -101,7 +90,7 @@ function Landing() {
             <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {t("landing.preview")}
             </p>
-            <AnimatedDashboardPreview />
+            <PlanningDemo />
           </div>
         </div>
       </section>
@@ -111,12 +100,8 @@ function Landing() {
           <p className="text-xs font-medium uppercase tracking-wide text-primary">
             {t("landing.platformEyebrow")}
           </p>
-          <h2 className="mt-2 text-2xl font-bold sm:text-3xl">
-            {t("landing.platformTitle")}
-          </h2>
-          <p className="mt-3 text-muted-foreground">
-            {t("landing.platformDesc")}
-          </p>
+          <h2 className="mt-2 text-2xl font-bold sm:text-3xl">{t("landing.platformTitle")}</h2>
+          <p className="mt-3 text-muted-foreground">{t("landing.platformDesc")}</p>
         </div>
         <div className="mt-8 grid gap-4 sm:mt-12 md:grid-cols-3">
           {pillars.map((p) => (
@@ -188,138 +173,5 @@ function Landing() {
         </div>
       </footer>
     </div>
-  );
-}
-
-function AnimatedDashboardPreview() {
-  const { t, language } = useI18n();
-  const [completed, setCompleted] = useState([true, true, false, false]);
-  const progress = Math.round(completed.filter(Boolean).length / completed.length * 100);
-  const previewTasks = [
-    { label: t("task.sevis") },
-    { label: t("task.ds160") },
-    { label: t("task.interview") },
-    { label: t("task.housing") },
-  ];
-
-  return (
-    <Card className="dashboard-preview relative overflow-hidden border-border/60 bg-card p-0 text-left shadow-soft">
-      <div className="dashboard-preview__mesh" />
-      <div className="dashboard-preview__glow" />
-      <div className="relative flex flex-wrap items-center justify-between gap-3 border-b bg-card/90 px-4 py-3 sm:px-6">
-        <p className="text-xs text-muted-foreground">
-          {language === "fr" ? "Essayez : cochez une étape" : "Try it: check off a step"}
-        </p>
-        <div className="dashboard-preview__live inline-flex items-center gap-2 rounded-full border border-success/20 bg-success/5 px-3 py-2">
-          <span className="dashboard-preview__live-dot h-2 w-2 shrink-0 rounded-full bg-success" />
-          <span className="text-xs font-semibold">Live checklist</span>
-        </div>
-      </div>
-      <div className="relative grid grid-cols-1 gap-0 md:grid-cols-[1.15fr_0.85fr]">
-        <div className="border-b p-4 sm:p-6 md:border-b-0 md:border-r">
-          <div className="mb-4 flex items-center justify-between rounded-lg border bg-muted/25 px-3 py-2">
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                UC Berkeley
-              </p>
-              <p className="text-xs font-semibold">{language === "fr" ? "Échange · Automne 2026" : "Fall 2026 exchange"}</p>
-            </div>
-            <span className="dashboard-preview__sync rounded-full bg-primary-soft px-2 py-1 text-[10px] font-semibold text-primary">
-              {language === "fr" ? "Démo interactive" : "Interactive demo"}
-            </span>
-          </div>
-          <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm font-medium">{t("landing.readiness")}</p>
-            <span className="dashboard-preview__percent text-sm font-semibold text-primary">
-              {progress}%
-            </span>
-          </div>
-          <div role="progressbar" aria-label={t("landing.readiness")} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100} className="h-2 w-full overflow-hidden rounded-full bg-muted">
-            <div className="dashboard-preview__progress h-2 rounded-full bg-primary" style={{ width: `${progress}%` }} />
-          </div>
-
-          <ul className="mt-6 space-y-3 text-sm">
-            {previewTasks.map((item, index) => (
-              <li key={item.label}>
-                <button
-                  type="button"
-                  aria-pressed={completed[index]}
-                  onClick={() => setCompleted((current) => current.map((value, i) => i === index ? !value : value))}
-                  className={`dashboard-preview__task dashboard-preview__task--${completed[index] ? "done" : "todo"} flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`}
-                >
-                  <span className="dashboard-preview__check grid h-5 w-5 shrink-0 place-items-center rounded-full border">
-                    {completed[index] && <CheckCircle2 className="h-3.5 w-3.5" />}
-                  </span>
-                  <span className={completed[index] ? "text-muted-foreground line-through" : ""}>
-                    {item.label}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-5 grid grid-cols-3 gap-2 text-xs">
-            {[
-              { icon: FileText, label: "DS-160" },
-              { icon: Plane, label: language === "fr" ? "Arrivée" : "Arrival" },
-              { icon: Library, label: t("nav.resources") },
-            ].map((item, index) => (
-              <div
-                key={item.label}
-                className="dashboard-preview__mini rounded-lg border bg-muted/30 p-2"
-                style={{ animationDelay: `${0.4 + index * 0.35}s` }}
-              >
-                <item.icon className="mb-1 h-3.5 w-3.5 text-primary" />
-                <p className="truncate font-medium">{item.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="relative bg-muted/35 p-4 sm:p-6">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {t("landing.nextDeadline")}
-          </p>
-          <p className="mt-2 text-lg font-semibold">{t("landing.scheduleInterview")}</p>
-          <p className="text-sm text-muted-foreground">{t("landing.beforeJune15")}</p>
-
-          <div className="dashboard-preview__floating mt-6 rounded-lg border bg-card p-4 text-sm shadow-soft">
-            <p className="font-medium">{t("landing.headsUp")}</p>
-            <p className="mt-1 text-muted-foreground">{t("landing.waitTimes")}</p>
-          </div>
-
-          <div className="mt-5 space-y-2">
-            {[
-              { label: "Visa", width: "78%" },
-              { label: language === "fr" ? "Logement" : "Housing", width: "42%" },
-              { label: language === "fr" ? "Arrivée" : "Arrival", width: "64%" },
-            ].map((item, index) => (
-              <div key={item.label} className="dashboard-preview__row" style={{ animationDelay: `${index * 0.4}s` }}>
-                <div className="mb-1 flex items-center justify-between text-[10px] text-muted-foreground">
-                  <span>{item.label}</span>
-                  <span>{index + 2} {language === "fr" ? "étapes" : "steps"}</span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-background">
-                  <div
-                    className="dashboard-preview__row-bar h-full rounded-full bg-primary/70"
-                    style={{ "--target-width": item.width } as CSSProperties}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="dashboard-preview__assistant mt-5 rounded-lg border bg-background/80 p-3 text-xs shadow-soft">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
-              <p className="font-semibold">{t("nav.aiAssistant")}</p>
-            </div>
-            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-              <div className="dashboard-preview__assistant-bar h-full rounded-full bg-accent" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </Card>
   );
 }
