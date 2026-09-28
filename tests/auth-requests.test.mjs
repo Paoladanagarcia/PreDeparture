@@ -15,6 +15,7 @@ const managerUrl = url(compile("../src/lib/session-manager.ts"));
 let source = compile("../src/lib/auth.tsx")
   .replace(/import\s*\{[^}]+\}\s*from "react";/, "const createContext = () => null;")
   .replace('"./session-manager"', JSON.stringify(managerUrl))
+  .replace('"./assistant-memory"', JSON.stringify(url(compile("../src/lib/assistant-memory.ts"))))
   .replace("import.meta.env.VITE_SUPABASE_URL", '"https://auth-fixture.invalid"')
   .replace("import.meta.env.VITE_SUPABASE_ANON_KEY", '"public-test-key"');
 const { restRequest } = await import(url(source));

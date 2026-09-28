@@ -1,3 +1,4 @@
+import { messageQuery, messagePage, type MessageCursor } from "./message-history";
 import { parseCalendarDate } from "./tasks";
 import { restRequest, SUPABASE_ANON_KEY, SUPABASE_URL, type AuthSession } from "@/lib/auth";
 import type { ProfileQuestionnaire } from "@/lib/tasks";
@@ -125,14 +126,15 @@ export async function listMessages(
   session: AuthSession,
   cohortKey: string,
   groupKey: CommunityGroupKey,
+  cursor?: MessageCursor,
+  direction: "before" | "after" = "before",
 ) {
-  return restRequest<CommunityMessage[]>(
-    `/rest/v1/predeparture_community_messages?cohort_key=eq.${encodeURIComponent(
-      cohortKey,
-    )}&group_key=eq.${groupKey}&select=*&order=created_at.asc&limit=80`,
+  const rows = await restRequest<CommunityMessage[]>(
+    messageQuery(cohortKey, groupKey, cursor, direction),
     { method: "GET" },
     session,
   );
+  return messagePage(rows, direction);
 }
 
 export async function sendMessage(
