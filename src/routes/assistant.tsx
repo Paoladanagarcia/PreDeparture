@@ -1,3 +1,4 @@
+import { AssistantText } from "@/components/AssistantText";
 import { useAuth } from "@/lib/auth";
 import { readConversation, saveConversation, type ChatMessage } from "@/lib/assistant-memory";
 import { createFileRoute } from "@tanstack/react-router";
@@ -352,9 +353,7 @@ function MessageBubble({ m }: { m: ChatMessage }) {
       </span>
       <div className="max-w-[92%] space-y-3 sm:max-w-[85%]">
         <div className="rounded-2xl rounded-tl-sm border bg-card px-3 py-3 text-sm sm:px-4">
-          <p className="whitespace-pre-wrap leading-7">
-            {m.content?.replace(/\n{3,}/g, "\n\n") || "..."}
-          </p>
+          <AssistantText text={m.content || "..."} />
           {m.incomplete && (
             <p className="mt-2 text-xs text-muted-foreground">
               {language === "fr"
