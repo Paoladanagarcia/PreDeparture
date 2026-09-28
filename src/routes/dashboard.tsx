@@ -1,3 +1,9 @@
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { isCalendarInput } from "@/lib/planning-demo";
 import { getTaskText } from "@/lib/task-text";
 import { getPersonalizedTasks, customTaskToTask } from "@/lib/personalized-tasks";
@@ -42,6 +48,7 @@ import {
   type SupportedUniversity,
 } from "@/lib/universities";
 import {
+  MoreHorizontal,
   ExternalLink,
   ArrowRight,
   RotateCcw,
@@ -402,36 +409,52 @@ function Dashboard() {
                 />
               )}
 
-              <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
-                <ChecklistColumn
-                  title={t("dashboard.beforeDeparture")}
-                  tasks={before}
-                  decisions={decisions}
-                  done={done}
-                  docs={docs}
-                  toggle={toggle}
-                  toggleDoc={toggleDoc}
-                  hideTask={hideTask}
-                  deleteCustomTask={deleteCustomTask}
-                  canCustomize={!isExample}
-                  university={effectiveProfile.university}
-                  arrival={arrival}
-                />
-                <ChecklistColumn
-                  title={t("dashboard.afterArrival")}
-                  tasks={after}
-                  decisions={decisions}
-                  done={done}
-                  docs={docs}
-                  toggle={toggle}
-                  toggleDoc={toggleDoc}
-                  hideTask={hideTask}
-                  deleteCustomTask={deleteCustomTask}
-                  canCustomize={!isExample}
-                  university={effectiveProfile.university}
-                  arrival={arrival}
-                />
-              </div>
+              <Tabs
+                defaultValue={before.length ? "before" : "after"}
+                key={statusFilter}
+                className="mt-4"
+              >
+                <TabsList className="mb-4 flex h-auto w-full flex-wrap justify-start">
+                  <TabsTrigger value="before">
+                    {t("dashboard.beforeDeparture")} · {before.length}
+                  </TabsTrigger>
+                  <TabsTrigger value="after">
+                    {t("dashboard.afterArrival")} · {after.length}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="before">
+                  <ChecklistColumn
+                    title={t("dashboard.beforeDeparture")}
+                    tasks={before}
+                    decisions={decisions}
+                    done={done}
+                    docs={docs}
+                    toggle={toggle}
+                    toggleDoc={toggleDoc}
+                    hideTask={hideTask}
+                    deleteCustomTask={deleteCustomTask}
+                    canCustomize={!isExample}
+                    university={effectiveProfile.university}
+                    arrival={arrival}
+                  />
+                </TabsContent>
+                <TabsContent value="after">
+                  <ChecklistColumn
+                    title={t("dashboard.afterArrival")}
+                    tasks={after}
+                    decisions={decisions}
+                    done={done}
+                    docs={docs}
+                    toggle={toggle}
+                    toggleDoc={toggleDoc}
+                    hideTask={hideTask}
+                    deleteCustomTask={deleteCustomTask}
+                    canCustomize={!isExample}
+                    university={effectiveProfile.university}
+                    arrival={arrival}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
           </TabsContent>
 
@@ -809,197 +832,185 @@ function TaskCard({
     else hideTask(t.id);
   };
 
-  if (isDone) {
-    return (
-      <li className="rounded-lg border border-success/30 bg-success/5 px-4 py-3 transition-colors">
-        <div className="flex items-start gap-3">
-          <Checkbox
-            checked={isDone}
-            onCheckedChange={() => toggle(t.id)}
-            className="mt-1"
-            id={t.id}
-          />
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <label
-                htmlFor={t.id}
-                className="block cursor-pointer text-sm font-medium text-muted-foreground line-through"
-              >
-                {taskText.title}
-              </label>
-              <div className="flex items-center gap-1">
-                <Badge variant="outline" className="border-success/40 bg-success/10 text-[10px]">
-                  <CheckCircle2 className="mr-1 h-3 w-3" /> {translate("common.done")}
-                </Badge>
-                {canCustomize && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-[10px] text-muted-foreground"
-                    onClick={handleRemove}
-                  >
-                    <RemoveIcon className="mr-1 h-3 w-3" />
-                    {removeLabel}
-                  </Button>
-                )}
-              </div>
-            </div>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
-              <CategoryLabel category={t.category} />
-              <span>
-                {translate("common.recommended")}: {formatDate(recommended, language)}
-              </span>
-              <span>
-                {translate("common.latestSafe")}: {formatDate(latest, language)}
-              </span>
-              {guideTopic && (
-                <Link
-                  to="/resources/$topic"
-                  params={{ topic: guideTopic }}
-                  search={guideSearch}
-                  className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
-                >
-                  {translate("resources.openGuide")} <ArrowRight className="h-3 w-3" />
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      </li>
-    );
-  }
-
+  const status = decision?.status ?? (isDone ? "done" : "todo");
   return (
-    <li
-      className={`rounded-lg border p-4 transition-colors ${isDone ? "bg-success/5 border-success/30" : "bg-card hover:bg-muted/40"}`}
-    >
-      <div className="flex gap-3">
+    <li className={`rounded-xl border p-4 sm:p-5 ${isDone ? "bg-muted/30" : "bg-card"}`}>
+      <div className="flex items-start gap-3">
         <Checkbox
           checked={isDone}
           onCheckedChange={() => toggle(t.id)}
           className="mt-1"
           id={t.id}
         />
-        <div className="flex-1">
-          <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
             <label
               htmlFor={t.id}
-              className={`block cursor-pointer text-sm font-medium ${isDone ? "text-muted-foreground line-through" : ""}`}
+              className={`cursor-pointer text-sm font-semibold ${isDone ? "text-muted-foreground line-through" : ""}`}
             >
               {taskText.title}
             </label>
-            <div className="flex items-center gap-1">
-              <PriorityBadge priority={t.priority} />
-              {canCustomize && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 px-2 text-[10px] text-muted-foreground"
-                  onClick={handleRemove}
-                >
-                  <RemoveIcon className="mr-1 h-3 w-3" />
-                  {removeLabel}
-                </Button>
-              )}
-            </div>
+            {canCustomize && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="-mt-1 h-8 w-8 shrink-0"
+                    aria-label={`${language === "fr" ? "Options pour" : "Options for"} ${taskText.title}`}
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={handleRemove}>
+                    <RemoveIcon className="mr-2 h-4 w-4" />
+                    {removeLabel}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
-          {decision && (
-            <TaskStatusControl
-              decision={decision}
-              onToggleStarted={(id) => toggleDoc(STARTED_NAMESPACE, id)}
-              title={(task) => getTaskText(task, language).title}
-            />
-          )}
-          {decision?.urgent && (
-            <Badge variant="outline" className="mt-2 border-warning/40 bg-warning/10">
-              {language === "fr" ? "Date cible à vérifier" : "Review planning target"}
-            </Badge>
-          )}
-          <p className="mt-1 text-xs text-muted-foreground">{taskText.description}</p>
-
-          <div className="mt-3 grid gap-2 rounded-md border bg-muted/30 p-2 sm:grid-cols-2">
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                {translate("common.recommended")}
-              </p>
-              <p className="text-xs font-semibold">{formatDate(recommended, language)}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                {translate("common.latestSafe")}
-              </p>
-              <p className="text-xs font-semibold">{formatDate(latest, language)}</p>
-            </div>
-          </div>
-
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <CategoryBadge category={t.category} />
-            {t.effort && (
-              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                <Clock className="h-3 w-3" /> {formatEffort(t.effort, language)}
+          <p className="mt-1 text-xs text-muted-foreground">
+            {translate("common.latestSafe")} : {formatDate(latest, language)}
+            {!isDone && decision?.urgent && (
+              <span className="ml-2 text-amber-700 dark:text-amber-400">
+                · {language === "fr" ? "À vérifier" : "Review"}
               </span>
             )}
-            {t.source && (
-              <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                <ShieldCheck className="h-3 w-3" /> {translate("common.source")}: {t.source}
-              </span>
-            )}
-            {t.link && (
-              <a
-                href={t.link.url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+          </p>
+          {status === "blocked" && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {language === "fr" ? "En attente de" : "Waiting for"} :{" "}
+              {decision?.waitingFor.map((task) => getTaskText(task, language).title).join(", ")}
+            </p>
+          )}
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            {status === "todo" && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 px-2"
+                onClick={() => toggleDoc(STARTED_NAMESPACE, t.id)}
               >
-                {t.link.label} <ExternalLink className="h-3 w-3" />
-              </a>
+                {language === "fr" ? "Commencer" : "Start"}
+              </Button>
+            )}
+            {status === "in-progress" && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 px-2 text-primary"
+                onClick={() => toggleDoc(STARTED_NAMESPACE, t.id)}
+                aria-label={
+                  language === "fr"
+                    ? "En cours — remettre à commencer"
+                    : "In progress — mark as not started"
+                }
+              >
+                {actionStatusLabel(status, language === "fr")}
+              </Button>
+            )}
+            {isDone && (
+              <span className="text-xs text-muted-foreground">{translate("common.done")}</span>
             )}
             {guideTopic && (
-              <Button asChild variant="outline" size="sm" className="h-7 px-2 text-[11px]">
+              <Button asChild variant="outline" size="sm" className="h-8">
                 <Link to="/resources/$topic" params={{ topic: guideTopic }} search={guideSearch}>
-                  {translate("resources.openGuide")} <ArrowRight className="ml-1 h-3 w-3" />
+                  {translate("resources.openGuide")}
+                  <ArrowRight className="ml-1 h-3.5 w-3.5" />
                 </Link>
               </Button>
             )}
           </div>
+          <details className="group mt-3">
+            <summary className="w-fit cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline focus-visible:outline-2">
+              <span className="group-open:hidden">
+                {language === "fr" ? "Voir les détails" : "View details"}
+              </span>
+              <span className="hidden group-open:inline">
+                {language === "fr" ? "Fermer les détails" : "Hide details"}
+              </span>
+            </summary>
+            <div className="mt-3 border-t pt-3">
+              <p className="mt-1 text-xs text-muted-foreground">{taskText.description}</p>
 
-          {t.warning && (
-            <div className="mt-3 flex gap-2 rounded-md border border-warning/40 bg-warning/10 p-2 text-xs text-warning-foreground">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>{taskText.warning ?? t.warning}</span>
-            </div>
-          )}
+              <div className="mt-3 grid gap-2 rounded-md border bg-muted/30 p-2 sm:grid-cols-2">
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {translate("common.recommended")}
+                  </p>
+                  <p className="text-xs font-semibold">{formatDate(recommended, language)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {translate("common.latestSafe")}
+                  </p>
+                  <p className="text-xs font-semibold">{formatDate(latest, language)}</p>
+                </div>
+              </div>
 
-          {t.requiredDocuments && t.requiredDocuments.length > 0 && (
-            <div className="mt-3 rounded-md border bg-card p-3">
-              <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <FileText className="h-3 w-3" /> {translate("common.requiredDocuments")}
-              </p>
-              <ul className="space-y-1.5">
-                {t.requiredDocuments.map((d) => {
-                  const key = `${t.id}.${d.id}`;
-                  const checked = !!docs[key];
-                  return (
-                    <li key={d.id} className="flex items-center gap-2">
-                      <Checkbox
-                        id={key}
-                        checked={checked}
-                        onCheckedChange={() => toggleDoc(t.id, d.id)}
-                      />
-                      <label
-                        htmlFor={key}
-                        className={`cursor-pointer text-xs ${checked ? "text-muted-foreground line-through" : ""}`}
-                      >
-                        {taskText.docs?.[d.id] ?? d.label}
-                      </label>
-                    </li>
-                  );
-                })}
-              </ul>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <CategoryBadge category={t.category} />
+                {t.effort && (
+                  <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <Clock className="h-3 w-3" /> {formatEffort(t.effort, language)}
+                  </span>
+                )}
+                {t.source && (
+                  <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <ShieldCheck className="h-3 w-3" /> {translate("common.source")}: {t.source}
+                  </span>
+                )}
+                {t.link && (
+                  <a
+                    href={t.link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                  >
+                    {t.link.label} <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
+
+              {t.warning && (
+                <div className="mt-3 flex gap-2 rounded-md border border-warning/40 bg-warning/10 p-2 text-xs text-warning-foreground">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>{taskText.warning ?? t.warning}</span>
+                </div>
+              )}
+
+              {t.requiredDocuments && t.requiredDocuments.length > 0 && (
+                <div className="mt-3 rounded-md border bg-card p-3">
+                  <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <FileText className="h-3 w-3" /> {translate("common.requiredDocuments")}
+                  </p>
+                  <ul className="space-y-1.5">
+                    {t.requiredDocuments.map((d) => {
+                      const key = `${t.id}.${d.id}`;
+                      const checked = !!docs[key];
+                      return (
+                        <li key={d.id} className="flex items-center gap-2">
+                          <Checkbox
+                            id={key}
+                            checked={checked}
+                            onCheckedChange={() => toggleDoc(t.id, d.id)}
+                          />
+                          <label
+                            htmlFor={key}
+                            className={`cursor-pointer text-xs ${checked ? "text-muted-foreground line-through" : ""}`}
+                          >
+                            {taskText.docs?.[d.id] ?? d.label}
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
             </div>
-          )}
+          </details>
         </div>
       </div>
     </li>
