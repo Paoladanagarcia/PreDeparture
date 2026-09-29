@@ -67,7 +67,6 @@ export function NextActions({
   actions,
   urgentCount,
   actionableCount,
-  waitingCount,
   onShowAttention,
   showTiming = true,
   example = false,
@@ -79,7 +78,6 @@ export function NextActions({
   actions: ActionDecision[];
   urgentCount: number;
   actionableCount: number;
-  waitingCount: number;
   onShowAttention: (filter: AttentionFilter) => void;
   showTiming?: boolean;
   example?: boolean;
@@ -106,7 +104,7 @@ export function NextActions({
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
         {fr
-          ? "Jusqu’à trois étapes, classées selon vos dates, votre avancement et les étapes préalables."
+          ? "Jusqu’à trois étapes, classées selon vos dates, votre avancement."
           : "Up to three steps, ranked by your dates, progress and prerequisite steps."}
       </p>
       {!showTiming ? (
@@ -137,20 +135,11 @@ export function NextActions({
             >
               {fr ? "À faire maintenant" : "Act now"} · {actionableCount}
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={!waitingCount}
-              onClick={() => onShowAttention("attention-waiting")}
-            >
-              {fr ? "À surveiller" : "Keep an eye on"} · {waitingCount}
-            </Button>
           </div>
           <p className="text-xs text-muted-foreground">
             {fr
-              ? "Dates cibles dépassées ou dans les 7 jours. Les étapes à surveiller attendent une autre démarche."
-              : "Planning targets passed or within 7 days. Steps to watch are waiting on another task."}
+              ? "Dates cibles dépassées ou dans les 7 jours."
+              : "Planning targets passed or within 7 days."}
           </p>
         </div>
       ) : (
@@ -210,8 +199,8 @@ export function NextActions({
               ? "Toutes vos étapes sont terminées. Bravo !"
               : "All your steps are complete. Well done!"
             : fr
-              ? "Aucune étape disponible maintenant. Consultez les étapes en attente ou celles prévues après l’arrivée."
-              : "No steps are available now. Review waiting steps or those planned after arrival."}
+              ? "Aucune étape disponible maintenant. Consultez les étapes prévues après l’arrivée."
+              : "No steps are available now. Review steps planned after arrival."}
         </p>
       )}
     </section>

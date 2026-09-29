@@ -4,13 +4,6 @@ export type ActionStatus = "todo" | "in-progress" | "blocked" | "done";
 export const STARTED_NAMESPACE = "__predeparture_started_v1";
 export const startedKey = (id: string) => `${STARTED_NAMESPACE}.${id}`;
 
-// Suggested workflow order, not legal requirements. Hidden steps are ignored.
-export const TASK_DEPENDENCIES: Readonly<Record<string, readonly string[]>> = {
-  "scholarships-prepare": ["scholarships-research"],
-  "scholarships-submit": ["scholarships-prepare"],
-  "housing-secure": ["housing-search"],
-  "activate-sim": ["phone"],
-};
 export type ActionDecision = {
   task: Task;
   status: ActionStatus;
@@ -42,19 +35,13 @@ export function planNextActions(
   if (!Number.isFinite(arrival.getTime()) || !Number.isFinite(today.getTime())) {
     return { decisions: [] as ActionDecision[], next: [] as ActionDecision[], urgentCount: 0 };
   }
-  const byId = new Map(tasks.map((task) => [task.id, task]));
   const decisions: ActionDecision[] = tasks.map((task) => {
-    const waitingFor = (TASK_DEPENDENCIES[task.id] ?? []).flatMap((id) => {
-      const prerequisite = byId.get(id);
-      return prerequisite && !done[id] ? [prerequisite] : [];
-    });
+    const waitingFor: Task[] = [];
     const status: ActionStatus = done[task.id]
       ? "done"
-      : waitingFor.length
-        ? "blocked"
-        : docs[startedKey(task.id)]
-          ? "in-progress"
-          : "todo";
+      : docs[startedKey(task.id)]
+        ? "in-progress"
+        : "todo";
     const recommended = subtractDays(arrival, task.recommendedDaysBefore);
     const latest = subtractDays(arrival, task.latestDaysBefore);
     const daysToRecommended = calendarDay(recommended) - calendarDay(today);
@@ -83,6 +70,7 @@ export function planNextActions(
             ? 3
             : 4;
   const priority = { high: 0, medium: 1, low: 2 };
+  const seenGroups = new Set<string>();
   const next = decisions
     .filter((d) => d.status !== "done" && d.status !== "blocked" && !d.afterArrival)
     .sort(
@@ -92,6 +80,16 @@ export function planNextActions(
         priority[a.task.priority] - priority[b.task.priority] ||
         a.task.id.localeCompare(b.task.id),
     )
+    .filter((d) => {
+      const group = d.task.id.startsWith("scholarships-")
+        ? "funding"
+        : ["housing-search", "housing-secure"].includes(d.task.id)
+          ? "housing"
+          : d.task.id;
+      if (seenGroups.has(group)) return false;
+      seenGroups.add(group);
+      return true;
+    })
     .slice(0, 3);
   return { decisions, next, urgentCount: decisions.filter((d) => d.urgent).length };
 }

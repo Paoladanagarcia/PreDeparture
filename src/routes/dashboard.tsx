@@ -296,7 +296,6 @@ function Dashboard() {
           actions={plan.next}
           urgentCount={attention.all.length}
           actionableCount={attention.now.length}
-          waitingCount={attention.waiting.length}
           onShowAttention={showAttention}
           showTiming={showTiming}
           example={isExample}
@@ -346,7 +345,7 @@ function Dashboard() {
                 className="mb-4 flex flex-wrap gap-2"
                 aria-label={language === "fr" ? "Filtrer les étapes" : "Filter steps"}
               >
-                {(["all", "todo", "in-progress", "blocked", "done"] as const).map((status) => (
+                {(["all", "todo", "in-progress", "done"] as const).map((status) => (
                   <Button
                     key={status}
                     type="button"
@@ -1042,9 +1041,18 @@ function ChecklistColumn({
   arrival: Date;
 }) {
   const { language, t: translate } = useI18n();
-  const fundingIds = ["scholarships-research", "scholarships-prepare", "scholarships-submit"];
-  const funding = tasks.filter((task) => fundingIds.includes(task.id));
-  const allFunding = [...decisions.values()].filter((d) => fundingIds.includes(d.task.id));
+  const taskGroups = [
+    {
+      ids: ["scholarships-research", "scholarships-prepare", "scholarships-submit"],
+      title: language === "fr" ? "Préparer mon financement" : "Plan my funding",
+      topic: "scholarships",
+    },
+    {
+      ids: ["housing-search", "housing-secure"],
+      title: language === "fr" ? "Trouver mon logement" : "Find my housing",
+      topic: "housing",
+    },
+  ];
   const renderTask = (task: Task, hideGuide = false) => (
     <TaskCard
       key={task.id}
@@ -1072,64 +1080,72 @@ function ChecklistColumn({
         </span>
       </div>
       <ul className="space-y-3">
-        {funding.length > 0 && (
-          <li className="rounded-xl border bg-card p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold">
-                {language === "fr" ? "Préparer mon financement" : "Plan my funding"}
-              </h3>
-              {canCustomize && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      aria-label={language === "fr" ? "Options du financement" : "Funding options"}
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onSelect={() => allFunding.forEach((d) => hideTask(d.task.id))}
-                    >
-                      {language === "fr"
-                        ? "Non concerné — masquer ces étapes"
-                        : "Not applicable — hide these steps"}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {allFunding.filter((d) => done[d.task.id]).length}/{allFunding.length}{" "}
-              {language === "fr" ? "étapes terminées" : "steps completed"}
-            </p>
-            <Button asChild variant="outline" size="sm" className="mt-3 h-8">
-              <Link
-                to="/resources/$topic"
-                params={{ topic: "scholarships" }}
-                search={getGuideSearch(university)}
-              >
-                {translate("resources.openGuide")}
-                <ArrowRight className="ml-1 h-3.5 w-3.5" />
-              </Link>
-            </Button>
-            <details className="group mt-3">
-              <summary className="w-fit cursor-pointer text-xs font-medium text-muted-foreground">
-                <span className="group-open:hidden">
-                  {language === "fr" ? "Voir les étapes" : "View steps"}
-                </span>
-                <span className="hidden group-open:inline">
-                  {language === "fr" ? "Fermer les étapes" : "Hide steps"}
-                </span>
-              </summary>
-              <ul className="mt-3 space-y-2">{funding.map((task) => renderTask(task, true))}</ul>
-            </details>
-          </li>
-        )}
-        {tasks.filter((task) => !fundingIds.includes(task.id)).map((task) => renderTask(task))}
+        {taskGroups.map((group) => {
+          const funding = tasks.filter((task) => group.ids.includes(task.id));
+          const allFunding = [...decisions.values()].filter((d) => group.ids.includes(d.task.id));
+          return (
+            funding.length > 0 && (
+              <li key={group.topic} className="rounded-xl border bg-card p-4 sm:p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold">{group.title}</h3>
+                  {canCustomize && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label={`Options : ${group.title}`}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onSelect={() => allFunding.forEach((d) => hideTask(d.task.id))}
+                        >
+                          {language === "fr"
+                            ? "Non concerné — masquer ces étapes"
+                            : "Not applicable — hide these steps"}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {allFunding.filter((d) => done[d.task.id]).length}/{allFunding.length}{" "}
+                  {language === "fr" ? "étapes terminées" : "steps completed"}
+                </p>
+                <Button asChild variant="outline" size="sm" className="mt-3 h-8">
+                  <Link
+                    to="/resources/$topic"
+                    params={{ topic: group.topic }}
+                    search={getGuideSearch(university)}
+                  >
+                    {translate("resources.openGuide")}
+                    <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                  </Link>
+                </Button>
+                <details className="group mt-3">
+                  <summary className="w-fit cursor-pointer text-xs font-medium text-muted-foreground">
+                    <span className="group-open:hidden">
+                      {language === "fr" ? "Voir les étapes" : "View steps"}
+                    </span>
+                    <span className="hidden group-open:inline">
+                      {language === "fr" ? "Fermer les étapes" : "Hide steps"}
+                    </span>
+                  </summary>
+                  <ul className="mt-3 space-y-2">
+                    {funding.map((task) => renderTask(task, true))}
+                  </ul>
+                </details>
+              </li>
+            )
+          );
+        })}
+        {tasks
+          .filter((task) => !taskGroups.some((group) => group.ids.includes(task.id)))
+          .map((task) => renderTask(task))}
       </ul>
     </Card>
   );

@@ -24,7 +24,7 @@ const task = (id, extra = {}) => ({
   ...extra,
 });
 
-test("returns three actionable tasks, excluding completed and waiting tasks", () => {
+test("returns three actionable tasks, excluding completed tasks and grouping related tasks", () => {
   const tasks = [
     task("done"),
     task("housing-secure"),
@@ -36,10 +36,10 @@ test("returns three actionable tasks, excluding completed and waiting tasks", ()
   const p = planNextActions(tasks, arrival, { done: true }, {}, today);
   assert.equal(p.next.length, 3);
   assert(!p.next.some((d) => ["done", "housing-secure"].includes(d.task.id)));
-  assert.equal(p.decisions.find((d) => d.task.id === "housing-secure").status, "blocked");
+  assert.equal(p.decisions.find((d) => d.task.id === "housing-secure").status, "todo");
 });
 
-test("dependency unlocks on completion and blocks again when reopened", () => {
+test("related steps remain actionable when another step is reopened", () => {
   const tasks = [
     task("scholarships-research"),
     task("scholarships-prepare"),
@@ -62,7 +62,7 @@ test("dependency unlocks on completion and blocks again when reopened", () => {
     {},
     today,
   );
-  assert.equal(reopened.decisions[2].status, "blocked");
+  assert.equal(reopened.decisions[2].status, "todo");
 });
 
 test("hidden prerequisites do not block and existing completions always win", () => {
@@ -159,19 +159,36 @@ for (const zone of ["America/Los_Angeles", "Europe/Paris", "Pacific/Auckland"]) 
   });
 }
 
-const { planningAttention, matchesPlanningFilter } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
-test('attention counts and displayed filters use exactly the same steps, including blocked ones', () => {
-  const tasks = [task('housing-search'),task('housing-secure'),task('done'),task('later',{latestDaysBefore:-30,phase:'after'})];
-  const p = planNextActions(tasks,arrival,{done:true},{},date('2026-11-15'));
+const { planningAttention, matchesPlanningFilter } = await import(
+  `data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`
+);
+test("attention counts and displayed filters use exactly the same steps, including blocked ones", () => {
+  const tasks = [
+    task("housing-search"),
+    task("housing-secure"),
+    task("done"),
+    task("later", { latestDaysBefore: -30, phase: "after" }),
+  ];
+  const p = planNextActions(tasks, arrival, { done: true }, {}, date("2026-11-15"));
   const attention = planningAttention(p.decisions);
-  assert.equal(attention.all.length,2);
-  assert.equal(attention.now.length,1);
-  assert.equal(attention.waiting.length,1);
-  assert.equal(attention.waiting[0].task.id,'housing-secure');
-  for (const [filter,items] of [['attention',attention.all],['attention-now',attention.now],['attention-waiting',attention.waiting]]) {
-    assert.deepEqual(p.decisions.filter(d=>matchesPlanningFilter(d,filter)).map(d=>d.task.id),items.map(d=>d.task.id));
+  assert.equal(attention.all.length, 2);
+  assert.equal(attention.now.length, 2);
+  assert.equal(attention.waiting.length, 0);
+
+  for (const [filter, items] of [
+    ["attention", attention.all],
+    ["attention-now", attention.now],
+    ["attention-waiting", attention.waiting],
+  ]) {
+    assert.deepEqual(
+      p.decisions.filter((d) => matchesPlanningFilter(d, filter)).map((d) => d.task.id),
+      items.map((d) => d.task.id),
+    );
   }
-  const updated = planningAttention(planNextActions(tasks,arrival,{'housing-search':true,done:true},{},date('2026-11-15')).decisions);
-  assert.equal(updated.waiting.length,0);
-  assert.equal(updated.now[0].task.id,'housing-secure');
+  const updated = planningAttention(
+    planNextActions(tasks, arrival, { "housing-search": true, done: true }, {}, date("2026-11-15"))
+      .decisions,
+  );
+  assert.equal(updated.waiting.length, 0);
+  assert.equal(updated.now[0].task.id, "housing-secure");
 });

@@ -19,11 +19,11 @@ test('homepage date presets change the actual engine ranking and target dates',(
  assert.ok(near.urgentCount>far.urgentCount);
  for(const item of near.next){const original=far.decisions.find(d=>d.task.id===item.task.id);assert.ok(item.latest<original.latest)}
 });
-test('checking housing unlocks its dependent task and keeps initial example progress separate',()=>{
+test('housing steps remain independently actionable and keeps initial example progress separate',()=>{
  const before=planNextActions(DEMO_TASKS,today,DEMO_INITIAL_DONE,DEMO_PROGRESS,today);
  const done={...DEMO_INITIAL_DONE,'housing-search':true};
  const after=planNextActions(DEMO_TASKS,today,done,DEMO_PROGRESS,today);
- assert.equal(before.decisions.find(d=>d.task.id==='housing-secure').status,'blocked');
+ assert.equal(before.decisions.find(d=>d.task.id==='housing-secure').status,'todo');
  assert.equal(after.decisions.find(d=>d.task.id==='housing-secure').status,'todo');
  assert.equal(DEMO_VISIBLE_IDS.filter(id=>DEMO_INITIAL_DONE[id]).length/DEMO_VISIBLE_IDS.length,0.5);
  assert.equal(DEMO_INITIAL_DONE['housing-search'],undefined);
