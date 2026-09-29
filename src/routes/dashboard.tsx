@@ -920,12 +920,12 @@ function TaskCard({
               </Button>
             )}
           </div>
-          <details className="group mt-3">
+          <details className="group/task-details mt-3">
             <summary className="w-fit cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline focus-visible:outline-2">
-              <span className="group-open:hidden">
+              <span className="group-open/task-details:hidden">
                 {language === "fr" ? "Voir les détails" : "View details"}
               </span>
-              <span className="hidden group-open:inline">
+              <span className="hidden group-open/task-details:inline">
                 {language === "fr" ? "Fermer les détails" : "Hide details"}
               </span>
             </summary>
