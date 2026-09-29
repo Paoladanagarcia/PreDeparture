@@ -24,12 +24,14 @@ export function TaskStatusControl({
   return (
     <div className="mt-2 space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge
-          variant="outline"
-          className={decision.status === "in-progress" ? "border-primary/30 bg-primary/5" : ""}
-        >
-          {actionStatusLabel(decision.status, fr)}
-        </Badge>
+        {decision.status !== "todo" && (
+          <Badge
+            variant="outline"
+            className={decision.status === "in-progress" ? "border-primary/30 bg-primary/5" : ""}
+          >
+            {actionStatusLabel(decision.status, fr)}
+          </Badge>
+        )}
         {decision.status !== "done" && decision.status !== "blocked" && (
           <Button
             type="button"
