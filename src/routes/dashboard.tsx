@@ -803,6 +803,7 @@ function TaskCard({
   canCustomize,
   university,
   arrival,
+  hideGuide = false,
 }: {
   t: Task;
   isDone: boolean;
@@ -815,6 +816,7 @@ function TaskCard({
   canCustomize: boolean;
   university: string;
   arrival: Date;
+  hideGuide?: boolean;
 }) {
   const { language, t: translate } = useI18n();
   const taskText = getTaskText(t, language);
@@ -873,11 +875,6 @@ function TaskCard({
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {translate("common.latestSafe")} : {formatDate(latest, language)}
-            {!isDone && decision?.urgent && (
-              <span className="ml-2 text-amber-700 dark:text-amber-400">
-                · {language === "fr" ? "À vérifier" : "Review"}
-              </span>
-            )}
           </p>
           {status === "blocked" && (
             <p className="mt-2 text-xs text-muted-foreground">
@@ -914,7 +911,7 @@ function TaskCard({
             {isDone && (
               <span className="text-xs text-muted-foreground">{translate("common.done")}</span>
             )}
-            {guideTopic && (
+            {guideTopic && !hideGuide && (
               <Button asChild variant="outline" size="sm" className="h-8">
                 <Link to="/resources/$topic" params={{ topic: guideTopic }} search={guideSearch}>
                   {translate("resources.openGuide")}
@@ -1044,6 +1041,27 @@ function ChecklistColumn({
   university: string;
   arrival: Date;
 }) {
+  const { language, t: translate } = useI18n();
+  const fundingIds = ["scholarships-research", "scholarships-prepare", "scholarships-submit"];
+  const funding = tasks.filter((task) => fundingIds.includes(task.id));
+  const allFunding = [...decisions.values()].filter((d) => fundingIds.includes(d.task.id));
+  const renderTask = (task: Task, hideGuide = false) => (
+    <TaskCard
+      key={task.id}
+      t={task}
+      isDone={!!done[task.id]}
+      decision={decisions.get(task.id)}
+      toggle={toggle}
+      docs={docs}
+      toggleDoc={toggleDoc}
+      hideTask={hideTask}
+      deleteCustomTask={deleteCustomTask}
+      canCustomize={canCustomize}
+      university={university}
+      arrival={arrival}
+      hideGuide={hideGuide}
+    />
+  );
   const completed = tasks.filter((t) => done[t.id]).length;
   return (
     <Card className="p-4 sm:p-5">
@@ -1054,22 +1072,64 @@ function ChecklistColumn({
         </span>
       </div>
       <ul className="space-y-3">
-        {tasks.map((t) => (
-          <TaskCard
-            key={t.id}
-            t={t}
-            isDone={!!done[t.id]}
-            decision={decisions.get(t.id)}
-            toggle={toggle}
-            docs={docs}
-            toggleDoc={toggleDoc}
-            hideTask={hideTask}
-            deleteCustomTask={deleteCustomTask}
-            canCustomize={canCustomize}
-            university={university}
-            arrival={arrival}
-          />
-        ))}
+        {funding.length > 0 && (
+          <li className="rounded-xl border bg-card p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold">
+                {language === "fr" ? "Préparer mon financement" : "Plan my funding"}
+              </h3>
+              {canCustomize && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      aria-label={language === "fr" ? "Options du financement" : "Funding options"}
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onSelect={() => allFunding.forEach((d) => hideTask(d.task.id))}
+                    >
+                      {language === "fr"
+                        ? "Non concerné — masquer ces étapes"
+                        : "Not applicable — hide these steps"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {allFunding.filter((d) => done[d.task.id]).length}/{allFunding.length}{" "}
+              {language === "fr" ? "étapes terminées" : "steps completed"}
+            </p>
+            <Button asChild variant="outline" size="sm" className="mt-3 h-8">
+              <Link
+                to="/resources/$topic"
+                params={{ topic: "scholarships" }}
+                search={getGuideSearch(university)}
+              >
+                {translate("resources.openGuide")}
+                <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            </Button>
+            <details className="group mt-3">
+              <summary className="w-fit cursor-pointer text-xs font-medium text-muted-foreground">
+                <span className="group-open:hidden">
+                  {language === "fr" ? "Voir les étapes" : "View steps"}
+                </span>
+                <span className="hidden group-open:inline">
+                  {language === "fr" ? "Fermer les étapes" : "Hide steps"}
+                </span>
+              </summary>
+              <ul className="mt-3 space-y-2">{funding.map((task) => renderTask(task, true))}</ul>
+            </details>
+          </li>
+        )}
+        {tasks.filter((task) => !fundingIds.includes(task.id)).map((task) => renderTask(task))}
       </ul>
     </Card>
   );
