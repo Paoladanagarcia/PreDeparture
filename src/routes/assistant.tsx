@@ -1,7 +1,8 @@
+import { assistantLinks, type AssistantLink } from "@/lib/assistant-links";
 import { AssistantText } from "@/components/AssistantText";
 import { useAuth } from "@/lib/auth";
 import { readConversation, saveConversation, type ChatMessage } from "@/lib/assistant-memory";
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -235,7 +236,20 @@ function AssistantPage({ owner }: { owner: string }) {
             )}
 
             {messages.map((m, i) => (
-              <MessageBubble key={i} m={m} />
+              <MessageBubble
+                key={i}
+                m={m}
+                links={
+                  m.role === "assistant" && m.content
+                    ? assistantLinks(
+                        messages[i - 1]?.content || "",
+                        m.content,
+                        profile?.university,
+                        language === "fr",
+                      )
+                    : []
+                }
+              />
             ))}
 
             {loading && (
@@ -335,7 +349,7 @@ function updateStreamingAssistantMessage(
   });
 }
 
-function MessageBubble({ m }: { m: ChatMessage }) {
+function MessageBubble({ m, links }: { m: ChatMessage; links: AssistantLink[] }) {
   const { t, language } = useI18n();
   if (m.role === "user") {
     return (
@@ -362,25 +376,35 @@ function MessageBubble({ m }: { m: ChatMessage }) {
             </p>
           )}
         </div>
-        {m.sources && m.sources.length > 0 && (
+        {links.length > 0 && (
           <div className="rounded-lg border bg-muted/30 p-3">
-            <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              <ShieldCheck className="h-3 w-3" /> {t("common.officialSources")}
+            <p className="mb-2 text-xs font-medium text-muted-foreground">
+              {language === "fr" ? "Liens utiles" : "Useful links"}
             </p>
-            <ul className="space-y-1.5">
-              {m.sources.map((s) => (
-                <li key={s.url}>
+            <div className="flex flex-wrap gap-2">
+              {links.map((link) =>
+                link.external ? (
                   <a
-                    href={s.url}
+                    key={link.url}
+                    href={link.url}
                     target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded-md border bg-background px-3 py-2 text-xs text-primary hover:underline"
                   >
-                    {s.title} <ExternalLink className="h-3 w-3" />
+                    {link.title}
+                    <ExternalLink className="h-3 w-3" />
                   </a>
-                </li>
-              ))}
-            </ul>
+                ) : (
+                  <Link
+                    key={link.url}
+                    to={link.url}
+                    className="inline-flex items-center rounded-md border bg-background px-3 py-2 text-xs text-primary hover:underline"
+                  >
+                    {link.title}
+                  </Link>
+                ),
+              )}
+            </div>
           </div>
         )}
       </div>
