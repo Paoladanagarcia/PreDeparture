@@ -122,7 +122,7 @@ export function NextActions({
             onClick={() => onShowAttention("attention")}
           >
             {fr
-              ? `${urgentCount} étape(s) à vérifier — voir toutes les étapes concernées`
+              ? `${urgentCount} date(s) cible(s) proche(s) ou passée(s) — voir les étapes`
               : `${urgentCount} step(s) need attention — see all affected steps`}
           </Button>
           <div className="flex flex-wrap gap-2">
@@ -167,11 +167,6 @@ export function NextActions({
                   <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
                     {index + 1}
                   </span>
-                  {showTiming && d.urgent && (
-                    <Badge variant="outline" className="border-warning/40 bg-warning/10">
-                      {fr ? "À vérifier" : "Needs attention"}
-                    </Badge>
-                  )}
                 </div>
                 <h3 className="text-sm font-semibold">{title(d.task)}</h3>
                 <p className="text-xs leading-relaxed text-muted-foreground">
