@@ -77,11 +77,65 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 Supabase variables are optional for local guest-only testing. Without them, account sync and community chat will not be available.
 
+## Architecture
+
+```mermaid
+flowchart LR
+    UI["React + TypeScript browser app"]
+    Planner["Deterministic planning rules"]
+    Memory["Conversation memory"]
+    API["Vercel API: ask-stream / ask"]
+    Model["Gemini"]
+    Data["Supabase: auth, profiles, progress, community"]
+    UI --> Planner
+    UI <--> Memory
+    UI -->|"Question, recent messages, selected plan fields"| API
+    API -->|"Server-side API key"| Model
+    Model --> API
+    API -->|"Streamed text or JSON"| UI
+    UI <-->|"Signed-in account data"| Data
+```
+
+The browser owns the interface and computes the planning. Vercel functions handle model requests; the model does not directly access the database or modify the user's tasks. Supabase supports account-based persistence and community features.
+
+## Planning and Technical Choices
+
+- **Rules for dates and priorities:** standard task dates use predefined day offsets from the arrival date. Moving the arrival date recalculates the schedule. Custom tasks retain user-entered dates.
+- **Explicit user progress:** tasks can be to start, in progress or done. Suggested next actions consider timing and progress; related funding and housing steps are grouped to avoid filling the recommendations with the same topic.
+- **Deterministic planning, generative explanations:** Gemini explains the supplied plan and answers questions; it is not the engine that calculates checklist dates. This keeps the planning reproducible even when model responses vary.
+- **Progressive disclosure:** grouped cards retain individual task progress and show details on demand, with a shared guide link.
+- **Optional accounts:** users can explore the product without registering; accounts enable synchronized data and community participation.
+
+Relevant implementation: [planning rules](src/lib/next-actions.ts), [task definitions](src/lib/tasks.ts), [personalization](src/lib/personalized-tasks.ts), and [dashboard](src/routes/dashboard.tsx).
+
 ## AI Assistant
 
-The frontend calls `/api/ask`. The Vercel serverless route then calls Gemini with `process.env.GEMINI_API_KEY`, so the Gemini key never reaches the browser.
+The chat uses `/api/ask-stream` to display responses progressively. A separate `/api/ask` endpoint returns a complete JSON response. Both run as Vercel functions and call Gemini with the server-side `GEMINI_API_KEY`; the key is never sent to the browser.
 
-The assistant is scoped to exchange preparation topics such as F-1 visa, DS-160, SEVIS, housing, insurance, banking, phone plans, arrival logistics, scholarships and student community. If Gemini returns a temporary quota error, the app shows a clean usage-limit message instead of exposing backend details.
+### Context and response handling
+
+- Requests include the question, recent conversation, interface language and host university. When a saved plan exists, they also include arrival date, duration, task titles, statuses and planning dates.
+- The server bounds message lengths and context size and accepts only supported fields and conversation roles. Account identifiers and email are not added as structured assistant context; free-text messages may still contain information the user supplies.
+- Simple greetings and narrowly recognized profile summaries can be answered directly without model generation. Some standalone general questions also use predefined replies or a short-lived browser cache; contextual conversations and saved-plan requests bypass that cache.
+- The model is instructed to distinguish saved personal information from external requirements, avoid inventing missing details and avoid assigning a visa category from the university name alone.
+- Streaming completion is checked explicitly. Interrupted answers are marked incomplete, with stop/retry controls and separate handling for timeouts, service failures and quota limits.
+
+### Conversation and navigation
+
+The active conversation lives in browser memory and survives navigation between app pages. “New conversation” clears it, and changing the conversation owner clears the previous account's exchange. Reloading the page starts a fresh conversation; there is no permanent assistant chat archive in the application.
+
+Selected terms such as DS-160, SEVIS, profile and planning become inline links to curated destinations. Internal links use client-side navigation; external links open separately. Model-generated text is rendered through a small escaped Markdown subset, rather than interpreted as HTML.
+
+Relevant implementation: [request normalization and instructions](src/lib/assistant-request.ts), [streaming endpoint](api/ask-stream.ts), [JSON endpoint](api/ask.ts), [client](src/lib/assistant.ts), [conversation memory](src/lib/assistant-memory.ts), and [curated links](src/lib/assistant-links.ts).
+
+## Current AI Limitations
+
+- **No live browsing or retrieval-augmented generation:** the assistant does not fetch official documents before answering. Curated links are navigation aids, not evidence that their pages were consulted.
+- **Generated answers can be inaccurate:** prompt instructions reduce unwanted behavior but do not guarantee factual correctness or resistance to every misleading input.
+- **Planning targets are estimates:** dates calculated by the app are not embassy appointments, university deadlines or confirmed legal requirements.
+- **Bounded context:** only recent messages and selected planning fields are sent; the assistant has neither unlimited memory nor access to every account field.
+- **No autonomous actions:** the assistant cannot submit applications, book appointments or update the saved profile and checklist on the user's behalf.
+- **External processing:** questions and selected context are sent to Gemini for generated responses. In-memory chat storage in this app does not imply that no external service processes the request.
 
 ## Supabase Setup
 
