@@ -128,15 +128,6 @@ Selected terms such as DS-160, SEVIS, profile and planning become inline links t
 
 Relevant implementation: [request normalization and instructions](src/lib/assistant-request.ts), [streaming endpoint](api/ask-stream.ts), [JSON endpoint](api/ask.ts), [client](src/lib/assistant.ts), [conversation memory](src/lib/assistant-memory.ts), and [curated links](src/lib/assistant-links.ts).
 
-## Current AI Limitations
-
-- **No live browsing or retrieval-augmented generation:** the assistant does not fetch official documents before answering. Curated links are navigation aids, not evidence that their pages were consulted.
-- **Generated answers can be inaccurate:** prompt instructions reduce unwanted behavior but do not guarantee factual correctness or resistance to every misleading input.
-- **Planning targets are estimates:** dates calculated by the app are not embassy appointments, university deadlines or confirmed legal requirements.
-- **Bounded context:** only recent messages and selected planning fields are sent; the assistant has neither unlimited memory nor access to every account field.
-- **No autonomous actions:** the assistant cannot submit applications, book appointments or update the saved profile and checklist on the user's behalf.
-- **External processing:** questions and selected context are sent to Gemini for generated responses. In-memory chat storage in this app does not imply that no external service processes the request.
-
 ## Supabase Setup
 
 PreDeparture works without Supabase in guest mode. To enable accounts, cloud checklist sync and community chat:
