@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import ts from "typescript";
 const source = readFileSync(new URL("../src/lib/assistant-links.ts", import.meta.url), "utf8");
 const { outputText } = ts.transpileModule(source, {
-  compilerOptions: { module: ts.ModuleKind.ESNext },
+  compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
 });
 const { assistantLinks } = await import(
   `data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`
@@ -38,3 +38,18 @@ test("date explanation links to planning", () =>
       (l) => l.url === "/dashboard",
     ),
   ));
+const { inlineAssistantLinks } = await import(
+  `data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`
+);
+test("inline links preserve prose and use curated destinations", () => {
+  const text = "Complétez le DS-160, puis consultez votre profil et le planning.";
+  const parts = inlineAssistantLinks(text);
+  assert.equal(parts.map((p) => p.text).join(""), text);
+  assert.deepEqual(
+    parts.filter((p) => p.url).map((p) => p.url),
+    ["https://ceac.state.gov/GenNIV/Default.aspx", "/profile", "/dashboard"],
+  );
+});
+test("model supplied addresses are not executable links", () => {
+  assert(!inlineAssistantLinks("https://evil.example javascript:alert(1)").some((p) => p.url));
+});

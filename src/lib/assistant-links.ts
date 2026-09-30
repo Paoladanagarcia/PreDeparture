@@ -48,3 +48,33 @@ export function assistantLinks(
     links.push({ title: fr ? "Voir mon planning" : "View my planning", url: "/dashboard" });
   return links;
 }
+
+// Only these curated destinations become clickable. Model-provided URLs stay text.
+export function inlineAssistantLinks(text: string, university?: string) {
+  const terms =
+    /\b(DS[-‑– ]160|SEVIS(?: I[-‑– ]901)?|I[-‑– ]901|Berkeley International Office|Département d[’']État(?: des États-Unis)?|Department of State|ambassade|consulat|embassy|consulate|profil(?:e)?|planning|tableau de bord|dashboard)\b/gi;
+  const parts: { text: string; url?: string; external?: boolean }[] = [];
+  let last = 0;
+  for (const match of text.matchAll(terms)) {
+    const word = match[0];
+    const token = word.toLowerCase();
+    let url: string | undefined;
+    if (/^ds/.test(token)) url = "https://ceac.state.gov/GenNIV/Default.aspx";
+    else if (/sevis|^i[-‑– ]901/.test(token)) url = "https://www.ice.gov/sevis/i901";
+    else if (/^berkeley/.test(token) && /berkeley/i.test(university || ""))
+      url = "https://internationaloffice.berkeley.edu/node/54";
+    else if (/département|department/.test(token))
+      url = "https://travel.state.gov/content/travel/en/us-visas/study/student-visa.html";
+    else if (/ambassade|consulat|embassy/.test(token)) url = "https://www.usembassy.gov/";
+    else if (/^profil/.test(token)) url = "/profile";
+    else if (/planning|tableau|dashboard/.test(token)) url = "/dashboard";
+    if (!url) continue;
+    parts.push(
+      { text: text.slice(last, match.index) },
+      { text: word, url, external: url.startsWith("https:") },
+    );
+    last = match.index! + word.length;
+  }
+  parts.push({ text: text.slice(last) });
+  return parts;
+}

@@ -1,4 +1,3 @@
-import { assistantLinks, type AssistantLink } from "@/lib/assistant-links";
 import { AssistantText } from "@/components/AssistantText";
 import { useAuth } from "@/lib/auth";
 import { readConversation, saveConversation, type ChatMessage } from "@/lib/assistant-memory";
@@ -236,20 +235,7 @@ function AssistantPage({ owner }: { owner: string }) {
             )}
 
             {messages.map((m, i) => (
-              <MessageBubble
-                key={i}
-                m={m}
-                links={
-                  m.role === "assistant" && m.content
-                    ? assistantLinks(
-                        messages[i - 1]?.content || "",
-                        m.content,
-                        profile?.university,
-                        language === "fr",
-                      )
-                    : []
-                }
-              />
+              <MessageBubble key={i} m={m} university={profile?.university} />
             ))}
 
             {loading && (
@@ -349,7 +335,7 @@ function updateStreamingAssistantMessage(
   });
 }
 
-function MessageBubble({ m, links }: { m: ChatMessage; links: AssistantLink[] }) {
+function MessageBubble({ m, university }: { m: ChatMessage; university?: string }) {
   const { t, language } = useI18n();
   if (m.role === "user") {
     return (
@@ -367,7 +353,7 @@ function MessageBubble({ m, links }: { m: ChatMessage; links: AssistantLink[] })
       </span>
       <div className="max-w-[92%] space-y-3 sm:max-w-[85%]">
         <div className="rounded-2xl rounded-tl-sm border bg-card px-3 py-3 text-sm sm:px-4">
-          <AssistantText text={m.content || "..."} />
+          <AssistantText text={m.content || "..."} university={university} />
           {m.incomplete && (
             <p className="mt-2 text-xs text-muted-foreground">
               {language === "fr"
@@ -376,37 +362,6 @@ function MessageBubble({ m, links }: { m: ChatMessage; links: AssistantLink[] })
             </p>
           )}
         </div>
-        {links.length > 0 && (
-          <div className="rounded-lg border bg-muted/30 p-3">
-            <p className="mb-2 text-xs font-medium text-muted-foreground">
-              {language === "fr" ? "Liens utiles" : "Useful links"}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {links.map((link) =>
-                link.external ? (
-                  <a
-                    key={link.url}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 rounded-md border bg-background px-3 py-2 text-xs text-primary hover:underline"
-                  >
-                    {link.title}
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                ) : (
-                  <Link
-                    key={link.url}
-                    to={link.url}
-                    className="inline-flex items-center rounded-md border bg-background px-3 py-2 text-xs text-primary hover:underline"
-                  >
-                    {link.title}
-                  </Link>
-                ),
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

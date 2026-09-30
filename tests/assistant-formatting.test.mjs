@@ -14,8 +14,10 @@ let source = ts.transpileModule(
     },
   },
 ).outputText;
-for (const name of ["react/jsx-runtime", "react"])
+for (const name of ["react/jsx-runtime", "react", "@tanstack/react-router"])
   source = source.replaceAll(`"${name}"`, JSON.stringify(import.meta.resolve(name)));
+const linkSource = ts.transpileModule(readFileSync(new URL("../src/lib/assistant-links.ts", import.meta.url), "utf8"), {compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
+source = source.replace('"@/lib/assistant-links"', JSON.stringify(`data:text/javascript;base64,${Buffer.from(linkSource).toString("base64")}`));
 const { AssistantText } = await import(
   `data:text/javascript;base64,${Buffer.from(source).toString("base64")}`
 );
@@ -42,4 +44,11 @@ test("HTML remains escaped, ordinary asterisks and unfinished streaming text are
   assert.ok(html.includes("2 * 3 = 6"));
   assert.ok(html.includes("**Début"));
   assert.ok(render("**Terminé**").includes("<strong"));
+});
+
+test("official terms render inline anchors inside bold text", () => {
+ const html = render("Remplissez **DS-160** et consultez SEVIS.");
+ assert.ok(html.includes('href="https://ceac.state.gov/GenNIV/Default.aspx"'));
+ assert.ok(html.includes('href="https://www.ice.gov/sevis/i901"'));
+ assert.ok(!html.includes("Liens utiles"));
 });
